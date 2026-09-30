@@ -1,0 +1,19 @@
+# Dependências e builds
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+**/bin/
+**/obj/
+
+# Ambiente e dados locais
+.env
+.env.local
+backend/src/Zalek360.Api/data/
+data/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
