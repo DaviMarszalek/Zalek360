@@ -1,0 +1,11 @@
+{
+  "name": "Zalek360 · Zalek Personalizados",
+  "short_name": "Zalek360",
+  "description": "Sistema comercial interno da Zalek Personalizados",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F5F7FA",
+  "theme_color": "#0A1120",
+  "lang": "pt-BR",
+  "icons": [{ "src": "/icons/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
