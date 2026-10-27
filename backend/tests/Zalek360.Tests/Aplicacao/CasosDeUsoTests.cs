@@ -15,7 +15,7 @@ public class ClienteServiceTests
     {
         var c = new Cenario();
         var d = Dados.ClientePj();
-        var r = new ClienteRequest(d.TipoPessoa, "38.221.907/0001-53", d.NomeRazaoSocial, d.NomeFantasia, d.ContatoNome, d.ContatoCargo,
+        var r = new ClienteRequest(d.TipoPessoa, "38.221.907/0001-53", d.NomeRazaoSocial, d.NomeFantasia, d.InscricaoEstadual, d.ContatoNome, d.ContatoCargo,
             "(47) 3000-1122", "(47) 99988-7766", d.Email, "89201-000", d.Logradouro, d.Numero, null, d.Bairro, d.Cidade, d.Uf,
             "Prefere contato pelo WhatsApp.", null);
 
@@ -31,7 +31,7 @@ public class ClienteServiceTests
     {
         var c = new Cenario();
         var d = Dados.ClientePj(Dados.CnpjMetalurgica);
-        var r = new ClienteRequest(d.TipoPessoa, "12.345.678/0001-95", "Outra Empresa", null, null, null, "4730001122", null,
+        var r = new ClienteRequest(d.TipoPessoa, "12.345.678/0001-95", "Outra Empresa", null, null, null, null, "4730001122", null,
             null, null, null, null, null, null, "Joinville", "SC", null, null);
 
         var ex = await Assert.ThrowsAsync<ConflitoException>(() => c.Clientes().CriarAsync(r, CancellationToken.None));

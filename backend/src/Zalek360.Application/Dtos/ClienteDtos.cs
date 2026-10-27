@@ -7,6 +7,7 @@ public sealed record ClienteRequest(
     string? Documento,
     string? NomeRazaoSocial,
     string? NomeFantasia,
+    string? InscricaoEstadual,
     string? ContatoNome,
     string? ContatoCargo,
     string? Telefone,
@@ -35,7 +36,7 @@ public sealed record EnderecoDto(
     string? Cep, string? Logradouro, string? Numero, string? Complemento, string? Bairro, string? Cidade, string? Uf);
 
 public sealed record ClienteDetalheDto(
-    Guid Id, TipoPessoa TipoPessoa, string Documento, string NomeRazaoSocial, string? NomeFantasia, string NomeExibicao,
+    Guid Id, TipoPessoa TipoPessoa, string Documento, string NomeRazaoSocial, string? NomeFantasia, string? InscricaoEstadual, string NomeExibicao,
     string? ContatoNome, string? ContatoCargo, string? Telefone, string? WhatsApp, string? Email,
     EnderecoDto Endereco, DateTime CriadoEm, int TotalOrcamentos, int TotalPedidos, int Versao);
 

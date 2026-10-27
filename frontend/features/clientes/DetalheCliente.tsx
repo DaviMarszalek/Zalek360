@@ -31,7 +31,7 @@ export function DetalheCliente() {
     <>
       <CabecalhoPagina voltar={<Voltar href="/clientes">Clientes</Voltar>}
         titulo={<span className="flex flex-wrap items-center gap-2">{c.nomeExibicao}<Etiqueta>{rotuloTipoPessoa[c.tipoPessoa]}</Etiqueta></span>}
-        subtitulo={<span className="numero">{documento(c.documento)}{c.nomeFantasia && c.nomeFantasia !== c.nomeRazaoSocial && <span className="font-sans"> · {c.nomeRazaoSocial}</span>}</span>}
+        subtitulo={<span className="numero">{documento(c.documento)}{c.inscricaoEstadual && <span> · IE {c.inscricaoEstadual}</span>}{c.nomeFantasia && c.nomeFantasia !== c.nomeRazaoSocial && <span className="font-sans"> · {c.nomeRazaoSocial}</span>}</span>}
         acoes={<>
           <Link href={`/clientes/${id}/editar`}><Botao variante="secundaria" icone={<Pencil className="h-4 w-4" />}>Editar</Botao></Link>
           <Link href={`/orcamentos/novo?clienteId=${id}`}><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>

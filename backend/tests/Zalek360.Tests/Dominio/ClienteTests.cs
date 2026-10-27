@@ -43,14 +43,14 @@ public class ClienteTests
     [Fact]
     public void Exige_tipo_de_pessoa()
     {
-        var vazio = new DadosCliente(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var vazio = new DadosCliente(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         Assert.True(Cliente.Validar(vazio).ContainsKey("tipoPessoa"));
     }
 
     [Fact]
     public void Exige_documento_nome_e_ao_menos_um_meio_de_contato()
     {
-        var vazio = new DadosCliente(TipoPessoa.PessoaJuridica, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var vazio = new DadosCliente(TipoPessoa.PessoaJuridica, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         var erros = Cliente.Validar(vazio);
         Assert.True(erros.ContainsKey("documento"));
         Assert.True(erros.ContainsKey("nomeRazaoSocial"));

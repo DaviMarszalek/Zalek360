@@ -25,12 +25,12 @@ public static class Dados
     public const string CpfJoao = "31844296016";
 
     public static DadosCliente ClientePj(string cnpj = CnpjAcademia, string razao = "Academia Movimento Ltda.") => new(
-        TipoPessoa.PessoaJuridica, cnpj, razao, "Academia Movimento", "Rafael Costa", "Gerente",
+        TipoPessoa.PessoaJuridica, cnpj, razao, "Academia Movimento", null, "Rafael Costa", "Gerente",
         "4730001122", "47999887766", "contato@academiamovimento.com.br", "89201000", "Rua das Palmeiras", "120", null,
         "Centro", "Joinville", "SC");
 
     public static DadosCliente ClientePf(string cpf = CpfJoao) => new(
-        TipoPessoa.PessoaFisica, cpf, "João Martins", null, null, null,
+        TipoPessoa.PessoaFisica, cpf, "João Martins", null, null, null, null,
         null, "47996547781", "joao.martins@gmail.com", null, null, null, null, null, "Joinville", "SC");
 
     public static DadosPersonalizacao Personalizacao() =>

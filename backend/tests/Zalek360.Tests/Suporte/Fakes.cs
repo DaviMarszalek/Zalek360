@@ -117,7 +117,7 @@ public sealed class ConsultasFake : IClienteQueries, IOrcamentoQueries
     public Task<ClienteDetalheDto> ObterDetalheAsync(Guid id, CancellationToken ct)
     {
         var c = _b.Clientes.FirstOrDefault(x => x.Id == id) ?? throw new NaoEncontradoException("Cliente");
-        return Task.FromResult(new ClienteDetalheDto(c.Id, c.TipoPessoa, c.Documento, c.NomeRazaoSocial, c.NomeFantasia, c.NomeExibicao,
+        return Task.FromResult(new ClienteDetalheDto(c.Id, c.TipoPessoa, c.Documento, c.NomeRazaoSocial, c.NomeFantasia, c.InscricaoEstadual, c.NomeExibicao,
             c.ContatoNome, c.ContatoCargo, c.Telefone, c.WhatsApp, c.Email,
             new EnderecoDto(c.EnderecoCep, c.EnderecoLogradouro, c.EnderecoNumero, c.EnderecoComplemento, c.EnderecoBairro, c.EnderecoCidade, c.EnderecoUf),
             c.CriadoEm, 0, 0, c.Versao));

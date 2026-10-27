@@ -52,6 +52,7 @@ internal sealed class ClienteMap : IEntityTypeConfiguration<Cliente>
         b.Property(x => x.Documento).HasColumnName("cpf_cnpj").HasMaxLength(14).IsRequired();
         b.Property(x => x.NomeRazaoSocial).HasMaxLength(150).IsRequired();
         b.Property(x => x.NomeFantasia).HasMaxLength(100);
+        b.Property(x => x.InscricaoEstadual).HasMaxLength(20);
         b.Property(x => x.ContatoNome).HasMaxLength(100);
         b.Property(x => x.ContatoCargo).HasMaxLength(60);
         b.Property(x => x.Telefone).HasMaxLength(15);

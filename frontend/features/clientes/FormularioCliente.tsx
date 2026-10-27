@@ -17,13 +17,14 @@ const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","P
 function inicial(c?: ClienteDetalhe, nome?: string | null, doc?: string | null): ClienteRequisicao {
   if (c) return {
     tipoPessoa: c.tipoPessoa, documento: mascaraDocumento(c.documento, c.tipoPessoa), nomeRazaoSocial: c.nomeRazaoSocial, nomeFantasia: c.nomeFantasia ?? "",
+    inscricaoEstadual: c.inscricaoEstadual ?? "",
     contatoNome: c.contatoNome ?? "", contatoCargo: c.contatoCargo ?? "", telefone: telefone(c.telefone), whatsApp: telefone(c.whatsApp), email: c.email ?? "",
     cep: mascaraCep(c.endereco.cep ?? ""), logradouro: c.endereco.logradouro ?? "", numero: c.endereco.numero ?? "", complemento: c.endereco.complemento ?? "",
     bairro: c.endereco.bairro ?? "", cidade: c.endereco.cidade ?? "", uf: c.endereco.uf ?? "", versao: c.versao,
   };
   const digitos = somenteDigitos(doc);
   const tipo: TipoPessoa = digitos.length === 11 ? "PessoaFisica" : "PessoaJuridica";
-  return { tipoPessoa: tipo, documento: digitos ? mascaraDocumento(digitos, tipo) : "", nomeRazaoSocial: nome ?? "", nomeFantasia: nome ?? "", contatoNome: "", contatoCargo: "",
+  return { tipoPessoa: tipo, documento: digitos ? mascaraDocumento(digitos, tipo) : "", nomeRazaoSocial: nome ?? "", nomeFantasia: nome ?? "", inscricaoEstadual: "", contatoNome: "", contatoCargo: "",
     telefone: "", whatsApp: "", email: "", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", observacaoInicial: "" };
 }
 
@@ -72,7 +73,7 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
   const salvar = useMutation({
     mutationFn: () => {
       const corpo: ClienteRequisicao = { ...f, documento: somenteDigitos(f.documento), telefone: somenteDigitos(f.telefone), whatsApp: somenteDigitos(f.whatsApp),
-        cep: somenteDigitos(f.cep), nomeFantasia: pj ? f.nomeFantasia : "", contatoCargo: pj ? f.contatoCargo : "" };
+        cep: somenteDigitos(f.cep), nomeFantasia: pj ? f.nomeFantasia : "", inscricaoEstadual: pj ? f.inscricaoEstadual : "", contatoCargo: pj ? f.contatoCargo : "" };
       return edicao ? clientesService.atualizar(cliente!.id, corpo) : clientesService.criar(corpo);
     },
     onSuccess: (c) => {
@@ -126,6 +127,9 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
           </Campo>
           {pj && <Campo rotulo="Nome fantasia" htmlFor="fantasia" erro={e("nomeFantasia")} ajuda="Nome usado nas listas e no dia a dia.">
             <Entrada id="fantasia" value={f.nomeFantasia} onChange={(ev) => set("nomeFantasia", ev.target.value)} maxLength={100} />
+          </Campo>}
+          {pj && <Campo rotulo="Inscrição estadual" htmlFor="inscricaoEstadual" erro={e("inscricaoEstadual")} ajuda="Deixe em branco se isento.">
+            <Entrada id="inscricaoEstadual" value={f.inscricaoEstadual} onChange={(ev) => set("inscricaoEstadual", ev.target.value)} maxLength={20} placeholder="Inscrição estadual" />
           </Campo>}
         </div>
       </Cartao>

@@ -103,6 +103,6 @@ public sealed class ClienteService
     }
 
     private static DadosCliente Mapear(ClienteRequest r) => new(
-        r.TipoPessoa, r.Documento, r.NomeRazaoSocial, r.NomeFantasia, r.ContatoNome, r.ContatoCargo,
+        r.TipoPessoa, r.Documento, r.NomeRazaoSocial, r.NomeFantasia, r.InscricaoEstadual, r.ContatoNome, r.ContatoCargo,
         r.Telefone, r.WhatsApp, r.Email, r.Cep, r.Logradouro, r.Numero, r.Complemento, r.Bairro, r.Cidade, r.Uf);
 }

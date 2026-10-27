@@ -9,6 +9,7 @@ public sealed record DadosCliente(
     string? Documento,
     string? NomeRazaoSocial,
     string? NomeFantasia,
+    string? InscricaoEstadual,
     string? ContatoNome,
     string? ContatoCargo,
     string? Telefone,
@@ -38,6 +39,7 @@ public class Cliente : RaizAgregado
     public string Documento { get; private set; } = string.Empty;
     public string NomeRazaoSocial { get; private set; } = string.Empty;
     public string? NomeFantasia { get; private set; }
+    public string? InscricaoEstadual { get; private set; }
     public string? ContatoNome { get; private set; }
     public string? ContatoCargo { get; private set; }
     public string? Telefone { get; private set; }
@@ -115,6 +117,7 @@ public class Cliente : RaizAgregado
         else if (nome.Length > 150) erros.Adicionar("nomeRazaoSocial", "Use no máximo 150 caracteres.");
 
         if ((TextoOpcional.Limpar(d.NomeFantasia)?.Length ?? 0) > 100) erros.Adicionar("nomeFantasia", "Use no máximo 100 caracteres.");
+        if ((TextoOpcional.Limpar(d.InscricaoEstadual)?.Length ?? 0) > 20) erros.Adicionar("inscricaoEstadual", "Use no máximo 20 caracteres.");
         if ((TextoOpcional.Limpar(d.ContatoNome)?.Length ?? 0) > 100) erros.Adicionar("contatoNome", "Use no máximo 100 caracteres.");
         if ((TextoOpcional.Limpar(d.ContatoCargo)?.Length ?? 0) > 60) erros.Adicionar("contatoCargo", "Use no máximo 60 caracteres.");
 
@@ -154,6 +157,7 @@ public class Cliente : RaizAgregado
         Documento = DocumentoFiscal.Normalizar(d.Documento);
         NomeRazaoSocial = d.NomeRazaoSocial!.Trim();
         NomeFantasia = pj ? TextoOpcional.Limpar(d.NomeFantasia) : null;
+        InscricaoEstadual = pj ? TextoOpcional.Limpar(d.InscricaoEstadual) : null;
         ContatoNome = pj ? TextoOpcional.Limpar(d.ContatoNome) : null;
         ContatoCargo = pj ? TextoOpcional.Limpar(d.ContatoCargo) : null;
         Telefone = TextoOpcional.Limpar(TextoBusca.SomenteDigitos(d.Telefone));

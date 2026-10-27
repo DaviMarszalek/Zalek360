@@ -70,31 +70,31 @@ internal sealed class DbSeeder
 
         // ------------------------------------------------------------------ clientes
         var metalurgica = NovoCliente(carlos, Momento(2024, 3, 12, 10, 0), new DadosCliente(
-            TipoPessoa.PessoaJuridica, "12345678000195", "Metalúrgica Horizonte Ltda.", null, "Luciana Prates", "Compras",
+            TipoPessoa.PessoaJuridica, "12345678000195", "Metalúrgica Horizonte Ltda.", null, null, "Luciana Prates", "Compras",
             "4734224410", "47998123304", "compras@metalhorizonte.com.br", "89219600", "Rua Dona Francisca", "8300", "Galpão 4",
             "Distrito Industrial", "Joinville", "SC"));
         var construtora = NovoCliente(fernanda, Momento(2025, 2, 3, 14, 20), new DadosCliente(
-            TipoPessoa.PessoaJuridica, "45908112000183", "Construtora Vale Sul Ltda.", "Construtora Vale Sul", "Ricardo Almeida", "Suprimentos",
+            TipoPessoa.PessoaJuridica, "45908112000183", "Construtora Vale Sul Ltda.", "Construtora Vale Sul", null, "Ricardo Almeida", "Suprimentos",
             "4730378820", "47984401290", "suprimentos@construtoravalesul.com.br", "89010100", "Rua XV de Novembro", "1200", "Sala 804",
             "Centro", "Blumenau", "SC"));
         var colegio = NovoCliente(fernanda, Momento(2025, 1, 20, 9, 30), new DadosCliente(
-            TipoPessoa.PessoaJuridica, "07231554000149", "Associação Educacional Aurora", "Colégio Aurora", "Patrícia Nunes", "Coordenação",
+            TipoPessoa.PessoaJuridica, "07231554000149", "Associação Educacional Aurora", "Colégio Aurora", null, "Patrícia Nunes", "Coordenação",
             "4733716600", "47991234480", "secretaria@colegioaurora.com.br", "89251000", "Rua Reinoldo Rau", "450", null,
             "Centro", "Jaraguá do Sul", "SC"));
         var clinica = NovoCliente(maria, Momento(2025, 6, 9, 11, 0), new DadosCliente(
-            TipoPessoa.PessoaJuridica, "29117340000189", "Clínica Bem Viver Ltda.", "Clínica Bem Viver", "Helena Duarte", "Diretora administrativa",
+            TipoPessoa.PessoaJuridica, "29117340000189", "Clínica Bem Viver Ltda.", "Clínica Bem Viver", null, "Helena Duarte", "Diretora administrativa",
             "4130217755", "41997021145", "administrativo@clinicabemviver.com.br", "80420090", "Avenida Sete de Setembro", "4214", "Conjunto 12",
             "Batel", "Curitiba", "PR"));
         var joao = NovoCliente(maria, Momento(2025, 11, 4, 16, 45), new DadosCliente(
-            TipoPessoa.PessoaFisica, "31844296016", "João Martins", null, null, null,
+            TipoPessoa.PessoaFisica, "31844296016", "João Martins", null, null, null, null,
             null, "47996547781", "joao.martins@gmail.com", "89201000", "Rua Visconde de Taunay", "310", "Apto 52",
             "Centro", "Joinville", "SC"));
         var anaPaula = NovoCliente(maria, Momento(2026, 3, 18, 10, 15), new DadosCliente(
-            TipoPessoa.PessoaFisica, "02781533050", "Ana Paula Rocha", null, null, null,
+            TipoPessoa.PessoaFisica, "02781533050", "Ana Paula Rocha", null, null, null, null,
             null, "47982335671", "anapaula.rocha@outlook.com", "89216000", "Rua Blumenau", "1580", null,
             "América", "Joinville", "SC"));
         var rotaLitoral = NovoCliente(carlos, Momento(2026, 9, 10, 15, 30), new DadosCliente(
-            TipoPessoa.PessoaJuridica, "33604219000159", "Transportes Rota Litoral Ltda.", null, "Marcos Vieira", "Financeiro",
+            TipoPessoa.PessoaJuridica, "33604219000159", "Transportes Rota Litoral Ltda.", null, null, "Marcos Vieira", "Financeiro",
             "4733481180", "47998770021", "financeiro@rotalitoral.com.br", "88301000", "Rua Hercílio Luz", "760", null,
             "Centro", "Itajaí", "SC"));
 

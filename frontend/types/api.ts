@@ -42,13 +42,13 @@ export interface ClienteListaItem {
 export interface Endereco { cep: string | null; logradouro: string | null; numero: string | null; complemento: string | null; bairro: string | null; cidade: string | null; uf: string | null }
 
 export interface ClienteDetalhe {
-  id: string; tipoPessoa: TipoPessoa; documento: string; nomeRazaoSocial: string; nomeFantasia: string | null; nomeExibicao: string;
+  id: string; tipoPessoa: TipoPessoa; documento: string; nomeRazaoSocial: string; nomeFantasia: string | null; inscricaoEstadual: string | null; nomeExibicao: string;
   contatoNome: string | null; contatoCargo: string | null; telefone: string | null; whatsApp: string | null; email: string | null;
   endereco: Endereco; criadoEm: string; totalOrcamentos: number; totalPedidos: number; versao: number;
 }
 
 export interface ClienteRequisicao {
-  tipoPessoa: TipoPessoa | null; documento: string; nomeRazaoSocial: string; nomeFantasia: string; contatoNome: string; contatoCargo: string;
+  tipoPessoa: TipoPessoa | null; documento: string; nomeRazaoSocial: string; nomeFantasia: string; inscricaoEstadual: string; contatoNome: string; contatoCargo: string;
   telefone: string; whatsApp: string; email: string; cep: string; logradouro: string; numero: string; complemento: string; bairro: string;
   cidade: string; uf: string; observacaoInicial?: string; versao?: number;
 }
