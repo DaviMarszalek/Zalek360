@@ -35,6 +35,16 @@ services:
       # HTTP local: o cookie de sessão não pode exigir HTTPS. Atrás de proxy com TLS, use true.
       Autenticacao__CookieSegura: ${COOKIE_SEGURA:-false}
       Aplicacao__FusoHorario: America/Sao_Paulo
+      Empresa__NomeFantasia: ${Empresa__NomeFantasia:-Zalek Personalizados}
+      Empresa__RazaoSocial: ${Empresa__RazaoSocial:-}
+      Empresa__Cnpj: ${Empresa__Cnpj:-}
+      Empresa__Telefone: ${Empresa__Telefone:-}
+      Empresa__WhatsApp: ${Empresa__WhatsApp:-}
+      Empresa__Email: ${Empresa__Email:-}
+      Empresa__Site: ${Empresa__Site:-}
+      Empresa__Endereco: ${Empresa__Endereco:-}
+      Empresa__CaminhoLogo: ${Empresa__CaminhoLogo:-}
+      Empresa__TextoRodape: ${Empresa__TextoRodape:-}
       Banco__ExecutarSeed: ${EXECUTAR_SEED:-true}
       Banco__SenhaUsuariosDemo: ${SENHA_USUARIOS_DEMO:-Zalek@2026}
       Swagger__Habilitado: ${SWAGGER_HABILITADO:-true}
@@ -42,6 +52,7 @@ services:
       - "${BACKEND_PORTA_HOST:-5000}:8080"
     volumes:
       - anexos:/app/data/uploads
+      - identidade:/app/data/empresa:ro
     depends_on:
       db:
         condition: service_healthy
@@ -62,3 +73,4 @@ services:
 volumes:
   dados-postgres:
   anexos:
+  identidade:

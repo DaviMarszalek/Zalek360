@@ -14,6 +14,7 @@ RUN dotnet publish src/Zalek360.Api/Zalek360.Api.csproj -c Release -o /app/publi
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libfontconfig1 && rm -rf /var/lib/apt/lists/*
 # A imagem Debian 12 já inclui ICU (formatação pt-BR) e tzdata (fuso America/Sao_Paulo).
 ENV ASPNETCORE_URLS=http://+:8080 \
     ASPNETCORE_ENVIRONMENT=Production \
