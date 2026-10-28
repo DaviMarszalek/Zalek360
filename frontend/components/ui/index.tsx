@@ -74,10 +74,20 @@ export function Cartao({ titulo, acao, children, className, semPadding }: { titu
 }
 
 const baseBadge = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium";
-export const BadgeOrcamento = ({ situacao }: { situacao: SituacaoOrcamento }) =>
-  <span className={cn(baseBadge, estiloSituacaoOrcamento[situacao])}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{rotuloSituacaoOrcamento[situacao]}</span>;
-export const BadgePedido = ({ situacao }: { situacao: SituacaoPedido }) =>
-  <span className={cn(baseBadge, estiloSituacaoPedido[situacao])}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{rotuloSituacaoPedido[situacao]}</span>;
+export const BadgeOrcamento = ({ situacao }: { situacao: SituacaoOrcamento }) => {
+  const rotulo = rotuloSituacaoOrcamento[situacao] ?? "Status não identificado";
+  const estilo = estiloSituacaoOrcamento[situacao] ?? "bg-slate-100 text-slate-700 border-slate-200";
+  return <span className={cn(baseBadge, estilo)}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{rotulo}</span>;
+};
+export const BadgePedido = ({ situacao }: { situacao: SituacaoPedido }) => {
+  const chave = String(situacao ?? "").trim();
+  const normalizada = chave.toLowerCase();
+  const estado = (Object.keys(rotuloSituacaoPedido) as SituacaoPedido[])
+    .find((s) => s.toLowerCase() === normalizada);
+  const rotulo = estado ? rotuloSituacaoPedido[estado] : "Status não identificado";
+  const estilo = estado ? estiloSituacaoPedido[estado] : "bg-slate-100 text-slate-700 border-slate-200";
+  return <span className={cn(baseBadge, estilo)}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{rotulo}</span>;
+};
 export const Etiqueta = ({ children, className }: { children: React.ReactNode; className?: string }) =>
   <span className={cn("inline-flex items-center rounded border border-borda bg-slate-50 px-1.5 py-0.5 text-[11px] font-medium text-texto-suave", className)}>{children}</span>;
 

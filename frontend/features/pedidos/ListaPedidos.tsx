@@ -81,19 +81,17 @@ export function ListaPedidos() {
                 acao={filtrando ? <Botao variante="secundaria" onClick={limpar}>Limpar filtros</Botao>
                   : <Link href="/orcamentos?status=AguardandoRetorno"><Botao variante="secundaria">Ver orçamentos aguardando retorno</Botao></Link>} />
               : <>
-                <div className="overflow-x-auto"><table className="tabela w-full min-w-[920px] text-sm">
-                  <thead><tr><th>Nº pedido</th><th>Nº orçamento</th><th>Cliente</th><th>Data</th><th className="text-right">Valor</th><th>Prazo</th><th>Responsável</th><th>Status</th></tr></thead>
+                <div className="overflow-x-auto"><table className="tabela w-full min-w-[860px] table-fixed text-sm">
+                  <thead><tr><th className="w-[14%]">Pedido</th><th className="w-[27%]">Cliente</th><th className="w-[21%]">Data e prazo</th><th className="w-[20%] text-center">Valor</th><th className="w-[18%]">Status</th></tr></thead>
                   <tbody>{q.data.itens.map((p) => (
                     <tr key={p.id} className="cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/pedidos/${p.id}`)}>
-                      <td className="whitespace-nowrap"><Link href={`/pedidos/${p.id}`} className="numero font-medium text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(p.numero)}</Link>
-                        {dataIsoDeInstante(p.criadoEm) === hojeIso() && <Etiqueta className="ml-2 border-emerald-200 bg-emerald-50 text-emerald-700">Novo</Etiqueta>}</td>
-                      <td><Link href={`/orcamentos/${p.orcamentoId}`} className="numero text-texto-suave hover:text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(p.orcamentoNumero)}</Link></td>
-                      <td className="max-w-[240px] truncate">{p.cliente}</td>
-                      <td className="numero text-texto-suave">{data(p.data)}</td>
-                      <td className="numero text-right">{moeda(p.valorTotal)}</td>
-                      <td><Prazo prazo={p.prazoEntrega} situacao={p.situacao} /></td>
-                      <td className="text-texto-suave">{p.responsavel}</td>
-                      <td><BadgePedido situacao={p.situacao} /></td>
+                      <td><div className="flex items-center gap-2"><Link href={`/pedidos/${p.id}`} className="numero font-medium text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(p.numero)}</Link>
+                        {dataIsoDeInstante(p.criadoEm) === hojeIso() && <Etiqueta className="border-emerald-200 bg-emerald-50 text-emerald-700">Novo</Etiqueta>}</div>
+                        <div className="mt-0.5 text-xs text-texto-fraco">Orçamento <Link href={`/orcamentos/${p.orcamentoId}`} className="numero hover:text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(p.orcamentoNumero)}</Link></div></td>
+                      <td className="max-w-[280px] truncate">{p.cliente}<div className="mt-0.5 truncate text-xs text-texto-fraco">Responsável: {p.responsavel}</div></td>
+                      <td className="whitespace-nowrap"><div className="numero text-texto-suave">Criado {data(p.data)}</div><div className="mt-0.5 text-xs text-texto-fraco">Prazo <Prazo prazo={p.prazoEntrega} situacao={p.situacao} /></div></td>
+                      <td className="min-w-0 overflow-hidden text-center"><span className="numero inline-block max-w-full truncate align-middle font-medium" title={moeda(p.valorTotal)}>{moeda(p.valorTotal)}</span></td>
+                      <td className="overflow-hidden"><BadgePedido situacao={p.situacao} /></td>
                     </tr>))}</tbody></table></div>
                 <Paginacao pagina={q.data.pagina} totalPaginas={q.data.totalPaginas} total={q.data.total} exibindo={q.data.itens.length} nome={["pedido", "pedidos"]} aoMudar={setPagina} />
               </>}
