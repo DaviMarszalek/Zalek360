@@ -79,14 +79,37 @@ export const BadgeOrcamento = ({ situacao }: { situacao: SituacaoOrcamento }) =>
   const estilo = estiloSituacaoOrcamento[situacao] ?? "bg-slate-100 text-slate-700 border-slate-200";
   return <span className={cn(baseBadge, estilo)}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{rotulo}</span>;
 };
+const situacoesPedidoPorNumero: SituacaoPedido[] = [
+  "Aberto",
+  "EmProducao",
+  "Pronto",
+  "Entregue",
+  "Cancelado",
+];
+
 export const BadgePedido = ({ situacao }: { situacao: SituacaoPedido }) => {
   const chave = String(situacao ?? "").trim();
-  const normalizada = chave.toLowerCase();
-  const estado = (Object.keys(rotuloSituacaoPedido) as SituacaoPedido[])
-    .find((s) => s.toLowerCase() === normalizada);
-  const rotulo = estado ? rotuloSituacaoPedido[estado] : "Status não identificado";
-  const estilo = estado ? estiloSituacaoPedido[estado] : "bg-slate-100 text-slate-700 border-slate-200";
-  return <span className={cn(baseBadge, estilo)}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{rotulo}</span>;
+  const normalizada = chave.toLowerCase().replace(/[ _-]/g, "");
+
+  const estado = /^\d+$/.test(chave)
+    ? situacoesPedidoPorNumero[Number(chave) - 1]
+    : (Object.keys(rotuloSituacaoPedido) as SituacaoPedido[]).find(
+      (s) => s.toLowerCase() === normalizada,
+    );
+
+  const rotulo = estado
+    ? rotuloSituacaoPedido[estado]
+    : "Status não identificado";
+  const estilo = estado
+    ? estiloSituacaoPedido[estado]
+    : "bg-slate-100 text-slate-700 border-slate-200";
+
+  return (
+    <span className={cn(baseBadge, estilo)}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+      {rotulo}
+    </span>
+  );
 };
 export const Etiqueta = ({ children, className }: { children: React.ReactNode; className?: string }) =>
   <span className={cn("inline-flex items-center rounded border border-borda bg-slate-50 px-1.5 py-0.5 text-[11px] font-medium text-texto-suave", className)}>{children}</span>;

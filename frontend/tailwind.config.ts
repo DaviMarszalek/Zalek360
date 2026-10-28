@@ -2,7 +2,12 @@ import type { Config } from "tailwindcss";
 
 // Tokens visuais extraídos dos protótipos do MVP 1.
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./features/**/*.{ts,tsx}"],
+  content: [
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./features/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
