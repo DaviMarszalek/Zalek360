@@ -55,22 +55,19 @@ export function ListaOrcamentos() {
         {q.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div>
           : !q.data ? <div className="space-y-2 p-4">{Array.from({ length: 6 }).map((_, i) => <Esqueleto key={i} className="h-11" />)}</div>
             : q.data.itens.length === 0 ? <EstadoVazio icone={<FileText className="h-5 w-5" />} titulo="Nenhum orçamento encontrado"
-                descricao={filtrando ? "Ajuste os filtros ou amplie o período." : "Crie o primeiro orçamento para um cliente cadastrado."}
-                acao={filtrando ? <Botao variante="secundaria" onClick={() => { setBusca(""); setResponsavelId(""); setPeriodo("todos"); setStatus(""); }}>Limpar filtros</Botao>
-                  : <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>} />
+              descricao={filtrando ? "Ajuste os filtros ou amplie o período." : "Crie o primeiro orçamento para um cliente cadastrado."}
+              acao={filtrando ? <Botao variante="secundaria" onClick={() => { setBusca(""); setResponsavelId(""); setPeriodo("todos"); setStatus(""); }}>Limpar filtros</Botao>
+                : <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>} />
               : <>
-                <div className="overflow-x-auto"><table className="tabela w-full min-w-[900px] text-sm">
-                  <thead><tr><th>Número</th><th>Cliente</th><th>Data</th><th>Validade</th><th>Itens</th><th className="text-right">Valor</th><th>Responsável</th><th>Status</th></tr></thead>
+                <div className="overflow-x-auto"><table className="tabela w-full min-w-[860px] table-fixed text-sm">
+                  <thead><tr><th className="w-[14%]">Orçamento</th><th className="w-[25%]">Cliente</th><th className="w-[21%]">Datas</th><th className="w-[22%] text-center">Valor</th><th className="w-[18%]">Status</th></tr></thead>
                   <tbody>{q.data.itens.map((o) => (
                     <tr key={o.id} className="cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/orcamentos/${o.id}`)}>
-                      <td><Link href={`/orcamentos/${o.id}`} className="numero font-medium text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(o.numero)}</Link></td>
-                      <td className="max-w-[240px] truncate">{o.cliente}</td>
-                      <td className="numero text-texto-suave">{data(o.data)}</td>
-                      <td className="numero text-texto-suave">{data(o.validade)}</td>
-                      <td className="text-texto-suave">{o.quantidadeItens}</td>
-                      <td className="numero text-right">{moeda(o.valorTotal)}</td>
-                      <td className="text-texto-suave">{o.responsavel}</td>
-                      <td><BadgeOrcamento situacao={o.situacao} /></td>
+                      <td><Link href={`/orcamentos/${o.id}`} className="numero font-medium text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(o.numero)}</Link><div className="mt-0.5 text-xs text-texto-fraco">{o.quantidadeItens} {o.quantidadeItens === 1 ? "item" : "itens"}</div></td>
+                      <td className="max-w-[280px] truncate">{o.cliente}<div className="mt-0.5 truncate text-xs text-texto-fraco">Responsável: {o.responsavel}</div></td>
+                      <td className="whitespace-nowrap"><div className="numero text-texto-suave">Criado {data(o.data)}</div><div className="mt-0.5 numero text-xs text-texto-fraco">Vence {data(o.validade)}</div></td>
+                      <td className="min-w-0 overflow-hidden text-center"><span className="numero inline-block max-w-full truncate align-middle font-medium" title={moeda(o.valorTotal)}>{moeda(o.valorTotal)}</span></td>
+                      <td className="overflow-hidden"><BadgeOrcamento situacao={o.situacao} /></td>
                     </tr>))}</tbody></table></div>
                 <Paginacao pagina={q.data.pagina} totalPaginas={q.data.totalPaginas} total={q.data.total} exibindo={q.data.itens.length} nome={["orçamento", "orçamentos"]} aoMudar={setPagina} />
               </>}
