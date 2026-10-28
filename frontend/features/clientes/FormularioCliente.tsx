@@ -56,6 +56,7 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
   const [verificacao, setVerificacao] = useState<VerificacaoDocumento | null>(null);
   const [verificando, setVerificando] = useState(false);
   const [criarOrcamento, setCriarOrcamento] = useState(false);
+  const [aba, setAba] = useState<"identificacao" | "contato" | "endereco" | "observacoes">("identificacao");
   const pj = f.tipoPessoa === "PessoaJuridica";
 
   const set = <K extends keyof ClienteRequisicao>(campo: K, valor: ClienteRequisicao[K]) => {
@@ -96,11 +97,26 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
   const qtdErros = erro ? Object.keys(erro.errors).length : 0;
 
   return (
-    <form onSubmit={(ev) => { ev.preventDefault(); setCriarOrcamento(false); salvar.mutate(); }} noValidate className="space-y-5">
+    <form onSubmit={(ev) => { ev.preventDefault(); setCriarOrcamento(false); salvar.mutate(); }} noValidate className="mx-auto w-full max-w-4xl space-y-5">
       {erro && qtdErros > 0 && !(verificacao?.clienteExistente) && <Aviso tipo="erro" titulo="Corrija os campos destacados para salvar o cliente.">{qtdErros} {qtdErros === 1 ? "campo precisa" : "campos precisam"} de atenção.</Aviso>}
       {erro && qtdErros === 0 && <Aviso tipo="erro">{erro.message}</Aviso>}
 
-      <Cartao titulo="Identificação">
+      <div className="rounded-lg border border-borda bg-white p-1.5" role="tablist" aria-label="Seções do cadastro">
+        {([
+          ["identificacao", "Identificação"],
+          ["contato", "Contato"],
+          ["endereco", "Endereço"],
+          ...(!edicao ? [["observacoes", "Observações"]] : []),
+        ] as [typeof aba, string][]).map(([id, rotulo]) => (
+          <button key={id} type="button" role="tab" aria-selected={aba === id}
+            onClick={() => setAba(id)}
+            className={cn("rounded-md px-4 py-2.5 text-sm font-medium transition-colors", aba === id ? "bg-primaria text-white" : "text-texto-suave hover:bg-slate-50")}>
+            {rotulo}
+          </button>
+        ))}
+      </div>
+
+      {aba === "identificacao" && <Cartao titulo="Identificação">
         {!edicao && (
           <div className="mb-5 grid max-w-md grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de pessoa">
             {(["PessoaJuridica", "PessoaFisica"] as TipoPessoa[]).map((t) => (
@@ -132,9 +148,9 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
             <Entrada id="inscricaoEstadual" value={f.inscricaoEstadual} onChange={(ev) => set("inscricaoEstadual", ev.target.value)} maxLength={20} placeholder="Inscrição estadual" />
           </Campo>}
         </div>
-      </Cartao>
+      </Cartao>}
 
-      <Cartao titulo="Contato">
+      {aba === "contato" && <Cartao titulo="Contato">
         {e("contato") && <Aviso tipo="erro" className="mb-4">{e("contato")}</Aviso>}
         <div className="grid gap-4 md:grid-cols-2">
           {pj && <>
@@ -146,9 +162,9 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
           <Campo rotulo="E-mail" htmlFor="email" erro={e("email")} className="md:col-span-2"><Entrada id="email" type="email" value={f.email} onChange={(ev) => set("email", ev.target.value)} invalido={!!e("email")} maxLength={150} /></Campo>
         </div>
         <p className="mt-3 text-xs text-texto-fraco">Informe pelo menos um meio de contato (WhatsApp, telefone ou e-mail).</p>
-      </Cartao>
+      </Cartao>}
 
-      <Cartao titulo="Endereço">
+      {aba === "endereco" && <Cartao titulo="Endereço">
         <div className="grid gap-4 md:grid-cols-6">
           <Campo rotulo="CEP" htmlFor="cep" erro={e("cep")} className="md:col-span-2"><Entrada id="cep" className="numero" inputMode="numeric" placeholder="00000-000" value={f.cep} onChange={(ev) => set("cep", mascaraCep(ev.target.value))} invalido={!!e("cep")} /></Campo>
           <Campo rotulo="Logradouro" htmlFor="logradouro" erro={e("logradouro")} className="md:col-span-4"><Entrada id="logradouro" value={f.logradouro} onChange={(ev) => set("logradouro", ev.target.value)} maxLength={150} /></Campo>
@@ -160,9 +176,9 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
             <Selecao id="uf" value={f.uf} onChange={(ev) => set("uf", ev.target.value)} invalido={!!e("uf")}><option value="">Selecione</option>{UFS.map((u) => <option key={u}>{u}</option>)}</Selecao>
           </Campo>
         </div>
-      </Cartao>
+      </Cartao>}
 
-      {!edicao && <Cartao titulo="Observações internas">
+      {!edicao && aba === "observacoes" && <Cartao titulo="Observações internas">
         <Campo erro={e("observacaoInicial")} ajuda="Visível apenas para a equipe. Novas observações podem ser adicionadas depois no cadastro.">
           <AreaTexto value={f.observacaoInicial} onChange={(ev) => set("observacaoInicial", ev.target.value)} maxLength={2000} placeholder="Preferências de contato, forma de pagamento habitual, cuidados com a arte..." />
         </Campo>
