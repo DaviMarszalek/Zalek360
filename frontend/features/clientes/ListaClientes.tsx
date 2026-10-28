@@ -8,7 +8,6 @@ import { Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, E
 import { clientesService } from "@/services";
 import { useDebounce } from "@/hooks";
 import { erroDaApi } from "@/lib/api";
-import { siglaTipoPessoa } from "@/lib/status";
 import { data, documento, numeroDocumento, somenteDigitos, telefone } from "@/utils/formatos";
 import type { TipoPessoa } from "@/types/api";
 
@@ -63,7 +62,7 @@ export function ListaClientes() {
                   <thead><tr><th>Cliente</th><th>CPF/CNPJ</th><th>Contato</th><th>Cidade</th><th>Último orçamento</th><th className="w-8" /></tr></thead>
                   <tbody>{q.data.itens.map((c) => (
                     <tr key={c.id} className="cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/clientes/${c.id}`)}>
-                      <td><div className="flex items-center gap-2"><Link href={`/clientes/${c.id}`} className="font-medium text-texto hover:text-primaria" onClick={(e) => e.stopPropagation()}>{c.nome}</Link><Etiqueta>{siglaTipoPessoa[c.tipoPessoa]}</Etiqueta></div>
+                      <td><Link href={`/clientes/${c.id}`} className="font-medium text-texto hover:text-primaria" onClick={(e) => e.stopPropagation()}>{c.nome}</Link>
                         {c.razaoSocial && c.razaoSocial !== c.nome && <p className="mt-0.5 text-xs text-texto-fraco">{c.razaoSocial}</p>}</td>
                       <td className="numero text-texto-suave">{documento(c.documento)}</td>
                       <td className="text-texto-suave"><p className="numero">{telefone(c.whatsApp ?? c.telefone) || "—"}</p>{c.email && <p className="text-xs text-texto-fraco">{c.email}</p>}</td>
