@@ -17,11 +17,13 @@ public sealed class OrcamentosController : ControllerBase
 {
     private readonly OrcamentoService _servico;
     private readonly IOrcamentoQueries _consultas;
+    private readonly OrcamentoDocumentoService _documentos;
 
-    public OrcamentosController(OrcamentoService servico, IOrcamentoQueries consultas)
+    public OrcamentosController(OrcamentoService servico, IOrcamentoQueries consultas, OrcamentoDocumentoService documentos)
     {
         _servico = servico;
         _consultas = consultas;
+        _documentos = documentos;
     }
 
     /// <summary>Lista com filtros e contagem por status (abas).</summary>
@@ -46,6 +48,26 @@ public sealed class OrcamentosController : ControllerBase
 
     [HttpGet("{id:guid}")]
     public Task<OrcamentoDetalheDto> Obter(Guid id, CancellationToken ct) => _consultas.ObterDetalheAsync(id, ct);
+
+    /// <summary>Pré-visualiza o PDF sem gravar histórico. inline=true abre no navegador.</summary>
+    [HttpGet("{id:guid}/exportar-pdf")]
+    public Task<FileContentResult> PrevisualizarPdf(Guid id, [FromQuery] bool inline, CancellationToken ct) =>
+        DocumentoPdf(id, false, inline, ct);
+
+    /// <summary>Exporta o PDF e registra um evento único no histórico do orçamento e do cliente.</summary>
+    [HttpPost("{id:guid}/exportacoes")]
+    public Task<FileContentResult> ExportarPdf(Guid id, [FromQuery] bool inline, CancellationToken ct) =>
+        DocumentoPdf(id, true, inline, ct);
+
+    private async Task<FileContentResult> DocumentoPdf(Guid id, bool registrar, bool inline, CancellationToken ct)
+    {
+        var arquivo = await _documentos.GerarAsync(id, registrar, ct);
+        Response.Headers.CacheControl = "no-store";
+        var disposicao = new Microsoft.Net.Http.Headers.ContentDispositionHeaderValue(inline ? "inline" : "attachment");
+        disposicao.SetHttpFileName(arquivo.NomeArquivo);
+        Response.Headers.ContentDisposition = disposicao.ToString();
+        return File(arquivo.Conteudo, "application/pdf");
+    }
 
     /// <summary>Edita orçamento em Em Elaboração/Aguardando Retorno (RN6). Envie "versao".</summary>
     [HttpPut("{id:guid}")]

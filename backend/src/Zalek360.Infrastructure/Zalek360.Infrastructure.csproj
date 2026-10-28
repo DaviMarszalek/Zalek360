@@ -9,6 +9,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="QuestPDF" Version="2026.9.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
@@ -17,6 +18,8 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Zalek360.Tests" />
+    <EmbeddedResource Include="Documentos/Fontes/*.ttf" />
+    <None Update="Documentos/Fontes/OFL.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Zalek360.Application\Zalek360.Application.csproj" />

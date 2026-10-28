@@ -10,6 +10,7 @@ using Zalek360.Infrastructure.Persistence;
 using Zalek360.Infrastructure.Queries;
 using Zalek360.Infrastructure.Repositories;
 using Zalek360.Infrastructure.Services;
+using Zalek360.Infrastructure.Documentos;
 
 namespace Zalek360.Infrastructure;
 
@@ -24,6 +25,18 @@ public static class DependencyInjection
         services.Configure<AplicacaoOptions>(configuration.GetSection(AplicacaoOptions.Secao));
         services.Configure<BancoOptions>(configuration.GetSection(BancoOptions.Secao));
         services.Configure<RotinasOptions>(configuration.GetSection(RotinasOptions.Secao));
+        services.AddOptions<EmpresaOptions>().Bind(configuration.GetSection(EmpresaOptions.Secao))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.NomeFantasia) && o.NomeFantasia.Length <= 200,
+                "Empresa:NomeFantasia é obrigatório e deve ter até 200 caracteres.")
+            .Validate(o => o.RazaoSocial.Length <= 200 && o.Endereco.Length <= 500 && (o.TextoRodape?.Length ?? 0) <= 500,
+                "Empresa: razão social, endereço ou rodapé excedem o tamanho permitido.")
+            .Validate(o => string.IsNullOrEmpty(o.Email) || System.Net.Mail.MailAddress.TryCreate(o.Email, out _),
+                "Empresa:Email deve ser um e-mail válido.")
+            .Validate(o => string.IsNullOrEmpty(o.Cnpj) || Zalek360.Domain.Common.DocumentoFiscal.CnpjValido(Zalek360.Domain.Common.DocumentoFiscal.Normalizar(o.Cnpj)),
+                "Empresa:Cnpj deve ser um CNPJ válido ou ficar vazio.")
+            .ValidateOnStart();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<EmpresaOptions>>().Value);
+        services.AddSingleton<IGeradorDocumentoOrcamento, GeradorDocumentoOrcamento>();
 
         var conexao = configuration.GetConnectionString("Zalek360")
                       ?? throw new InvalidOperationException("ConnectionStrings:Zalek360 não configurada.");

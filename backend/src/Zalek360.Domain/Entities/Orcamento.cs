@@ -377,6 +377,11 @@ public class Orcamento : RaizAgregado
             Decisao?.DataHora ?? agoraUtc, agoraUtc, null));
     }
 
+    /// <summary>Auditoria da exportação, sem alterar situação, versão ou data de edição comercial.</summary>
+    public void RegistrarExportacaoPdf(DateTime agoraUtc, Guid usuarioId) =>
+        RegistrarHistorico(Evento(TipoEventoHistorico.OrcamentoExportadoPdf,
+            "Orçamento exportado em PDF", null, agoraUtc, agoraUtc, usuarioId));
+
     // ------------------------------------------------------------------ internos
 
     private void AplicarDadosComerciais(DadosComerciaisOrcamento dados)

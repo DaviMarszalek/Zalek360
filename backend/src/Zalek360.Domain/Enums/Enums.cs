@@ -36,6 +36,7 @@ public enum TipoEventoHistorico
     DecisaoRegistrada = 15,
     OrcamentoExpirado = 16,
     PedidoGerado = 17,
+    OrcamentoExportadoPdf = 18,
     PedidoCriado = 30,
     PedidoStatusInicial = 31,
     PedidoStatusAlterado = 32,
