@@ -10,6 +10,29 @@ import type {
 type Params = Record<string, string | number | undefined | null>;
 const limpar = (p: Params) => Object.fromEntries(Object.entries(p).filter(([, v]) => v !== undefined && v !== null && v !== ""));
 
+/** Resposta da ViaCEP (API pública, sem autenticação). `erro` vem presente (bool ou string, a depender da versão) quando o CEP não existe. */
+export interface EnderecoCep { cep: string; logradouro: string; complemento: string; bairro: string; localidade: string; uf: string; erro?: boolean | string }
+
+const TEMPO_LIMITE_CEP_MS = 8_000;
+
+/** Preenchimento automático de endereço a partir do CEP. Chamada direta ao provedor público (não passa pelo backend). */
+export const cepService = {
+  consultar: async (cepDigitos: string, signal?: AbortSignal): Promise<EnderecoCep | null> => {
+    // Sem limite, uma resposta atrasada sobrescreveria o endereço que o usuário já digitou à mão.
+    const controle = new AbortController();
+    const limite = setTimeout(() => controle.abort(), TEMPO_LIMITE_CEP_MS);
+    signal?.addEventListener("abort", () => controle.abort(), { once: true });
+    try {
+      const resposta = await fetch(`https://viacep.com.br/ws/${cepDigitos}/json/`, { signal: controle.signal });
+      if (!resposta.ok) throw new Error("Falha ao consultar o CEP.");
+      const dados: EnderecoCep = await resposta.json();
+      return dados.erro ? null : dados;
+    } finally {
+      clearTimeout(limite);
+    }
+  },
+};
+
 export const authService = {
   login: (email: string, senha: string, manterConectado: boolean) =>
     api.post<LoginResposta>("/auth/login", { email, senha, manterConectado }).then((r) => r.data),

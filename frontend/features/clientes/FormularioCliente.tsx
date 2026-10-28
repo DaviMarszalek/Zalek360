@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Building2, CheckCircle2, Loader2, User } from "lucide-react";
 import { Aviso, Botao, Campo, Cartao, Entrada, AreaTexto, Selecao } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
-import { clientesService } from "@/services";
+import { cepService, clientesService } from "@/services";
 import { erroCampo, erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { documento as fmtDocumento, mascaraCep, mascaraDocumento, mascaraTelefone, numeroDocumento, somenteDigitos, telefone } from "@/utils/formatos";
@@ -57,12 +57,37 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
   const [verificando, setVerificando] = useState(false);
   const [criarOrcamento, setCriarOrcamento] = useState(false);
   const [aba, setAba] = useState<"identificacao" | "contato" | "endereco" | "observacoes">("identificacao");
+  const [cepAlterado, setCepAlterado] = useState(false);
   const pj = f.tipoPessoa === "PessoaJuridica";
 
   const set = <K extends keyof ClienteRequisicao>(campo: K, valor: ClienteRequisicao[K]) => {
     setF((v) => ({ ...v, [campo]: valor }));
     if (erro?.errors[campo as string]) setErro({ ...erro, errors: Object.fromEntries(Object.entries(erro.errors).filter(([k]) => k !== campo)) });
   };
+
+  // UC01 — preenchimento automático de endereço pelo CEP (ViaCEP). A chave da consulta inclui os dígitos do CEP,
+  // então uma resposta de um CEP antigo nunca sobrescreve o CEP atualmente digitado.
+  const cepDigitos = somenteDigitos(f.cep);
+  const consultaCep = useQuery({
+    queryKey: ["cep", cepDigitos],
+    queryFn: ({ signal }) => cepService.consultar(cepDigitos, signal),
+    enabled: cepAlterado && cepDigitos.length === 8,
+    staleTime: 30 * 60_000,
+    retry: false,
+  });
+
+  useEffect(() => {
+    const endereco = consultaCep.data;
+    if (!endereco) return;
+    setF((v) => ({
+      ...v,
+      logradouro: endereco.logradouro || v.logradouro,
+      bairro: endereco.bairro || v.bairro,
+      cidade: endereco.localidade || v.cidade,
+      uf: endereco.uf || v.uf,
+      complemento: endereco.complemento || v.complemento,
+    }));
+  }, [consultaCep.data]);
 
   async function verificarDocumento() {
     const d = somenteDigitos(f.documento);
@@ -166,7 +191,17 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
 
       {aba === "endereco" && <Cartao titulo="Endereço">
         <div className="grid gap-4 md:grid-cols-6">
-          <Campo rotulo="CEP" htmlFor="cep" erro={e("cep")} className="md:col-span-2"><Entrada id="cep" className="numero" inputMode="numeric" placeholder="00000-000" value={f.cep} onChange={(ev) => set("cep", mascaraCep(ev.target.value))} invalido={!!e("cep")} /></Campo>
+          <Campo rotulo="CEP" htmlFor="cep" erro={e("cep")}
+            ajuda={e("cep") ? undefined
+              : consultaCep.isFetching ? <span className="inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Buscando endereço...</span>
+              : consultaCep.isError ? <span className="inline-flex items-center gap-1 text-amber-700"><AlertTriangle className="h-3.5 w-3.5" />Não foi possível consultar o CEP agora. Preencha o endereço manualmente.</span>
+              : consultaCep.data === null ? <span className="inline-flex items-center gap-1 text-amber-700"><AlertTriangle className="h-3.5 w-3.5" />CEP não encontrado. Preencha o endereço manualmente.</span>
+              : consultaCep.data ? <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />Endereço preenchido automaticamente.</span>
+              : undefined}
+            className="md:col-span-2">
+            <Entrada id="cep" className="numero" inputMode="numeric" placeholder="00000-000" value={f.cep}
+              onChange={(ev) => { set("cep", mascaraCep(ev.target.value)); setCepAlterado(true); }} invalido={!!e("cep")} />
+          </Campo>
           <Campo rotulo="Logradouro" htmlFor="logradouro" erro={e("logradouro")} className="md:col-span-4"><Entrada id="logradouro" value={f.logradouro} onChange={(ev) => set("logradouro", ev.target.value)} maxLength={150} /></Campo>
           <Campo rotulo="Número" htmlFor="numero" erro={e("numero")} className="md:col-span-1"><Entrada id="numero" value={f.numero} onChange={(ev) => set("numero", ev.target.value)} maxLength={20} /></Campo>
           <Campo rotulo="Complemento" htmlFor="complemento" erro={e("complemento")} className="md:col-span-2"><Entrada id="complemento" value={f.complemento} onChange={(ev) => set("complemento", ev.target.value)} maxLength={100} /></Campo>
