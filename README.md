@@ -84,6 +84,7 @@ Os dados de demonstração usam **datas relativas**: o "hoje" do protótipo (24/
    - Adicione "Camiseta Dry Fit", 100 un., R$ 32,00 + R$ 10,00 de personalização, "Serigrafia (frente) + DTF (costas)", e anexe as artes. Os totais são calculados pela API.
    - Salve: nasce o **#000124 — Em Elaboração**.
 5. **Apresentar ao cliente**: o orçamento passa a Aguardando Retorno.
+   - Use **Exportar PDF para enviar ao cliente** no modal de sucesso. No cabeçalho também há **Exportar PDF** e **Abrir em nova aba**. Confira total, validade e prazo antes de enviar pelo WhatsApp/e-mail fora do sistema.
 6. **Registrar contato** (WhatsApp) e depois ajuste a quantidade para 80. O contato **não** altera o status, e as duas ações entram no histórico.
 7. **Registrar decisão → Aprovado**, informando o meio de contato e a data/hora. Depois confirme **"Aprovar orçamento e gerar pedido?"**.
    - Na mesma transação, o orçamento vira Aprovado e o **pedido #000057 — Aberto** é criado.
@@ -134,6 +135,7 @@ Documentação interativa em `/swagger`. Para autenticar lá, chame `POST /api/a
 | Autenticação | `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` |
 | Clientes | `GET/POST /api/clientes` · `GET /api/clientes/cidades` · `GET /api/clientes/verificar-documento` · `GET/PUT /api/clientes/{id}` · `GET /api/clientes/{id}/visao-geral` · `/orcamentos` · `/pedidos` · `/historico` · `GET/POST /api/clientes/{id}/observacoes` |
 | Orçamentos | `GET/POST /api/orcamentos` · `POST /api/orcamentos/calculo` · `GET/PUT /api/orcamentos/{id}` · `/itens` · `/historico?categoria=` · `GET/POST /api/orcamentos/{id}/contatos` · `POST /api/orcamentos/{id}/aguardando-retorno` · `POST /api/orcamentos/{id}/decisao` · `GET /api/orcamentos/motivos-decisao` |
+| PDF do orçamento | `POST /api/orcamentos/{id}/exportacoes?inline=true` exporta e registra histórico · `GET /api/orcamentos/{id}/exportar-pdf?inline=true` pré-visualiza sem gravar. Omitir `inline` baixa o arquivo |
 | Pedidos | `GET /api/pedidos` · `GET /api/pedidos/{id}` · `/historico` · `PATCH /api/pedidos/{id}/status` · `POST /api/pedidos` → **sempre 422** |
 | Anexos | `POST /api/anexos` (multipart `arquivo`; PDF, PNG, JPG, AI, CDR; até 20 MB) · `GET /api/anexos/{id}/download?inline=` · `DELETE /api/anexos/{id}` (só anexos ainda não vinculados) |
 | Apoio | `GET /api/dashboard` · `GET /api/produtos` · `GET /api/produtos/opcoes` · `GET /api/usuarios/responsaveis` · `GET /health` |
@@ -146,7 +148,7 @@ Não existe exclusão de orçamentos, pedidos ou clientes (RN10): apenas cancela
 cd backend && ./scripts/testar.sh      # equivalente a: dotnet test Zalek360.sln
 ```
 
-São 44 testes xUnit:
+Na entrega inicial eram 44 testes xUnit (a cobertura original abaixo foi preservada). A suíte atual tem **65 testes**, incluindo 17 cenários de documento na Application, 2 de renderização real e 2 de endpoint HTTP. Execute sempre `dotnet test Zalek360.sln` com os pacotes reais.
 - **27 de domínio:** cliente, CPF/CNPJ, cálculo, ciclo do orçamento, expiração e pedido.
 - **14 de casos de uso**, com repositórios em memória:
   - duplicidade de documento;
@@ -163,6 +165,8 @@ São 44 testes xUnit:
   - o histórico do cliente filtra por tipo.
 
 ## 7. O que foi verificado nesta entrega (transparência)
+
+**Registro histórico da entrega inicial.** A verificação atual da exportação, realizada em 28/10/2026 com NuGet e Docker, está na seção 10. Os stubs offline originais não cobrem QuestPDF nem WebApplicationFactory e não validam a entrega atual.
 
 O ambiente em que o projeto foi construído **não tinha acesso ao NuGet** (HTTP 403) **nem ao Docker**. Por isso:
 
@@ -214,3 +218,38 @@ cd backend && ./scripts/recriar-migration-inicial.sh
 | [`docs/05-checklists.md`](docs/05-checklists.md) | Checklists de casos de uso, tecnologia e telas |
 | [`docs/06-revisao-da-modelagem.md`](docs/06-revisao-da-modelagem.md) | MANTIDO / ALTERADO / ADICIONADO / REMOVIDO |
 | [`docs/07-insumos-diagramas-der-dicionario.md`](docs/07-insumos-diagramas-der-dicionario.md) | O que atualizar nos diagramas, no DER e no dicionário de dados |
+
+## 10. Exportar orçamento em PDF
+
+Abra **Orçamentos → detalhe → Exportar PDF** para baixar a **Proposta Comercial**. **Abrir em nova aba** solicita o mesmo documento com `inline=true`; ambos registram “Orçamento exportado em PDF”, com usuário e data/hora, no histórico do orçamento e do cliente. O modal após **Apresentar ao cliente** oferece o atalho de exportação. O sistema permanece interno: envie o arquivo ao cliente fora dele.
+
+O PDF A4 inclui identificação do cliente, responsável, três destaques (total, validade e prazo), itens e detalhes de personalização, nomes das artes, resumo financeiro, pagamento, instruções de aprovação e paginação. Os valores são os persistidos; o frontend não calcula o conteúdo. As artes são listadas por nome, sem miniaturas, para manter a exportação independente da leitura dos anexos.
+
+O prazo informa dias úteis e semanas (arredondamento para cima), a previsão se aprovado na emissão e se aprovado no último dia da validade. O calendário é o mesmo de `Pedido.CriarAPartirDe`: segunda a sexta, sem feriados, com datas em `America/Sao_Paulo`. Um aprovado com pedido mostra o número e a data real do pedido. Rascunhos têm marca no cabeçalho e rodapé; recusados, expirados, cancelados e propostas vencidas não apresentam previsões hipotéticas nem instruções para aprovar.
+
+**Configuração pública da empresa:** use a seção `Empresa` de `backend/src/Zalek360.Api/appsettings.json` ou as variáveis abaixo, presentes nos dois `.env.example` e no Compose. O padrão neutro é “Zalek Personalizados”; os demais dados ficam vazios e são omitidos. Nome obrigatório, limites de tamanho, CNPJ e e-mail são validados na inicialização.
+
+| Variável | Conteúdo |
+|---|---|
+| `Empresa__NomeFantasia` | Nome exibido no cabeçalho |
+| `Empresa__RazaoSocial` / `Empresa__Cnpj` | Identificação fiscal no rodapé |
+| `Empresa__Telefone` / `Empresa__WhatsApp` / `Empresa__Email` | Contatos para aprovar e falar com a empresa |
+| `Empresa__Site` / `Empresa__Endereco` | Site e endereço público |
+| `Empresa__CaminhoLogo` | Arquivo local opcional, até 2 MB; caminho dentro do contêiner, ex.: `/app/data/empresa/logo.png` |
+| `Empresa__TextoRodape` | Texto adicional opcional, até 500 caracteres |
+
+O Compose monta o volume `identidade` em `/app/data/empresa` somente para leitura pela API. Disponibilize o logo nesse volume ou acrescente um bind mount de um arquivo próprio. Logo ausente, sem permissão ou inválido usa o nome da empresa em texto. Na execução local, variáveis precisam estar no ambiente do processo (o `dotnet run` não carrega `.env` automaticamente).
+
+**Implementação e licença:** QuestPDF está fixado em `2026.9.1`, configurado com `LicenseType.Community`. Empresas que excedam o limite da Community precisam de licença paga; verifique a elegibilidade na [licença oficial QuestPDF](https://www.questpdf.com/license/community.html) antes do uso comercial. As fontes IBM Plex Sans Regular, Medium e Bold são recursos embutidos com licença OFL em `backend/src/Zalek360.Infrastructure/Documentos/Fontes/OFL.txt`, com fallback Lato incluído pelo QuestPDF. O registro usa `FontManager.RegisterFontFromStream`, nome atual de `RegisterFont` na versão adotada. A imagem Debian instala `libfontconfig1`.
+
+**Verificação em 28/10/2026:** 65/65 testes reais aprovados via SDK .NET 8 em Docker; `npx tsc --noEmit` e `npm run build` aprovados; `docker compose -p zalek360-pdf-validacao up --build -d --wait` executado do zero em portas separadas, com PostgreSQL, API e frontend. O SDK .NET não está instalado no Windows; o comando equivalente executado foi:
+
+```powershell
+docker run --rm --mount "type=bind,source=${PWD}/backend,target=/src" --mount type=volume,source=zalek360-nuget-cache,target=/root/.nuget/packages -w /src mcr.microsoft.com/dotnet/sdk:8.0 dotnet test Zalek360.sln --nologo
+```
+
+Os testes de endpoint cobrem 401, 403, 404 padronizado, `application/pdf`, `Content-Disposition`, evento compartilhado com o cliente, GET sem gravação e falha de renderização sem evento. Os testes reais de PDF cobrem logo ausente/inválido e artes ausentes/ilegíveis. A verificação de navegador opcional está em `backend/tools/verificacao-pdf/verificar-interface.cjs`; execute somente contra uma instância de demonstração isolada, pois ela anexa uma arte e apresenta o orçamento #000123.
+
+**Aceite no navegador e no leitor PDF:** login, download com nome do servidor, nova aba, erro JSON recebido como blob, atalho após apresentação e histórico do cliente verificados no Chrome headless contra o Compose isolado. Os PDFs das seis situações foram lidos com PyMuPDF: proposta de três itens com arte em **2 páginas**, total **R$ 12.840,00** igual ao resumo da API, fontes IBM Plex incorporadas, paginação correta e ausência dos textos internos do histórico. Um orçamento de 12 itens/5 páginas confirmou a repetição do cabeçalho e blocos de item inteiros. PDFs e imagens de revisão ficam em `data/validacao-pdf/` (artefatos locais ignorados pelo Git). A inspeção independente pode ser repetida com `python backend/tools/verificacao-pdf/inspecionar_pdf.py data/validacao-pdf` após instalar `pymupdf`.
+
+Após o aceite, `docker compose up --build -d --wait` também atualizou a instância principal de desenvolvimento (portas 3000/5000), preservando os volumes existentes. Login e GET PDF pelo proxy em `http://localhost:3000` retornaram 200, `application/pdf`, `Content-Disposition: inline` com nome saneado e bytes `%PDF`.

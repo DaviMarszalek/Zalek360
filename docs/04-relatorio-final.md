@@ -177,6 +177,8 @@ Ver `02-matriz-rastreabilidade.md` e `05-checklists.md`.
 
 ## 12. Testes
 
+**Atualização em 28/10/2026:** a suíte atual tem **65 testes**, todos executados e aprovados com os pacotes reais (SDK .NET 8 no Docker). Os números abaixo descrevem a entrega inicial. A exportação acrescentou 17 cenários Application, 2 de PDF e 2 de endpoint HTTP.
+
 São 44 testes xUnit: 27 de domínio, 14 de casos de uso e 3 de integração com EF Core + SQLite em memória.
 - **Pontos exigidos que estão cobertos:**
   - cliente (DV, obrigatórios, duplicidade);
@@ -217,6 +219,8 @@ São 44 testes xUnit: 27 de domínio, 14 de casos de uso e 3 de integração com
 
 ## 15. Verificações realizadas e não realizadas
 
+**Tabela histórica da entrega inicial.** Na atualização de 28/10/2026, passaram `dotnet test Zalek360.sln` (65/65, SDK em Docker), `npx tsc --noEmit`, `npm run build` e `docker compose -p zalek360-pdf-validacao up --build -d --wait` com banco novo e portas 13000/15000/15432. NuGet, QuestPDF nativo em Linux, migrations, seed e API com PostgreSQL foram executados de verdade. A API PDF também foi exercitada em testes HTTP com SQLite. Ver README, seção 10.
+
 | Item | Como | Resultado |
 |---|---|---|
 | Domain + Application | `dotnet build` (SDK 8.0.131) | 0 erros / 0 avisos |
@@ -233,11 +237,11 @@ São 44 testes xUnit: 27 de domínio, 14 de casos de uso e 3 de integração com
 
 ## 16. Limitações conhecidas e divergências em relação ao documento
 
-1. **Execução ponta a ponta da API e do compose não realizada neste ambiente** (item 15). É a principal pendência de verificação.
+1. **Pendência inicial de execução da API e do Compose resolvida em 28/10/2026:** build e subida com banco novo, migrations, seed, API/PostgreSQL e frontend executados; ver atualização do item 15 e README, seção 10.
 2. **A migration inicial foi escrita à mão**, sem `ModelSnapshot`. Funciona para criar o banco. Antes da próxima mudança de esquema, regenere com `scripts/recriar-migration-inicial.sh` em banco novo.
 3. **Pedido inicia "Aberto"**, com avanço manual já no MVP 1 (protótipo). O RF 4.1.3.3 previa "Registrado" e avanço só no MVP 2.
 4. **"Enviado ao Cliente" virou "Aguardando Retorno"** (protótipo e dicionário).
-5. **Exportar orçamento em PDF** (UC03, condição de entrada) **não implementado.** A apresentação ao cliente é registrada pela ação "Apresentar ao cliente".
+5. **Exportar orçamento em PDF — limitação resolvida em 28/10/2026.** Proposta Comercial com prazo em dias úteis/semanas, previsões e dados da empresa configuráveis. POST registra histórico do orçamento/cliente; GET é de leitura. A apresentação continua independente. As artes são listadas por nome; miniaturas opcionais não foram adotadas.
 6. **Exceção do RF 4.1.3.2** (pedido de produto pronto, sem orçamento) **não implementada.** Todo pedido nasce de orçamento, como exigido na entrega.
 7. **Sem limitação de tentativas de login** (*rate limiting*). Não há telas de gestão de usuários nem de troca de senha: os usuários vêm do seed.
 8. **Anexos em disco local** (volume Docker). Adequado a uma instância; várias instâncias exigem armazenamento compartilhado (ex.: S3).
@@ -248,12 +252,14 @@ São 44 testes xUnit: 27 de domínio, 14 de casos de uso e 3 de integração com
 
 ## 17. Próximos passos recomendados
 
+O aceite da exportação em 28/10/2026 incluiu Chrome (download, nova aba, mensagem JSON/blob, atalho após apresentar e histórico), leitura independente dos PDFs e inspeção visual. A proposta de três itens/arte tem 2 páginas e R$ 12.840,00, igual à tela; 12 itens produziram 5 páginas com cabeçalhos repetidos e blocos inteiros. A instância principal foi atualizada com `docker compose up --build -d --wait`, preservando os dados; login e PDF via porta 3000 foram conferidos. Os comandos abaixo continuam como roteiro de manutenção/evolução.
+
 1. Em máquina com internet:
-   - `./backend/scripts/testar.sh` (44 testes, incluindo integração);
+   - `./backend/scripts/testar.sh` (65 testes na suíte atual, incluindo integração e PDF);
    - `docker compose up --build`;
    - roteiro do README, seção 3.
 2. Regenerar a migration com `dotnet ef`, para ter o `ModelSnapshot`.
 3. Testes de integração da API com `WebApplicationFactory` + PostgreSQL (Testcontainers) e testes de interface (Playwright) do roteiro.
-4. Exportação do orçamento em PDF e envio por link ou WhatsApp.
+4. Exportação PDF concluída; futuras integrações de envio por link ou WhatsApp ficam fora deste escopo (o atendente envia o arquivo).
 5. *Rate limiting* no login, gestão de usuários e troca de senha.
 6. MVP 2: integrar a aprovação com a reserva de estoque (RF 4.1.5.1) e a geração da OS (RF 4.1.5.2), usando as mesmas transições de status do pedido.

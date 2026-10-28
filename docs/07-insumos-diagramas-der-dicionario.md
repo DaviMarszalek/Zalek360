@@ -39,7 +39,9 @@ A RN6 atual da seção 7 ("Enviado pode ser Aprovado, Recusado ou Expirado") pas
 - **UC01:** manter o fluxo. Acrescentar ao passo 1: "Atendente pesquisa o cliente pelo nome, CPF/CNPJ ou telefone antes de cadastrar". Acrescentar os campos "contato responsável" e "cargo".
 - **UC02:** acrescentar "Atendente pode anexar arquivos de arte (PDF, PNG, JPG, AI, CDR, até 20 MB) a cada item".
 - **UC03:**
-  - trocar a condição de entrada "Atendente aciona **Exportar Orçamento**" por "Atendente aciona **Apresentar ao cliente**, após enviar a proposta fora do sistema";
+  - manter **Exportar Orçamento** como ação disponível: gera a Proposta Comercial PDF para envio fora do sistema; incluir **Apresentar ao cliente** como ação independente que muda a situação;
+  - acrescentar `POST /api/orcamentos/{id}/exportacoes` (PDF + evento) e `GET /api/orcamentos/{id}/exportar-pdf` (pré-visualização sem evento), ambos com `?inline=true` opcional e política Comercial;
+  - representar prazo útil/semanas, previsões a partir da emissão e da validade e data real do pedido aprovado; rascunho marcado, encerrados/vencidos sem previsão hipotética;
   - no passo 1, trocar "Enviado ao Cliente" por "Aguardando Retorno";
   - novo passo 2a: "Atendente registra cada contato (meio, data/hora, conversa) sem alterar a situação";
   - novo fluxo alternativo A4: "Cancelamento com motivo";
@@ -216,6 +218,7 @@ erDiagram
    - `tipo_contato` / `meio_contato`: WhatsApp, Ligacao, Email, Presencial, Outro
    - `resultado`: Aprovado, Recusado, Cancelado, Expirado
    - `perfil`: Atendente, Gestor, Operador, Administrador
+   - `historico_eventos.tipo`: acrescentar `OrcamentoExportadoPdf` (valor 18 no enum, persistido como texto `varchar(40)` por `HasConversion<string>()`); título “Orçamento exportado em PDF”, usuário e data UTC. Um evento referencia cliente e orçamento; nenhuma migration é necessária.
 5. **Tipos:** `datetime` → `timestamp with time zone` (UTC); `decimal 10,2` → `numeric(10,2)`; `text` de livre digitação → `varchar(2000)` (ou 500 para `referencia_arte`, `descricao` do item e `motivo_cancelamento`).
 6. **Restrições:** listar os 7 índices únicos e os 7 checks, cujos nomes estão em `03-alteracoes-e-complementos-na-modelagem.md`.
 

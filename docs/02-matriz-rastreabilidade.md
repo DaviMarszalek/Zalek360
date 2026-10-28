@@ -8,7 +8,7 @@
   - **A** = casos de uso (`Aplicacao/CasosDeUsoTests`);
   - **I** = integração EF + SQLite (`Integracao/IntegracaoTests`).
 
-  Os testes D e A foram executados (41/41). Os testes I estão compilados, mas não foram executados neste ambiente.
+  A entrega inicial executou D e A (41/41). Em 28/10/2026 foram executados **65/65 testes reais**, incluindo integração relacional, renderização PDF e pipeline HTTP. Os resultados iniciais foram preservados como histórico no relatório.
 - As regras usam a numeração consolidada de `01-analise-inicial.md`.
 
 ## Mapa das telas do protótipo
@@ -63,6 +63,7 @@
 | UC02 — artes de referência (RF 4.1.2.2) | T14 | `POST /api/anexos` · `DELETE /api/anexos/{id}` · `GET /api/anexos/{id}/download` | `ArquivoAnexo` / `arquivos_anexos` | tipos PDF/PNG/JPG/AI/CDR; até 20 MB; assinatura do conteúdo | I `Aprovacao_persiste_orcamento_pedido_itens_anexos_e_historico` (anexos copiados) |
 | **UC02 A1** — orçamento sem item | T13 | `POST /api/orcamentos` → 400 `ORCAMENTO_SEM_ITENS` | `Orcamento` | RN3 | D `Orcamento_sem_item_nao_e_criado`; A `Orcamento_sem_itens_retorna_erro_de_validacao_e_nao_consome_numero` |
 | **UC03** passo 1 — apresentar ao cliente | T15 → T16 | `POST /api/orcamentos/{id}/aguardando-retorno` | `Orcamento`, `HistoricoEvento` | RN5 | D `Nao_marca_aguardando_retorno_com_validade_vencida` |
+| **UC03 — Exportar PDF** | `DetalheOrcamento`: Exportar PDF / Abrir em nova aba / atalho após apresentação | `POST /api/orcamentos/{id}/exportacoes?inline=`; `GET /api/orcamentos/{id}/exportar-pdf?inline=` sem gravação | `HistoricoEvento`, tipo `OrcamentoExportadoPdf` (`varchar(40)`, sem migration) | Política Comercial; valores persistidos; calendário útil comum; rascunho; prazo real do pedido; encerrados/vencidos sem promessa; dados públicos da empresa | A `OrcamentoDocumentoTests`; I `DocumentoPdfTests`, `EndpointPdfTests` (401/403/404, PDF, histórico, GET, falha sem evento) |
 | UC03 passo 2 — registrar contato | T16, T17 | `POST /api/orcamentos/{id}/contatos` · `GET …/contatos` | `ContatoOrcamento` / `contatos_orcamento` | RN7 (contato não altera status) | D `Registrar_contato_nao_altera_status`; A `Contato_registrado_nao_altera_status` |
 | **UC03 A3** — editar enquanto aberto | T16 (Editar) | `PUT /api/orcamentos/{id}` | `Orcamento`, `ItemOrcamento`, `HistoricoEvento` | RN6, RN4 | D `Alterar_quantidade_recalcula_e_registra_no_historico`, `Nao_aceita_segunda_decisao_nem_edicao_apos_decidido` |
 | UC03 passos 3–4 — decisão Aprovado | T18, T22, T23, T24 | `POST /api/orcamentos/{id}/decisao` | `DecisaoOrcamento` / `decisoes_orcamento` | RN7, RN8; aprovação só dentro da validade | D `Decisao_exige_meio_de_contato_e_data_hora`, `Aprovacao_exige_aguardando_retorno`, `Aprovacao_apos_a_validade_e_rejeitada` |

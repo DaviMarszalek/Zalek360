@@ -11,6 +11,8 @@
 
 A marca [OK] só aparece quando houve execução real, como build, testes, DDL no PostgreSQL ou servidor Next.js respondendo. Uma camada de uma funcionalidade pode ter sido verificada sem que a funcionalidade inteira tenha sido testada ponta a ponta.
 
+**Atualização de 28/10/2026:** 65/65 testes reais, TypeScript, build de produção e Compose com banco novo executados. As evidências anteriores foram mantidas como histórico; a linha de exportação abaixo reflete a entrega atual. Ver detalhes no README, seção 10.
+
 ---
 
 ## 1. Casos de uso
@@ -31,7 +33,7 @@ A marca [OK] só aparece quando houve execução real, como build, testes, DDL n
 | UC03 | A1 — recusa com motivo | [IMPLEMENTADO] | Testes executados |
 | UC03 | A2 — expiração automática | [IMPLEMENTADO] | Testes do domínio e da rotina executados; agendamento em segundo plano não executado |
 | UC03 | A3 — editar enquanto Em Elaboração ou Aguardando Retorno | [IMPLEMENTADO] | Teste de recálculo com histórico executado |
-| UC03 | Exportar orçamento (condição de entrada do UC03) | [NÃO] | Substituído por "Apresentar ao cliente"; PDF fica como próximo passo |
+| UC03 | Exportar orçamento em PDF | [OK] | 65/65 testes; Docker real; Chrome: download, nova aba, erro blob e atalho; PyMuPDF: três itens/arte em 2 páginas, valores idênticos, 12 itens/5 páginas com cabeçalho repetido e blocos inteiros; GET sem evento, POST com histórico compartilhado. Ver README, seção 10 |
 | UC04 | Converter automaticamente em pedido, copiando itens, personalização, artes e valores | [IMPLEMENTADO] | Testes de domínio e de caso de uso executados; teste de integração compilado, não executado |
 | UC04 | Transação única com rollback em caso de falha | [IMPLEMENTADO] | Teste com fakes executado; teste de rollback real (SQLite) compilado, não executado |
 | UC04 | Vínculo pedido ↔ orçamento (rastreabilidade) | [IMPLEMENTADO] | FK única `pedidos.orcamento_origem_id` validada no PostgreSQL |
