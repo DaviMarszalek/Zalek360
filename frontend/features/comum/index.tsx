@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowLeft, Bot, FileText, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Users } from "lucide-react";
+import { ArrowLeft, Bot, Download, FileText, Mail, MapPin, MessageCircle, Package, Phone, RefreshCw, Users } from "lucide-react";
 import { Selecao } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { rotuloMeio, siglaTipoPessoa } from "@/lib/status";
@@ -55,11 +55,11 @@ export function LinhaDoTempo({ eventos, mostrarDocumento, vazio = "Nenhum evento
       {eventos.map((e) => (
         <li key={e.id} className="relative flex gap-3.5">
           <span className={cn("relative z-10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-4 ring-white", corCategoria[e.categoria])}>
-            {e.automatico ? <Bot className="h-3.5 w-3.5" /> : e.categoria === "contato" || e.categoria === "decisao" ? <IconeMeio meio={e.meioContato} /> : e.categoria === "pedido" ? <Package className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
+            {e.tipo === "OrcamentoExportadoPdf" ? <Download className="h-3.5 w-3.5" /> : e.automatico ? <Bot className="h-3.5 w-3.5" /> : e.categoria === "contato" || e.categoria === "decisao" ? <IconeMeio meio={e.meioContato} /> : e.categoria === "pedido" ? <Package className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-x-2">
-              <p className="text-sm font-medium text-texto">{e.titulo}</p>
+              <p className="text-sm font-medium text-texto">{e.tipo === "OrcamentoExportadoPdf" ? "Exportado em PDF" : e.titulo}</p>
               {mostrarDocumento && e.orcamentoId && e.orcamentoNumero && (
                 <Link href={`/orcamentos/${e.orcamentoId}`} className="numero text-xs text-primaria hover:underline">Orç. {numeroDocumento(e.orcamentoNumero)}</Link>)}
               {mostrarDocumento && e.pedidoId && e.pedidoNumero && (

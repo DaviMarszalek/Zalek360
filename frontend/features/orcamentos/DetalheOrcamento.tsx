@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Ban, CheckCircle2, FileImage, FileText, Gavel, MessageSquarePlus, Package, Pencil, Plus, Send } from "lucide-react";
+import { AlertTriangle, Ban, CheckCircle2, Download, ExternalLink, FileImage, FileText, Gavel, MessageSquarePlus, Package, Pencil, Plus, Send } from "lucide-react";
+import { useExportarOrcamento } from "@/hooks/useExportarOrcamento";
 import { Abas, AreaTexto, Aviso, BadgeOrcamento, Botao, CabecalhoPagina, Campo, Cartao, Carregando, Entrada, ErroCarregamento, Info2, Modal, Selecao } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, IconeMeio, LinhaDoTempo, Voltar } from "@/features/comum";
@@ -99,15 +100,17 @@ function ModalContato({ o, aberto, aoFechar }: { o: OrcamentoDetalhe; aberto: bo
 function ModalApresentar({ o, aberto, aoFechar }: { o: OrcamentoDetalhe; aberto: boolean; aoFechar: () => void }) {
   const qc = useQueryClient();
   const toast = useToast();
+  const [apresentado, setApresentado] = useState(false);
+  const pdf = useExportarOrcamento(o.id, o.cliente.id);
   const [meio, setMeio] = useState<MeioContato | null>(null);
   const [erro, setErro] = useState<ErroApi | null>(null);
   const m = useMutation({
     mutationFn: () => orcamentosService.marcarAguardando(o.id, meio, o.versao),
-    onSuccess: (d) => { qc.setQueryData(["orcamento", o.id], d); qc.invalidateQueries({ queryKey: ["orcamento", o.id] }); qc.invalidateQueries({ queryKey: ["orcamentos"] }); toast("sucesso", "Orçamento aguardando retorno do cliente."); aoFechar(); },
+    onSuccess: (d) => { qc.setQueryData(["orcamento", o.id], d); qc.invalidateQueries({ queryKey: ["orcamento", o.id] }); qc.invalidateQueries({ queryKey: ["orcamentos"] }); toast("sucesso", "Orçamento aguardando retorno do cliente."); setApresentado(true); aoFechar(); },
     onError: (e) => setErro(erroDaApi(e)),
   });
   return (
-    <Modal aberto={aberto} aoFechar={aoFechar} titulo="Apresentar proposta ao cliente" descricao="O orçamento passará para Aguardando Retorno."
+    <><Modal aberto={aberto} aoFechar={aoFechar} titulo="Apresentar proposta ao cliente" descricao="O orçamento passará para Aguardando Retorno."
       rodape={<><Botao variante="secundaria" onClick={aoFechar}>Cancelar</Botao><Botao carregando={m.isPending} onClick={() => m.mutate()} icone={<Send className="h-4 w-4" />}>Marcar como apresentado</Botao></>}>
       <div className="space-y-4">
         {erro && <Aviso tipo="erro">{erro.message}</Aviso>}
@@ -115,6 +118,10 @@ function ModalApresentar({ o, aberto, aoFechar }: { o: OrcamentoDetalhe; aberto:
         <p className="text-xs text-texto-fraco">O envio acontece fora do sistema. Esta ação apenas registra que o cliente recebeu a proposta, válida até {data(o.validade)}.</p>
       </div>
     </Modal>
+      <Modal aberto={apresentado} aoFechar={() => setApresentado(false)} titulo="Proposta apresentada ao cliente"
+        rodape={<><Botao variante="secundaria" onClick={() => setApresentado(false)}>Fechar</Botao><Botao carregando={pdf.carregando} icone={<Download className="h-4 w-4" />} onClick={() => void pdf.exportar()}>Exportar PDF para enviar ao cliente</Botao></>}>
+        <p className="text-sm">O orçamento está aguardando retorno. Baixe a proposta para enviar por WhatsApp ou e-mail.</p>
+      </Modal></>
   );
 }
 
@@ -219,6 +226,7 @@ export function DetalheOrcamento() {
   const historico = useQuery({ queryKey: ["orcamento", id, "historico", aba], queryFn: () => orcamentosService.historico(id, aba || undefined), enabled: !!q.data });
   const [modal, setModal] = useState<"contato" | "apresentar" | "decisao" | "cancelar" | null>(null);
   const [pedidoGerado, setPedidoGerado] = useState<PedidoVinculado | null>(null);
+  const pdf = useExportarOrcamento(id, q.data?.cliente.id ?? "");
 
   if (q.isError) return <ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} />;
   if (!q.data) return <Carregando />;
@@ -231,6 +239,8 @@ export function DetalheOrcamento() {
         titulo={<span className="flex flex-wrap items-center gap-3">Orçamento <span className="numero">{numeroDocumento(o.numero)}</span><BadgeOrcamento situacao={o.situacao} /></span>}
         subtitulo={<>{o.cliente.nome} · criado em {dataDeInstante(o.criadoEm)} · responsável {o.responsavel}{o.dataUltimaEdicao && ` · editado em ${dataHora(o.dataUltimaEdicao)}`}</>}
         acoes={<>
+          <Botao variante="secundaria" carregando={pdf.carregando} icone={<Download className="h-4 w-4" />} onClick={() => void pdf.exportar()}>Exportar PDF</Botao>
+          <Botao variante="secundaria" disabled={pdf.carregando} icone={<ExternalLink className="h-4 w-4" />} onClick={() => void pdf.exportar(true)}>Abrir em nova aba</Botao>
           {aberto && <Link href={`/orcamentos/${o.id}/editar`}><Botao variante="secundaria" icone={<Pencil className="h-4 w-4" />}>Editar</Botao></Link>}
           {aberto && <Botao variante="secundaria" icone={<MessageSquarePlus className="h-4 w-4" />} onClick={() => setModal("contato")}>Registrar contato</Botao>}
           {o.situacao === "EmElaboracao" && <Botao variante="fantasma" className="text-red-700" onClick={() => setModal("cancelar")}>Cancelar orçamento</Botao>}

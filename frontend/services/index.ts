@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import axios from "axios";
 import type {
   Anexo, Calculo, ClienteDetalhe, ClienteListaItem, ClienteRequisicao, ClienteVisaoGeral, Contato, Dashboard, DecisaoResultado,
   HistoricoEvento, ItemDetalhe, ListaComContagem, ListaFiltrada, LoginResposta, MeioContato, ObservacaoCliente, OpcoesOrcamento,
@@ -37,6 +38,25 @@ export const clientesService = {
 };
 
 export const orcamentosService = {
+  exportarPdf: async (id: string, inline = false) => {
+    try {
+      const r = await api.post<Blob>(`/orcamentos/${id}/exportacoes`, null, {
+        params: { inline }, responseType: "blob", headers: { Accept: "application/pdf" },
+      });
+      const disposicao = String(r.headers["content-disposition"] ?? "");
+      const utf8 = disposicao.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+      const simples = disposicao.match(/filename="([^"]+)"|filename=([^;]+)/i);
+      let nome = simples?.[1] ?? simples?.[2]?.trim() ?? "Orcamento.pdf";
+      if (utf8) { try { nome = decodeURIComponent(utf8); } catch { /* Usa filename simples. */ } }
+      nome = nome.replace(/[\\/\x00-\x1f]/g, "-");
+      return { arquivo: r.data, nome };
+    } catch (erro) {
+      if (axios.isAxiosError(erro) && erro.response?.data instanceof Blob) {
+        try { erro.response.data = JSON.parse(await erro.response.data.text()); } catch { /* erroDaApi usa mensagem genérica. */ }
+      }
+      throw erro;
+    }
+  },
   listar: (p: { busca?: string; status?: SituacaoOrcamento | ""; responsavelId?: string; clienteId?: string; de?: string; ate?: string; pagina?: number }) =>
     api.get<ListaComContagem<OrcamentoListaItem>>("/orcamentos", { params: limpar({ ...p, tamanhoPagina: 20 }) }).then((r) => r.data),
   obter: (id: string) => api.get<OrcamentoDetalhe>(`/orcamentos/${id}`).then((r) => r.data),
