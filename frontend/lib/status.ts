@@ -22,7 +22,7 @@ export const estiloSituacaoPedido: Record<SituacaoPedido, string> = {
   Aberto: "bg-slate-100 text-slate-700 border-slate-200",
   EmProducao: "bg-blue-50 text-blue-700 border-blue-200",
   Pronto: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Entregue: "bg-slate-900 text-white border-slate-900",
+  Entregue: "bg-emerald-100 text-emerald-800 border-emerald-300",
   Cancelado: "bg-white text-red-700 border-red-300",
 };
 
