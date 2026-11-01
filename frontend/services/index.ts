@@ -4,7 +4,7 @@ import type {
   Anexo, Calculo, ClienteDetalhe, ClienteListaItem, ClienteRequisicao, ClienteVisaoGeral, Contato, Dashboard, DecisaoResultado,
   HistoricoEvento, ItemDetalhe, ListaComContagem, ListaFiltrada, LoginResposta, MeioContato, ObservacaoCliente, OpcoesOrcamento,
   OrcamentoDetalhe, OrcamentoListaItem, OrcamentoRequisicao, OrcamentoResumo, Pagina, PedidoDetalhe, PedidoListaItem, PedidoResumo,
-  Produto, ResultadoDecisao, SituacaoOrcamento, SituacaoPedido, TipoPessoa, Usuario, VerificacaoDocumento,
+  CompraMateriaPrima, FichaTecnica, MateriaPrima, MovimentoMateriaPrima, Produto, ReservaPedidoMaterial, ResultadoDecisao, SituacaoCompraMateriaPrima, SituacaoOrcamento, SituacaoPedido, TipoPessoa, Usuario, VerificacaoDocumento,
 } from "@/types/api";
 
 type Params = Record<string, string | number | undefined | null>;
@@ -129,4 +129,20 @@ export const catalogoService = {
   produtos: () => api.get<Produto[]>("/produtos").then((r) => r.data),
   opcoes: () => api.get<OpcoesOrcamento>("/produtos/opcoes").then((r) => r.data),
   responsaveis: () => api.get<Usuario[]>("/usuarios/responsaveis").then((r) => r.data),
+};
+
+export const estoqueService = {
+  materias: () => api.get<MateriaPrima[]>("/estoque/materias-primas").then((r) => r.data),
+  movimentos: (materiaPrimaId: string) => api.get<MovimentoMateriaPrima[]>(`/estoque/materias-primas/${materiaPrimaId}/movimentos`).then((r) => r.data),
+  criarMateria: (dados: { nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number }) => api.post<MateriaPrima>("/estoque/materias-primas", dados).then((r) => r.data),
+  atualizarMateria: (id: string, dados: { nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number }) => api.put<MateriaPrima>(`/estoque/materias-primas/${id}`, dados).then((r) => r.data),
+  definirMateriaAtiva: (id: string, ativo: boolean) => api.patch<MateriaPrima>(`/estoque/materias-primas/${id}/status`, { ativo }).then((r) => r.data),
+  fichas: () => api.get<FichaTecnica[]>("/estoque/fichas-tecnicas").then((r) => r.data),
+  salvarFicha: (produtoId: string, materiais: { materiaPrimaId: string; quantidadePorUnidade: number }[]) => api.put<FichaTecnica>(`/estoque/fichas-tecnicas/${produtoId}`, { produtoId, materiais }).then((r) => r.data),
+  compras: () => api.get<CompraMateriaPrima[]>("/estoque/compras").then((r) => r.data),
+  criarCompra: (dados: { materiaPrimaId: string; quantidade: number; fornecedor: string; dataPrevista: string }) => api.post<CompraMateriaPrima>("/estoque/compras", dados).then((r) => r.data),
+  atualizarSituacaoCompra: (id: string, situacao: SituacaoCompraMateriaPrima) => api.patch<CompraMateriaPrima>(`/estoque/compras/${id}/situacao`, { situacao }).then((r) => r.data),
+  reservasPedido: (pedidoId: string) => api.get<ReservaPedidoMaterial[]>(`/pedidos/${pedidoId}/materiais`).then((r) => r.data),
+  aplicarFichaPedido: (pedidoId: string) => api.post<ReservaPedidoMaterial[]>(`/pedidos/${pedidoId}/materiais/ficha-tecnica`).then((r) => r.data),
+  atualizarMateriaisPedido: (pedidoId: string, materiais: { materiaPrimaId: string; quantidade: number }[]) => api.put<ReservaPedidoMaterial[]>(`/pedidos/${pedidoId}/materiais`, materiais).then((r) => r.data),
 };

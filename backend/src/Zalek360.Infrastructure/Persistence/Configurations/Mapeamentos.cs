@@ -42,6 +42,80 @@ internal sealed class ProdutoMap : IEntityTypeConfiguration<Produto>
     }
 }
 
+internal sealed class MateriaPrimaMap : IEntityTypeConfiguration<MateriaPrima>
+{
+    public void Configure(EntityTypeBuilder<MateriaPrima> b)
+    {
+        b.ToTable("materias_primas", t => {
+            t.HasCheckConstraint("ck_materias_primas_quantidades", "quantidade_disponivel >= 0 AND estoque_minimo >= 0");
+        });
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Nome).HasMaxLength(120).IsRequired();
+        b.Property(x => x.Unidade).HasMaxLength(20).IsRequired();
+        b.Property(x => x.QuantidadeDisponivel).HasPrecision(12, 3);
+        b.Property(x => x.EstoqueMinimo).HasPrecision(12, 3);
+        b.Property(x => x.Versao).IsConcurrencyToken();
+        b.HasIndex(x => x.Nome).IsUnique();
+    }
+}
+
+internal sealed class CompraMateriaPrimaMap : IEntityTypeConfiguration<CompraMateriaPrima>
+{
+    public void Configure(EntityTypeBuilder<CompraMateriaPrima> b)
+    {
+        b.ToTable("compras_materias_primas", t => t.HasCheckConstraint("ck_compras_materias_primas_quantidade", "quantidade > 0"));
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Quantidade).HasPrecision(12, 3);
+        b.Property(x => x.Fornecedor).HasMaxLength(120);
+        b.Property(x => x.Situacao).HasConversion<string>().HasMaxLength(Tipos.Enum).IsRequired();
+        b.HasOne(x => x.MateriaPrima).WithMany().HasForeignKey(x => x.MateriaPrimaId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.MateriaPrimaId, x.Situacao, x.DataPrevista });
+    }
+}
+
+internal sealed class FichaTecnicaMaterialMap : IEntityTypeConfiguration<FichaTecnicaMaterial>
+{
+    public void Configure(EntityTypeBuilder<FichaTecnicaMaterial> b)
+    {
+        b.ToTable("fichas_tecnicas_materias_primas", t => t.HasCheckConstraint("ck_fichas_tecnicas_quantidade", "quantidade_por_unidade > 0"));
+        b.HasKey(x => x.Id);
+        b.Property(x => x.QuantidadePorUnidade).HasPrecision(12, 3);
+        b.HasOne<Produto>().WithMany().HasForeignKey(x => x.ProdutoId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<MateriaPrima>().WithMany().HasForeignKey(x => x.MateriaPrimaId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.ProdutoId, x.MateriaPrimaId }).IsUnique();
+    }
+}
+
+internal sealed class ReservaMateriaPrimaPedidoMap : IEntityTypeConfiguration<ReservaMateriaPrimaPedido>
+{
+    public void Configure(EntityTypeBuilder<ReservaMateriaPrimaPedido> b)
+    {
+        b.ToTable("reservas_materias_primas_pedido", t => t.HasCheckConstraint("ck_reservas_materias_primas_quantidade", "quantidade > 0"));
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Quantidade).HasPrecision(12, 3);
+        b.Property(x => x.Situacao).HasConversion<string>().HasMaxLength(Tipos.Enum).IsRequired();
+        b.HasOne<Pedido>().WithMany().HasForeignKey(x => x.PedidoId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne(x => x.MateriaPrima).WithMany().HasForeignKey(x => x.MateriaPrimaId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.PedidoId, x.MateriaPrimaId, x.Situacao });
+    }
+}
+
+internal sealed class MovimentoMateriaPrimaMap : IEntityTypeConfiguration<MovimentoMateriaPrima>
+{
+    public void Configure(EntityTypeBuilder<MovimentoMateriaPrima> b)
+    {
+        b.ToTable("movimentos_materias_primas", t => t.HasCheckConstraint("ck_movimentos_materias_primas_variacao", "variacao <> 0"));
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Variacao).HasPrecision(12, 3);
+        b.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(Tipos.Enum).IsRequired();
+        b.Property(x => x.Observacao).HasMaxLength(300);
+        b.HasOne(x => x.MateriaPrima).WithMany().HasForeignKey(x => x.MateriaPrimaId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne(x => x.Pedido).WithMany().HasForeignKey(x => x.PedidoId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.MateriaPrimaId, x.CriadoEm });
+        b.HasIndex(x => x.PedidoId);
+    }
+}
+
 internal sealed class ClienteMap : IEntityTypeConfiguration<Cliente>
 {
     public void Configure(EntityTypeBuilder<Cliente> b)

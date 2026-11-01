@@ -21,6 +21,7 @@ public static class ConfiguracaoServicos
     {
         services.AddScoped<AuthService>();
         services.AddScoped<ClienteService>();
+        services.AddScoped<EstoqueService>();
         services.AddScoped<OrcamentoService>();
         services.AddScoped<OrcamentoDocumentoService>();
         services.AddScoped<PedidoService>();

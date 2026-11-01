@@ -25,6 +25,13 @@ export interface Usuario { id: string; nome: string; email: string; perfil: Perf
 export interface LoginResposta { usuario: Usuario; accessToken: string; expiraEm: string; manterConectado: boolean }
 
 export interface Produto { id: string; nome: string; categoria: string; descricaoBase: string | null }
+export interface MateriaPrima { id: string; nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number; quantidadeAReceber: number; quantidadeReservada: number; ativo: boolean }
+export type SituacaoCompraMateriaPrima = "Planejada" | "Pedido" | "Recebida" | "Cancelada";
+export interface CompraMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; fornecedor: string | null; dataPrevista: string; situacao: SituacaoCompraMateriaPrima; criadaEm: string }
+export interface FichaTecnicaLinha { materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidadePorUnidade: number }
+export interface FichaTecnica { produtoId: string; produtoNome: string; materiais: FichaTecnicaLinha[] }
+export interface ReservaPedidoMaterial { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; situacao: "Reservada" | "Consumida" | "Liberada" }
+export interface MovimentoMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; pedidoId: string | null; pedidoNumero: number | null; variacao: number; tipo: "EntradaCompra" | "SaidaPedido" | "Ajuste"; observacao: string | null; criadoEm: string }
 export interface OpcoesOrcamento { extensoesPermitidas: string[]; tamanhoMaximoBytes: number; tiposPersonalizacao: string[]; condicoesPagamento: string[] }
 export interface Anexo { id: string; nome: string; extensao: string; contentType: string; tamanhoBytes: number; ehImagem: boolean }
 

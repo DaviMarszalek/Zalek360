@@ -14,6 +14,7 @@ const menu = [
   { href: "/clientes", rotulo: "Clientes", icone: Users },
   { href: "/orcamentos", rotulo: "Orçamentos", icone: FileText },
   { href: "/pedidos", rotulo: "Pedidos", icone: Package },
+  { href: "/estoque", rotulo: "Estoque", icone: ClipboardList },
 ];
 
 export function Marca({ clara = true }: { clara?: boolean }) {
