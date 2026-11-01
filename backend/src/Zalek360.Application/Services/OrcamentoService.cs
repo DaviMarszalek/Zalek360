@@ -24,11 +24,12 @@ public sealed class OrcamentoService
     private readonly IUnitOfWork _uow;
     private readonly IClock _clock;
     private readonly IUsuarioAtual _usuario;
+    private readonly EstoqueService _estoque;
 
     public OrcamentoService(
         IOrcamentoRepository orcamentos, IPedidoRepository pedidos, IClienteRepository clientes, IUsuarioRepository usuarios,
         IProdutoRepository produtos, IAnexoRepository anexos, IOrcamentoQueries consultas, INumeradorDocumentos numerador,
-        IUnitOfWork uow, IClock clock, IUsuarioAtual usuario)
+        IUnitOfWork uow, IClock clock, IUsuarioAtual usuario, EstoqueService estoque)
     {
         _orcamentos = orcamentos;
         _pedidos = pedidos;
@@ -41,6 +42,7 @@ public sealed class OrcamentoService
         _uow = uow;
         _clock = clock;
         _usuario = usuario;
+        _estoque = estoque;
     }
 
     /// <summary>Pré-visualização do resumo financeiro (sequência UC02, passos 7–9). Não persiste nada.</summary>
@@ -145,6 +147,7 @@ public sealed class OrcamentoService
                 var numero = await _numerador.ProximoNumeroPedidoAsync(ct);
                 pedido = Pedido.CriarAPartirDe(orcamento, numero, dataLocal!.Value, agora, _usuario.Id);
                 _pedidos.Adicionar(pedido);
+                await _estoque.GerarReservasPedidoAsync(pedido, ct);
                 await _uow.SaveChangesAsync(ct);
             }
 

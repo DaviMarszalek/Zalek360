@@ -7,6 +7,7 @@ import { ArrowRight, Ban, Check, FileImage, FileText, Info } from "lucide-react"
 import { AreaTexto, Aviso, BadgePedido, Botao, CabecalhoPagina, Campo, Cartao, Carregando, ErroCarregamento, Etiqueta, Info2, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, LinhaDoTempo, Voltar } from "@/features/comum";
+import { MateriaisDoPedido } from "@/features/pedidos/MateriaisDoPedido";
 import { anexosService, pedidosService } from "@/services";
 import { erroCampo, erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -81,7 +82,7 @@ function ModalStatus({ p, alvo, aoFechar }: { p: PedidoDetalhe; alvo: SituacaoPe
     mutationFn: () => pedidosService.atualizarStatus(p.id, alvo!, obs, p.versao),
     onSuccess: (d) => {
       qc.setQueryData(["pedido", p.id], d);
-      for (const k of [["pedido", p.id], ["pedidos"], ["dashboard"], ["cliente", p.cliente.id]]) qc.invalidateQueries({ queryKey: k });
+      for (const k of [["pedido", p.id], ["pedidos"], ["dashboard"], ["cliente", p.cliente.id], ["estoque", "materias"]]) qc.invalidateQueries({ queryKey: k });
       toast("sucesso", cancelando ? `Pedido ${numeroDocumento(p.numero)} cancelado.` : `Pedido ${numeroDocumento(p.numero)} agora está ${rotuloSituacaoPedido[d.situacao]}.`);
       fechar();
     },
@@ -96,7 +97,7 @@ function ModalStatus({ p, alvo, aoFechar }: { p: PedidoDetalhe; alvo: SituacaoPe
         <Botao variante={cancelando ? "perigo" : "primaria"} carregando={m.isPending} onClick={() => m.mutate()}
           icone={cancelando ? <Ban className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}>{cancelando ? "Cancelar pedido" : `Mover para ${alvo ? rotuloSituacaoPedido[alvo] : ""}`}</Botao></>}>
       <div className="space-y-4">
-        {erro && !Object.keys(erro.errors).length && <Aviso tipo="erro">{erro.message}</Aviso>}
+        {erro && <Aviso tipo="erro">{erro.message}{erro.errors.materiais?.map((mensagem, i) => <p key={i} className="mt-1">{mensagem}</p>)}</Aviso>}
         <Campo rotulo={cancelando ? "Motivo do cancelamento" : "Observação (opcional)"} obrigatorio={cancelando} erro={erroCampo(erro, "observacao") ?? erroCampo(erro, "novaSituacao")}>
           <AreaTexto value={obs} maxLength={500} onChange={(e) => setObs(e.target.value)} invalido={!!erroCampo(erro, "observacao")}
             placeholder={cancelando ? "Ex.: cliente desistiu da compra após a aprovação." : "Ex.: arte liberada pela produção."} />
@@ -157,6 +158,8 @@ export function DetalhePedido() {
                 </dl>
               </div>))}</div>
           </Cartao>
+
+          <MateriaisDoPedido pedido={p} />
 
           <Cartao titulo={<span className="flex items-center gap-2">Artes e referências anexadas <Herdado /></span>}>
             {anexos.length === 0 ? <p className="text-sm text-texto-fraco">Nenhum arquivo foi anexado ao orçamento de origem.</p>
