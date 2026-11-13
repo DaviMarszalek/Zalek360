@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Archive, CalendarDays, ClipboardList, History, PackagePlus, Pencil, Plus, RotateCcw, Search, Trash2, Truck } from "lucide-react";
 import { Botao, CabecalhoPagina, Campo, Cartao, Entrada, ErroCarregamento, EstadoVazio, Modal, Selecao } from "@/components/ui";
 import { catalogoService, estoqueService } from "@/services";
+import { useToast } from "@/components/ui/toast";
 import { erroDaApi } from "@/lib/api";
 import type { MateriaPrima, Produto, SituacaoCompraMateriaPrima } from "@/types/api";
 
@@ -19,6 +20,7 @@ const dataPt = (d: string) => { const [a, m, dia] = d.slice(0, 10).split("-"); r
 
 export function Estoque() {
   const qc = useQueryClient();
+  const toast = useToast();
   const [busca, setBusca] = useState("");
   const [mostrarInativos, setMostrarInativos] = useState(false);
   const [modal, setModal] = useState<"material" | "compra" | "ficha" | null>(null);
@@ -29,21 +31,22 @@ export function Estoque() {
   const [produtoFicha, setProdutoFicha] = useState<Produto | null>(null);
   const [fichaLinhas, setFichaLinhas] = useState<FichaLinha[]>([]);
   const [erro, setErro] = useState("");
+  const pendencias = useQuery({ queryKey: ["estoque", "pendencias"], queryFn: estoqueService.pendencias });
   const materias = useQuery({ queryKey: ["estoque", "materias"], queryFn: estoqueService.materias });
   const compras = useQuery({ queryKey: ["estoque", "compras"], queryFn: estoqueService.compras });
   const produtos = useQuery({ queryKey: ["catalogo", "produtos"], queryFn: catalogoService.produtos });
   const fichas = useQuery({ queryKey: ["estoque", "fichas"], queryFn: estoqueService.fichas });
   const movimentos = useQuery({ queryKey: ["estoque", "movimentos", historicoMaterial?.id], queryFn: () => estoqueService.movimentos(historicoMaterial!.id), enabled: !!historicoMaterial });
-  const atualizar = async () => { await Promise.all([qc.invalidateQueries({ queryKey: ["estoque", "materias"] }), qc.invalidateQueries({ queryKey: ["estoque", "compras"] })]); };
+  const atualizar = async () => { await qc.invalidateQueries({ queryKey: ["estoque"] }); };
   const salvarMaterial = useMutation({ mutationFn: () => materialAtual ? estoqueService.atualizarMateria(materialAtual.id, materialForm) : estoqueService.criarMateria(materialForm), onSuccess: async () => { await atualizar(); setModal(null); setErro(""); } });
   const salvarCompra = useMutation({ mutationFn: () => estoqueService.criarCompra(compraForm), onSuccess: async () => { await atualizar(); setModal(null); setErro(""); } });
   const salvarFicha = useMutation({ mutationFn: () => estoqueService.salvarFicha(produtoFicha!.id, fichaLinhas), onSuccess: async () => { await qc.invalidateQueries({ queryKey: ["estoque", "fichas"] }); setModal(null); setErro(""); } });
-  const mudarCompra = useMutation({ mutationFn: ({ id, situacao }: { id: string; situacao: SituacaoCompraMateriaPrima }) => estoqueService.atualizarSituacaoCompra(id, situacao), onSuccess: atualizar });
-  const mudarAtivo = useMutation({ mutationFn: ({ id, ativo }: { id: string; ativo: boolean }) => estoqueService.definirMateriaAtiva(id, ativo), onSuccess: atualizar });
+  const mudarCompra = useMutation({ mutationFn: ({ id, situacao }: { id: string; situacao: SituacaoCompraMateriaPrima }) => estoqueService.atualizarSituacaoCompra(id, situacao), onSuccess: atualizar, onError: (e) => toast("erro", erroDaApi(e).message) });
+  const mudarAtivo = useMutation({ mutationFn: ({ id, ativo }: { id: string; ativo: boolean }) => estoqueService.definirMateriaAtiva(id, ativo), onSuccess: atualizar, onError: (e) => toast("erro", erroDaApi(e).message) });
   const itens = useMemo(() => (materias.data ?? []).filter((m) => (mostrarInativos || m.ativo) && `${m.nome} ${m.unidade}`.toLocaleLowerCase("pt-BR").includes(busca.toLocaleLowerCase("pt-BR"))), [materias.data, mostrarInativos, busca]);
   const ativos = materias.data?.filter((m) => m.ativo) ?? [];
-  const baixos = ativos.filter((m) => m.quantidadeDisponivel - m.quantidadeReservada <= m.estoqueMinimo);
-  const comprasAbertas = (compras.data ?? []).filter((c) => c.situacao === "Planejada" || c.situacao === "Pedido");
+  const baixos = ativos.filter((m) => m.noMinimo);
+  const comprasAbertas = (compras.data ?? []).filter((c) => c.aberta);
 
   function abrirMaterial(m?: MateriaPrima) { setMaterialAtual(m ?? null); setMaterialForm(m ? { nome: m.nome, unidade: m.unidade, quantidadeDisponivel: m.quantidadeDisponivel, estoqueMinimo: m.estoqueMinimo } : { ...materialVazio }); setErro(""); setModal("material"); }
   function abrirCompra(m?: MateriaPrima) { setCompraForm({ materiaPrimaId: m?.id ?? ativos[0]?.id ?? "", quantidade: 1, fornecedor: "", dataPrevista: dataHoje() }); setErro(""); setModal("compra"); }
@@ -61,6 +64,13 @@ export function Estoque() {
       <Cartao><p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-texto-fraco"><Truck className="h-3.5 w-3.5" />Compras a caminho</p><p className="mt-2 text-2xl font-semibold numero text-texto">{comprasAbertas.length}</p></Cartao>
     </div>
 
+    <Cartao titulo="Pendências de materiais" className="mb-5">
+      {pendencias.isError ? <ErroCarregamento mensagem={erroDaApi(pendencias.error).message} aoTentar={() => pendencias.refetch()} />
+        : pendencias.isLoading ? <p className="text-sm text-texto-fraco">Carregando pendências…</p>
+          : !pendencias.data?.length ? <p className="text-sm text-texto-fraco">Nenhuma pendência de materiais.</p>
+            : <div className="space-y-2">{pendencias.data.map((p) => <div key={p.pedidoId} className="flex flex-wrap items-center justify-between gap-2 text-sm"><Link href={`/pedidos/${p.pedidoId}`} className="font-medium text-primaria hover:underline">Pedido #{p.pedidoNumero}</Link><span className="text-amber-800">{p.descricao}</span><span className="numero text-texto-fraco">{dataPt(p.prazoEntrega)}</span></div>)}</div>}
+    </Cartao>
+
     <Cartao semPadding>
       <div className="flex flex-wrap items-center gap-3 border-b border-borda p-4">
         <div className="relative min-w-[230px] flex-1"><Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-texto-fraco" /><Entrada className="pl-9" placeholder="Buscar matéria-prima" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar matérias-primas" /></div>
@@ -71,19 +81,19 @@ export function Estoque() {
           : itens.length === 0 ? <EstadoVazio icone={<ClipboardList className="h-5 w-5" />} titulo={busca ? "Nenhum item encontrado" : "Nenhuma matéria-prima cadastrada"} descricao="Cadastre os materiais utilizados nas encomendas para acompanhar o que há disponível e o que precisa ser reposto." acao={<Botao icone={<Plus className="h-4 w-4" />} onClick={() => abrirMaterial()}>Cadastrar matéria-prima</Botao>} />
             : <div className="overflow-x-auto"><table className="tabela w-full min-w-[960px] text-sm"><thead><tr><th>Matéria-prima</th><th>Saldo físico</th><th>Reservado</th><th>Livre p/ pedidos</th><th>Estoque mínimo</th><th>A receber</th><th>Falta comprar</th><th>Status</th><th className="w-36 text-right">Ações</th></tr></thead><tbody>
               {itens.map((m) => {
-                const livre = m.quantidadeDisponivel - m.quantidadeReservada;
-                const falta = Math.max(0, m.estoqueMinimo - livre - m.quantidadeAReceber);
-                const baixo = livre <= m.estoqueMinimo;
+                const livre = m.saldoDisponivel;
+                const falta = m.faltaComprar;
+                const baixo = m.noMinimo;
                 return <tr key={m.id} className={!m.ativo ? "opacity-60" : ""}>
                   <td><span className="font-medium text-texto">{m.nome}</span><span className="ml-2 text-xs text-texto-fraco">({m.unidade})</span></td>
                   <td className="numero font-medium">{numero(m.quantidadeDisponivel)} <span className="text-xs font-normal text-texto-fraco">{m.unidade}</span></td>
-                  <td className="numero text-texto-suave">{numero(m.quantidadeReservada)} {m.unidade}</td>
+                  <td className="numero text-texto-suave">{numero(m.quantidadeReservada)} {m.unidade}{m.quantidadePendente > 0 && <p className="text-xs text-amber-700">Pendente: {numero(m.quantidadePendente)} {m.unidade}</p>}</td>
                   <td className={`numero font-medium ${livre < 0 ? "text-red-700" : "text-texto"}`}>{numero(livre)} {m.unidade}</td>
                   <td className="numero text-texto-suave">{numero(m.estoqueMinimo)} {m.unidade}</td>
                   <td className="numero text-texto-suave">{numero(m.quantidadeAReceber)} {m.unidade}</td>
                   <td className={`numero font-medium ${falta > 0 ? "text-red-700" : "text-texto-suave"}`}>{numero(falta)} {m.unidade}</td>
                   <td><span className={`rounded-full px-2 py-1 text-xs ${!m.ativo ? "bg-slate-100 text-slate-600" : baixo ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-700"}`}>{!m.ativo ? "Inativa" : baixo && m.quantidadeAReceber > 0 ? "Reposição a caminho" : baixo ? "Atenção" : "Adequado"}</span></td>
-                  <td><div className="flex justify-end gap-1"><Botao variante="fantasma" tamanho="sm" aria-label={`Histórico de ${m.nome}`} onClick={() => setHistoricoMaterial(m)} icone={<History className="h-4 w-4" />} /><Botao variante="fantasma" tamanho="sm" aria-label={`Editar ${m.nome}`} onClick={() => abrirMaterial(m)} icone={<Pencil className="h-4 w-4" />} />{m.ativo && <Botao variante="fantasma" tamanho="sm" aria-label={`Planejar compra de ${m.nome}`} onClick={() => abrirCompra(m)} icone={<PackagePlus className="h-4 w-4" />} />}{m.ativo ? <Botao variante="fantasma" tamanho="sm" aria-label={`Desativar ${m.nome}`} onClick={() => mudarAtivo.mutate({ id: m.id, ativo: false })} icone={<Archive className="h-4 w-4" />} /> : <Botao variante="fantasma" tamanho="sm" aria-label={`Reativar ${m.nome}`} onClick={() => mudarAtivo.mutate({ id: m.id, ativo: true })} icone={<RotateCcw className="h-4 w-4" />} />}</div></td>
+                  <td><div className="flex justify-end gap-1"><Botao variante="fantasma" tamanho="sm" aria-label={`Histórico de ${m.nome}`} onClick={() => setHistoricoMaterial(m)} icone={<History className="h-4 w-4" />} /><Botao variante="fantasma" tamanho="sm" aria-label={`Editar ${m.nome}`} onClick={() => abrirMaterial(m)} icone={<Pencil className="h-4 w-4" />} />{m.ativo && <Botao variante="fantasma" tamanho="sm" aria-label={`Planejar compra de ${m.nome}`} onClick={() => abrirCompra(m)} icone={<PackagePlus className="h-4 w-4" />} />}{m.ativo ? <Botao variante="fantasma" tamanho="sm" aria-label={`Desativar ${m.nome}`} disabled={mudarAtivo.isPending} onClick={() => mudarAtivo.mutate({ id: m.id, ativo: false })} icone={<Archive className="h-4 w-4" />} /> : <Botao variante="fantasma" tamanho="sm" aria-label={`Reativar ${m.nome}`} disabled={mudarAtivo.isPending} onClick={() => mudarAtivo.mutate({ id: m.id, ativo: true })} icone={<RotateCcw className="h-4 w-4" />} />}</div></td>
                 </tr>;
               })}
             </tbody></table></div>}
@@ -108,7 +118,7 @@ export function Estoque() {
           : compras.isLoading ? <div className="p-6 text-center text-sm text-texto-fraco">Carregando compras…</div>
             : comprasAbertas.length === 0 ? <EstadoVazio icone={<Truck className="h-5 w-5" />} titulo="Nenhuma compra a caminho" descricao="Planeje uma reposição para acompanhar quantidades e previsão de chegada." acao={<Botao variante="secundaria" onClick={() => abrirCompra()}>Planejar compra</Botao>} />
               : <div className="overflow-x-auto"><table className="tabela w-full min-w-[760px] text-sm"><thead><tr><th>Matéria-prima</th><th>Quantidade</th><th>Fornecedor</th><th>Previsão</th><th>Situação</th><th className="text-right">Atualizar</th></tr></thead><tbody>
-                {comprasAbertas.map((c) => <tr key={c.id}><td className="font-medium">{c.materiaPrimaNome}</td><td className="numero">{numero(c.quantidade)} {c.unidade}</td><td className="text-texto-suave">{c.fornecedor || "—"}</td><td className="numero text-texto-suave"><span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{dataPt(c.dataPrevista)}</span></td><td><span className={`rounded-full px-2 py-1 text-xs ${c.situacao === "Pedido" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-700"}`}>{c.situacao === "Pedido" ? "Pedido realizado" : "Planejada"}</span></td><td><div className="flex justify-end gap-2"><Selecao className="h-8 w-36 text-xs" aria-label={`Atualizar situação da compra de ${c.materiaPrimaNome}`} value={c.situacao} onChange={(e) => mudarCompra.mutate({ id: c.id, situacao: e.target.value as SituacaoCompraMateriaPrima })}><option value="Planejada" disabled>Planejada</option><option value="Pedido">Pedido realizado</option><option value="Recebida">Recebida</option><option value="Cancelada">Cancelar</option></Selecao></div></td></tr>)}
+                {comprasAbertas.map((c) => <tr key={c.id}><td className="font-medium">{c.materiaPrimaNome}</td><td className="numero">{numero(c.quantidade)} {c.unidade}</td><td className="text-texto-suave">{c.fornecedor || "—"}</td><td className="numero text-texto-suave"><span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{dataPt(c.dataPrevista)}</span></td><td><span className={`rounded-full px-2 py-1 text-xs ${c.situacao === "Pedido" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-700"}`}>{c.situacaoDescricao}</span></td><td><div className="flex justify-end gap-2"><Selecao disabled={mudarCompra.isPending} className="h-8 w-36 text-xs" aria-label={`Atualizar situação da compra de ${c.materiaPrimaNome}`} value={c.situacao} onChange={(e) => mudarCompra.mutate({ id: c.id, situacao: e.target.value as SituacaoCompraMateriaPrima })}><option value={c.situacao} disabled>{c.situacaoDescricao}</option>{c.situacoesPermitidas.map((opcao) => <option key={opcao.valor} value={opcao.valor}>{opcao.rotulo}</option>)}</Selecao></div></td></tr>)}
               </tbody></table></div>}
       </Cartao>
     </section>
@@ -139,7 +149,7 @@ export function Estoque() {
     <Modal aberto={!!historicoMaterial} aoFechar={() => setHistoricoMaterial(null)} titulo={`Movimentações · ${historicoMaterial?.nome ?? ""}`} descricao="Entradas, saídas para pedidos e ajustes manuais de saldo." largura="max-w-2xl">
       {movimentos.isError ? <ErroCarregamento mensagem={erroDaApi(movimentos.error).message} aoTentar={() => movimentos.refetch()} />
         : movimentos.isLoading ? <p className="text-sm text-texto-fraco">Carregando histórico…</p>
-          : movimentos.data?.length ? <div className="overflow-x-auto"><table className="tabela w-full min-w-[540px] text-sm"><thead><tr><th>Data</th><th>Movimento</th><th>Quantidade</th><th>Origem</th></tr></thead><tbody>{movimentos.data.map((x) => <tr key={x.id}><td className="numero text-texto-suave">{new Date(x.criadoEm).toLocaleString("pt-BR")}</td><td>{x.tipo === "EntradaCompra" ? "Entrada de compra" : x.tipo === "SaidaPedido" ? "Consumo de pedido" : "Ajuste"}{x.observacao && <p className="text-xs text-texto-fraco">{x.observacao}</p>}</td><td className={`numero font-medium ${x.variacao < 0 ? "text-red-700" : "text-emerald-700"}`}>{x.variacao > 0 ? "+" : ""}{numero(x.variacao)} {historicoMaterial?.unidade}</td><td>{x.pedidoId ? <Link href={`/pedidos/${x.pedidoId}`} className="text-primaria hover:underline">Pedido #{x.pedidoNumero}</Link> : "—"}</td></tr>)}</tbody></table></div>
+          : movimentos.data?.length ? <div className="overflow-x-auto"><table className="tabela w-full min-w-[540px] text-sm"><thead><tr><th>Data</th><th>Movimento</th><th>Quantidade</th><th>Origem</th></tr></thead><tbody>{movimentos.data.map((x) => <tr key={x.id}><td className="numero text-texto-suave">{new Date(x.criadoEm).toLocaleString("pt-BR")}</td><td>{x.tipoDescricao}{x.observacao && <p className="text-xs text-texto-fraco">{x.observacao}</p>}</td><td className={`numero font-medium ${x.variacao < 0 ? "text-red-700" : "text-emerald-700"}`}>{x.variacao > 0 ? "+" : ""}{numero(x.variacao)} {historicoMaterial?.unidade}</td><td>{x.pedidoId ? <Link href={`/pedidos/${x.pedidoId}`} className="text-primaria hover:underline">Pedido #{x.pedidoNumero}</Link> : "—"}</td></tr>)}</tbody></table></div>
             : <p className="text-sm text-texto-fraco">Ainda não há movimentações para este material.</p>}
     </Modal>
   </>;

@@ -25,13 +25,15 @@ export interface Usuario { id: string; nome: string; email: string; perfil: Perf
 export interface LoginResposta { usuario: Usuario; accessToken: string; expiraEm: string; manterConectado: boolean }
 
 export interface Produto { id: string; nome: string; categoria: string; descricaoBase: string | null }
-export interface MateriaPrima { id: string; nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number; quantidadeAReceber: number; quantidadeReservada: number; ativo: boolean }
+export interface MateriaPrima { id: string; nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number; quantidadeAReceber: number; quantidadeReservada: number; ativo: boolean; saldoDisponivel: number; quantidadePendente: number; noMinimo: boolean; faltaComprar: number }
 export type SituacaoCompraMateriaPrima = "Planejada" | "Pedido" | "Recebida" | "Cancelada";
-export interface CompraMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; fornecedor: string | null; dataPrevista: string; situacao: SituacaoCompraMateriaPrima; criadaEm: string }
+export interface CompraMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; fornecedor: string | null; dataPrevista: string; situacao: SituacaoCompraMateriaPrima; criadaEm: string; aberta: boolean; situacaoDescricao: string; situacoesPermitidas: { valor: SituacaoCompraMateriaPrima; rotulo: string }[] }
 export interface FichaTecnicaLinha { materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidadePorUnidade: number }
 export interface FichaTecnica { produtoId: string; produtoNome: string; materiais: FichaTecnicaLinha[] }
-export interface ReservaPedidoMaterial { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; situacao: "Reservada" | "Consumida" | "Liberada" }
-export interface MovimentoMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; pedidoId: string | null; pedidoNumero: number | null; variacao: number; tipo: "EntradaCompra" | "SaidaPedido" | "Ajuste"; observacao: string | null; criadoEm: string }
+export interface ReservaPedidoMaterial { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; situacao: "Reservada" | "Consumida" | "Liberada"; quantidadeReservada: number; quantidadePendente: number; ativa: boolean; consumida: boolean; situacaoDescricao: string }
+export interface PendenciaEstoquePedido { pedidoId: string; pedidoNumero: number; prazoEntrega: string; descricao: string }
+export interface MateriaisPedido { controleMateriais: boolean; podeEditarMateriais: boolean; podeAplicarFicha: boolean; temPendencia: boolean; podeIniciarProducao: boolean; reservas: ReservaPedidoMaterial[]; pendenciasFicha: { produtoId: string; produtoNome: string; quantidadeProduto: number; motivo: string }[] }
+export interface MovimentoMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; pedidoId: string | null; pedidoNumero: number | null; variacao: number; tipo: "EntradaCompra" | "SaidaPedido" | "Ajuste" | "Reserva" | "LiberacaoReserva"; observacao: string | null; criadoEm: string; tipoDescricao: string; saldoFisicoApos: number | null; saldoReservadoApos: number | null; usuarioId: string | null }
 export interface OpcoesOrcamento { extensoesPermitidas: string[]; tamanhoMaximoBytes: number; tiposPersonalizacao: string[]; condicoesPagamento: string[] }
 export interface Anexo { id: string; nome: string; extensao: string; contentType: string; tamanhoBytes: number; ehImagem: boolean }
 
@@ -119,7 +121,7 @@ export interface Calculo {
 }
 
 export interface Contato { id: string; tipo: MeioContato; dataHora: string; observacao: string; registradoPor: string; criadoEm: string }
-export interface DecisaoResultado { orcamento: OrcamentoDetalhe; pedidoGerado: PedidoVinculado | null }
+export interface DecisaoResultado { orcamento: OrcamentoDetalhe; pedidoGerado: PedidoVinculado | null; materiais: MateriaisPedido | null }
 
 export interface PedidoListaItem {
   id: string; numero: number; orcamentoId: string; orcamentoNumero: number; clienteId: string; cliente: string; data: string;

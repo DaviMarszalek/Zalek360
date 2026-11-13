@@ -82,7 +82,7 @@ function ModalStatus({ p, alvo, aoFechar }: { p: PedidoDetalhe; alvo: SituacaoPe
     mutationFn: () => pedidosService.atualizarStatus(p.id, alvo!, obs, p.versao),
     onSuccess: (d) => {
       qc.setQueryData(["pedido", p.id], d);
-      for (const k of [["pedido", p.id], ["pedidos"], ["dashboard"], ["cliente", p.cliente.id], ["estoque", "materias"]]) qc.invalidateQueries({ queryKey: k });
+      for (const k of [["pedido", p.id], ["pedidos"], ["dashboard"], ["cliente", p.cliente.id], ["estoque"]]) qc.invalidateQueries({ queryKey: k });
       toast("sucesso", cancelando ? `Pedido ${numeroDocumento(p.numero)} cancelado.` : `Pedido ${numeroDocumento(p.numero)} agora está ${rotuloSituacaoPedido[d.situacao]}.`);
       fechar();
     },
