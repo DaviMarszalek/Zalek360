@@ -32,7 +32,7 @@ A execução da API real e do compose completo fica como primeira ação na máq
 | RF 4.1.2.1–4.1.2.7 (orçamento, personalização, cálculo, prazo e pagamento, ciclo, edição, consulta por cliente) | Implementado |
 | RF 4.1.3.1–4.1.3.5 (conversão automática, sem pedido direto, situação inicial, cancelamento, sem exclusão) | Implementado. Situação inicial "Aberto" (ver item 16) |
 | RF 4.1.4.1–4.1.4.2 (histórico por cliente, painel por situação) | Implementado |
-| RF 4.1.5.x (estoque, OS, financeiro) | Fora do MVP 1, por definição do documento |
+| RF 4.1.5.x | Estoque integrado na Fase 2.0; OS será 2.2; Financeiro permanece fora deste MVP |
 | RNF 5.1.1–5.1.3, 5.2.1–5.2.2, 5.3.2, 5.4.1–5.4.3 | Implementados (HTTPS via proxy reverso de exemplo) |
 
 ## 3. Arquitetura e organização
@@ -68,12 +68,12 @@ O shadcn/ui era preferível, mas a CLI não pôde ser usada no ambiente. Os comp
 
 ## 5. Banco de dados
 
-Doze tabelas:
+Dezoito tabelas de negócio. As doze comerciais originais:
 - `usuarios`, `produtos`, `clientes`, `observacoes_cliente`;
 - `orcamentos`, `itens_orcamento`, `arquivos_anexos`, `contatos_orcamento`, `decisoes_orcamento`;
 - `pedidos`, `itens_pedido`, `historico_eventos`.
 
-A estrutura inclui 2 sequências, 47 índices (7 únicos), 22 chaves estrangeiras e 7 checks. Dinheiro é `numeric(10,2)`, e datas e horas são gravadas em UTC.
+Somam-se materias_primas, compras_materias_primas, fichas_tecnicas_materias_primas, reservas_materias_primas_pedido, movimentos_materias_primas e pendencias_ficha_tecnica_pedido. A estrutura atual inclui 2 sequências, 65 índices incluindo PKs (11 únicos adicionais), 32 FKs e 15 checks. Dinheiro é `numeric(10,2)`, e datas e horas são gravadas em UTC.
 
 As diferenças em relação ao DER e ao dicionário estão em `03-alteracoes-e-complementos-na-modelagem.md` e `06-revisao-da-modelagem.md`.
 
@@ -149,8 +149,9 @@ Ver `02-matriz-rastreabilidade.md` e `05-checklists.md`.
   2. grava;
   3. obtém o número do pedido na sequência;
   4. cria o pedido copiando itens, personalização e anexos;
-  5. grava;
-  6. confirma.
+  5. calcula necessidades, registra ficha ausente e reserva até o disponível, com lock de materiais;
+  6. grava pedido, reservas, movimentos e pendências;
+  7. confirma.
 
   Qualquer falha faz o descarte da transação executar ROLLBACK, e o orçamento continua Aguardando Retorno. A tela de erro diz isso explicitamente.
 - **Sem retentativa automática de execução** (`EnableRetryOnFailure` desligado), para não repetir parcialmente uma operação com transação explícita.
@@ -177,7 +178,7 @@ Ver `02-matriz-rastreabilidade.md` e `05-checklists.md`.
 
 ## 12. Testes
 
-**Atualização em 28/10/2026:** a suíte atual tem **65 testes**, todos executados e aprovados com os pacotes reais (SDK .NET 8 no Docker). Os números abaixo descrevem a entrega inicial. A exportação acrescentou 17 cenários Application, 2 de PDF e 2 de endpoint HTTP.
+**Atualização histórica de 28/10/2026:** naquela data a suíte tinha **65 testes**, todos executados e aprovados com os pacotes reais (SDK .NET 8 no Docker). Os números abaixo descrevem a entrega inicial. A exportação acrescentou 17 cenários Application, 2 de PDF e 2 de endpoint HTTP.
 
 São 44 testes xUnit: 27 de domínio, 14 de casos de uso e 3 de integração com EF Core + SQLite em memória.
 - **Pontos exigidos que estão cobertos:**
@@ -212,7 +213,7 @@ São 44 testes xUnit: 27 de domínio, 14 de casos de uso e 3 de integração com
 - **Configuração** por variáveis de ambiente, com `.env.example` na raiz, no backend e no frontend: banco, JWT, cookie, fuso, seed, rotinas, Swagger e portas.
 - **Inicialização da API:**
   1. espera o banco (até 30 tentativas);
-  2. aplica a migration;
+  2. aplica as migrations pendentes;
   3. confere o esquema;
   4. grava o seed (uma única vez);
   5. ajusta as sequências.
@@ -238,7 +239,7 @@ São 44 testes xUnit: 27 de domínio, 14 de casos de uso e 3 de integração com
 ## 16. Limitações conhecidas e divergências em relação ao documento
 
 1. **Pendência inicial de execução da API e do Compose resolvida em 28/10/2026:** build e subida com banco novo, migrations, seed, API/PostgreSQL e frontend executados; ver atualização do item 15 e README, seção 10.
-2. **A migration inicial foi escrita à mão**, sem `ModelSnapshot`. Funciona para criar o banco. Antes da próxima mudança de esquema, regenere com `scripts/recriar-migration-inicial.sh` em banco novo.
+2. **A migration inicial permanece escrita à mão.** O ModelSnapshot foi adotado na estabilização, com alinhamento em migration separada. Não regenerar o histórico publicado; usar backend/tools/comparar-esquema antes de novas alterações.
 3. **Pedido inicia "Aberto"**, com avanço manual já no MVP 1 (protótipo). O RF 4.1.3.3 previa "Registrado" e avanço só no MVP 2.
 4. **"Enviado ao Cliente" virou "Aguardando Retorno"** (protótipo e dicionário).
 5. **Exportar orçamento em PDF — limitação resolvida em 28/10/2026.** Proposta Comercial com prazo em dias úteis/semanas, previsões e dados da empresa configuráveis. POST registra histórico do orçamento/cliente; GET é de leitura. A apresentação continua independente. As artes são listadas por nome; miniaturas opcionais não foram adotadas.
@@ -255,11 +256,17 @@ São 44 testes xUnit: 27 de domínio, 14 de casos de uso e 3 de integração com
 O aceite da exportação em 28/10/2026 incluiu Chrome (download, nova aba, mensagem JSON/blob, atalho após apresentar e histórico), leitura independente dos PDFs e inspeção visual. A proposta de três itens/arte tem 2 páginas e R$ 12.840,00, igual à tela; 12 itens produziram 5 páginas com cabeçalhos repetidos e blocos inteiros. A instância principal foi atualizada com `docker compose up --build -d --wait`, preservando os dados; login e PDF via porta 3000 foram conferidos. Os comandos abaixo continuam como roteiro de manutenção/evolução.
 
 1. Em máquina com internet:
-   - `./backend/scripts/testar.sh` (65 testes na suíte atual, incluindo integração e PDF);
+   - `./backend/scripts/testar.sh` (88 testes; configure ZALEK_TEST_POSTGRES para executar os dois testes PostgreSQL);
    - `docker compose up --build`;
    - roteiro do README, seção 3.
-2. Regenerar a migration com `dotnet ef`, para ter o `ModelSnapshot`.
+2. Comparar migrations × modelo antes de qualquer migration futura; snapshot já adotado.
 3. Testes de integração da API com `WebApplicationFactory` + PostgreSQL (Testcontainers) e testes de interface (Playwright) do roteiro.
 4. Exportação PDF concluída; futuras integrações de envio por link ou WhatsApp ficam fora deste escopo (o atendente envia o arquivo).
 5. *Rate limiting* no login, gestão de usuários e troca de senha.
-6. MVP 2: integrar a aprovação com a reserva de estoque (RF 4.1.5.1) e a geração da OS (RF 4.1.5.2), usando as mesmas transições de status do pedido.
+6. MVP 2: reserva/pendência integrada na Fase 2.0; evoluir controle completo em 2.1 e OS/consumo real em 2.2, conforme 08-mvp2.md.
+
+## Atualização — Fase 2.0, 13/11/2026
+
+Estoque estabilizado sem reescrever migrations publicadas: aprovação não é bloqueada por falta de saldo/ficha; a produção controlada exige ausência de pendências; cancelamento libera reservas; pedidos legados sem controle seguem o fluxo manual. A baixa ao iniciar é transitória até a OS.
+
+Executados: 88/88 testes (incluindo concorrência/backfill PostgreSQL), TypeScript, build, Compose completo do zero, sete migrations × modelo sem divergências funcionais, atualização com contagens/hashes preservados e roteiro HTTP de aprovação/produção/cancelamento. Interação visual desta fase: NÃO EXECUTADA. O seed não ganhou dados de estoque. Decisões, limites de perfis/complementação automática e dicionário em [08-mvp2.md](08-mvp2.md).

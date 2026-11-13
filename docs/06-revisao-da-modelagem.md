@@ -1,6 +1,6 @@
 # 06 — Revisão da modelagem
 
-Esta revisão compara o **dicionário de dados e o DER** (seções 14 e 15 do Documento do Projeto) com a migration implementada, tabela por tabela. O motivo de cada mudança está em `03-alteracoes-e-complementos-na-modelagem.md`.
+Esta revisão compara o **dicionário de dados e o DER** (seções 14 e 15 do Documento do Projeto) com a base comercial implementada, tabela por tabela. A revisão de estoque da Fase 2.0 complementa a base abaixo; o dicionário físico atual está em [08-mvp2.md](08-mvp2.md). O motivo de cada mudança está em `03-alteracoes-e-complementos-na-modelagem.md`.
 
 Convenção geral:
 - **ALTERADO:** tipos `datetime` passaram a `timestamp with time zone` (UTC).
@@ -120,3 +120,17 @@ Convenção geral:
 | `Pedido.criarAPartirDe(orcamento)` (RN9) | `Pedido.CriarAPartirDe` | MANTIDO |
 | `ContatoOrcamento` imutável | Sem métodos de alteração | MANTIDO |
 | — | `Orcamento.RegistrarContato`, `MarcarAguardandoRetorno`, `ExpirarAutomaticamente`, `Atualizar`; `Pedido.AtualizarSituacao` | ADICIONADO |
+
+## Estoque e pendências — Fase 2.0
+
+| Entidade / tabela | Revisão do modelo físico | Alvo / evolução |
+|---|---|---|
+| MateriaPrima / materias_primas | quantidade_disponivel é físico; saldo_reservado novo; disponível derivado; versão e check reservado ≤ físico | Código/categoria/tipo em 2.1; preservar nomes existentes |
+| CompraMateriaPrima / compras_materias_primas | Compra planejada/integral do Luiz preservada; recebimento transacional, cancelada sem entrada | Recebimento parcial/custo/usuário em 2.1 |
+| FichaTecnicaMaterial / fichas_tecnicas_materias_primas | Consumo por unidade; par produto/material único | Observação/evoluções em 2.1 |
+| ReservaMateriaPrimaPedido / reservas_materias_primas_pedido | quantidade = necessidade; quantidade_reservada e versão novas; diferença pendente; único parcial para Reservada | Reservada equivale a Ativa do alvo |
+| MovimentoMateriaPrima / movimentos_materias_primas | Novos tipos Reserva/LiberacaoReserva; saldos após e usuário; imutável na aplicação | Compra/OS e perda serão 2.1/2.2; saldos legados nulos |
+| PendenciaFichaTecnicaPedido / pendencias_ficha_tecnica_pedido | Nova tabela por pedido/produto, quantidade e resolução; único parcial para não resolvida | Necessária para representar ficha ausente sem inventar materia_prima_id |
+| Pedido / pedidos | controle_materiais com backfill explícito; false mantém fluxo MVP 1; aplicar ficha ativa e grava histórico | Critério aprovado para futura integração com OS |
+
+A responsabilidade de reservar/baixar fica no EstoqueService e no repositório transacional; a aprovação coordena tudo numa transação. Os identificadores curtos do modelo foram preservados, e somente dois nomes longos existentes receberam o sufixo SHA-256. Não foi configurada ordem de colunas: ela é ignorada na comparação por decisão aprovada. Total atual: 18 tabelas, sete migrations e snapshot mantido.

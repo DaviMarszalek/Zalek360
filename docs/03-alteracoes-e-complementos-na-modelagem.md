@@ -1,6 +1,6 @@
 # 03 — ALTERAÇÕES E COMPLEMENTOS NA MODELAGEM
 
-Cada item compara a modelagem do Documento do Projeto (DER, dicionário de dados, seção 15, e diagrama de classes, seção 13) com o que foi implementado na migration `20260928120000_InitialCreate`.
+Cada item compara a modelagem do Documento do Projeto (DER, dicionário de dados, seção 15, e diagrama de classes, seção 13) com a base histórica da migration `20260928120000_InitialCreate`. A extensão atual de estoque e as sete migrations estão em [08-mvp2.md](08-mvp2.md).
 
 Convenções físicas aplicadas em todas as tabelas:
 - nomes em português, em `snake_case`;
@@ -129,7 +129,7 @@ Convenções físicas aplicadas em todas as tabelas:
 | **Estrutura original** | Apenas `data_ultima_edicao` em orçamentos. |
 | **Alteração** | `versao` (inteiro, *concurrency token*) em clientes, orçamentos e pedidos. Novas colunas `criado_em`, `criado_por_id`, `atualizado_em`, `atualizado_por_id` nas entidades principais. `data_ultima_edicao` foi mantida (RF 4.1.2.6). |
 | **Motivo** | RNF 5.2.1. Duas pessoas editando ou decidindo o mesmo orçamento não podem sobrescrever uma à outra sem aviso. |
-| **Impacto** | Toda alteração envia a `versao` lida; se estiver desatualizada, a API responde 409 `CONFLITO_CONCORRENCIA` e a tela pede para recarregar. |
+| **Impacto** | As alterações comerciais enviam a `versao` lida; se estiver desatualizada, a API responde 409 `CONFLITO_CONCORRENCIA` e a tela pede para recarregar. |
 | **Tabelas** | `clientes`, `orcamentos`, `pedidos` |
 
 ---
@@ -139,12 +139,14 @@ Convenções físicas aplicadas em todas as tabelas:
 - **Índices únicos:**
   - `usuarios.email`, `produtos.nome`, `clientes.cpf_cnpj`;
   - `orcamentos.numero`, `decisoes_orcamento.orcamento_id`;
-  - `pedidos.numero`, `pedidos.orcamento_origem_id` (um pedido por orçamento, RN9).
+  - `pedidos.numero`, `pedidos.orcamento_origem_id` (um pedido por orçamento, RN9);
+  - `materias_primas.nome`, ficha por produto/material, reserva ativa por pedido/material e pendência não resolvida por pedido/produto (estes dois últimos são índices parciais).
 - **Checks:**
   - `ck_clientes_cpf_cnpj_tamanho`, `ck_orcamentos_valores`, `ck_orcamentos_validade`;
   - `ck_itens_orcamento_quantidade`, `ck_pedidos_valores`, `ck_itens_pedido_quantidade`;
-  - `ck_arquivos_anexos_tamanho`.
-- **Chaves estrangeiras:** 22 no total.
+  - `ck_arquivos_anexos_tamanho`;
+  - mais 8 checks de estoque/pendência: quantidades, variação não zero, reservado limitado ao físico/necessidade e quantidade do produto sem ficha. Total atual: 15.
+- **Chaves estrangeiras:** 32 no esquema atual (as 22 comerciais originais mais 10 de estoque/pendências).
   - `Cascade` apenas de pais para filhos da mesma composição (orçamento → itens, contatos e decisão; pedido → itens; cliente → observações);
   - `SetNull` do item de orçamento para os anexos;
   - `Restrict` em todas as demais, para que nada histórico possa ser apagado indiretamente.
@@ -165,3 +167,9 @@ A RN2 exige documento válido. Os números do protótipo têm dígito verificado
 | Ana Paula (PF) | 027.815.330-41 | 027.815.330-50 |
 
 O seed também usa **datas relativas**: o dia 24/09/2026 do protótipo corresponde ao dia em que o banco é populado. Assim, validades, prazos, "aguardando desde…" e a expiração do #000116 continuam coerentes em qualquer data de execução.
+
+## Extensão da Fase 2.0
+
+As tabelas do Luiz foram preservadas. Acrescentaram-se saldo_reservado ao material, quantidade_reservada/versao à reserva, controle_materiais ao pedido, saldos/usuário ao movimento e pendencias_ficha_tecnica_pedido para produto sem ficha. quantidade_disponivel continua físico; quantidade da reserva continua necessidade. O dicionário físico completo e a comparação com o alvo estão em [08-mvp2.md](08-mvp2.md).
+
+Materiais são bloqueados por FOR UPDATE em ordem de id, dentro da transação da aprovação/alteração; reservas também têm versão e índice único parcial. Os nomes longos usam SHA-256 estável, sem alterar nomes curtos. O alinhamento manual foi separado da migration gerada da Fase 2.0. Não há HasColumnOrder: diferenças de ordem física foram aceitas.

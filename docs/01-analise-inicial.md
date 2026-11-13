@@ -9,7 +9,7 @@ Entregar funcionando o **ciclo comercial** da Zalek Personalizados, descrito nas
 4. converter automaticamente o orçamento aprovado em pedido;
 5. consultar o histórico.
 
-As integrações da seção 4.1.5 (estoque, ordens de serviço e financeiro) ficam para o MVP 2.
+O MVP 2 foi iniciado: a Fase 2.0 entrega necessidades, reservas limitadas e pendências de materiais na aprovação. Ordens de serviço são da Fase 2.2; Financeiro fica fora deste MVP. Escopo atual em [08-mvp2.md](08-mvp2.md).
 
 O sistema é **interno**. O cliente é ator indireto: decide fora do sistema, por WhatsApp, ligação, e-mail ou presencialmente, e o atendente registra essa decisão informando o meio de contato e a data/hora.
 
@@ -33,7 +33,8 @@ O exemplo genérico do dicionário de dados (tabela com `cod_matricula`) é mode
 | Dashboard | Indicadores por situação; orçamentos recentes; aguardando retorno com dias para vencer; pedidos em andamento e concluídos no mês |
 | Clientes | Pesquisa por nome, CPF/CNPJ, telefone ou e-mail; cadastro PF/PJ com validação de DV e de duplicidade; detalhe com abas Visão geral, Orçamentos, Pedidos, Observações e Histórico; edição |
 | Orçamentos | Criação e edição com itens, personalização e anexos; cálculo no servidor; apresentação ao cliente; contatos; decisão (aprovar, recusar, cancelar); expiração automática |
-| Pedidos | Geração automática e transacional na aprovação; lista e detalhe; atualização de status em uma etapa por vez; cancelamento com motivo; criação direta bloqueada |
+| Pedidos | Geração transacional com reservas/pendências; lista e detalhe; status manual transitório; início bloqueado por pendência quando controle_materiais=true; legado false sem baixa; cancelamento libera reservas; criação direta bloqueada |
+| Estoque (Fase 2.0) | Posição física/reservada/disponível, fichas, compras integrais atuais, fila de pendências, materiais do pedido e movimentos |
 | Transversal | Histórico unificado; concorrência otimista; erros padronizados; seed com os dados do protótipo; Docker Compose; testes |
 
 ## Conflitos entre as fontes e como foram resolvidos
@@ -74,3 +75,7 @@ O exemplo genérico do dicionário de dados (tabela com `cod_matricula`) é mode
 - **Expiração:** um orçamento Aguardando Retorno com validade vencida passa a Expirado a partir de 00:00 do dia seguinte, por rotina em segundo plano que roda de hora em hora e também na inicialização.
 - **Perfis:** Atendente, Gestor e Administrador acessam o módulo comercial. Operador (produção, MVP 2) não acessa.
 - Números de orçamento e de pedido vêm de sequências próprias no PostgreSQL. Uma tentativa inválida não consome número.
+
+## Atualização de escopo — Fase 2.0, 13/11/2026
+
+D1–D3 e D7 orientam a estabilização: aprovar não depende de saldo/ficha; a diferença fica pendente; produção exige ausência de pendências para pedidos com controle explícito. A baixa ao iniciar é transitória, até consumo real pela OS na 2.2. A política Comercial foi preservada; a separação Gestor/Operador/Atendente é das fases seguintes. Fonte e situação das RN 11–28: [08-mvp2.md](08-mvp2.md).

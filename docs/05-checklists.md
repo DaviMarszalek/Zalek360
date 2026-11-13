@@ -11,7 +11,7 @@
 
 A marca [OK] só aparece quando houve execução real, como build, testes, DDL no PostgreSQL ou servidor Next.js respondendo. Uma camada de uma funcionalidade pode ter sido verificada sem que a funcionalidade inteira tenha sido testada ponta a ponta.
 
-**Atualização de 28/10/2026:** 65/65 testes reais, TypeScript, build de produção e Compose com banco novo executados. As evidências anteriores foram mantidas como histórico; a linha de exportação abaixo reflete a entrega atual. Ver detalhes no README, seção 10.
+**Atualização de 28/10/2026:** 65/65 testes reais, TypeScript, build de produção e Compose com banco novo executados. As evidências anteriores foram mantidas como histórico; a linha de exportação abaixo registra aquela entrega. Ver detalhes no README, seção 10.
 
 ---
 
@@ -34,24 +34,24 @@ A marca [OK] só aparece quando houve execução real, como build, testes, DDL n
 | UC03 | A2 — expiração automática | [IMPLEMENTADO] | Testes do domínio e da rotina executados; agendamento em segundo plano não executado |
 | UC03 | A3 — editar enquanto Em Elaboração ou Aguardando Retorno | [IMPLEMENTADO] | Teste de recálculo com histórico executado |
 | UC03 | Exportar orçamento em PDF | [OK] | 65/65 testes; Docker real; Chrome: download, nova aba, erro blob e atalho; PyMuPDF: três itens/arte em 2 páginas, valores idênticos, 12 itens/5 páginas com cabeçalho repetido e blocos inteiros; GET sem evento, POST com histórico compartilhado. Ver README, seção 10 |
-| UC04 | Converter automaticamente em pedido, copiando itens, personalização, artes e valores | [IMPLEMENTADO] | Testes de domínio e de caso de uso executados; teste de integração compilado, não executado |
-| UC04 | Transação única com rollback em caso de falha | [IMPLEMENTADO] | Teste com fakes executado; teste de rollback real (SQLite) compilado, não executado |
+| UC04 | Converter automaticamente em pedido, copiando itens, personalização, artes e valores | [IMPLEMENTADO] | Testes de domínio e de caso de uso executados; teste de integração executado na suíte atual |
+| UC04 | Transação única com rollback em caso de falha | [IMPLEMENTADO] | Rollback comercial e da reserva executados em SQLite; concorrência executada em PostgreSQL |
 | UC04 | Vínculo pedido ↔ orçamento (rastreabilidade) | [IMPLEMENTADO] | FK única `pedidos.orcamento_origem_id` validada no PostgreSQL |
-| UC05 | Histórico de orçamentos e pedidos por cliente, com filtros | [IMPLEMENTADO] | Teste de integração compilado, não executado |
+| UC05 | Histórico de orçamentos e pedidos por cliente, com filtros | [IMPLEMENTADO] | Teste de integração executado na suíte atual |
 | UC05 | A1 — cliente sem histórico mostra mensagem informativa | [IMPLEMENTADO] | Estados vazios nas abas; cliente sem orçamentos no seed |
 | RN9 | Pedido direto bloqueado (422) | [IMPLEMENTADO] | Teste executado; resposta 422 com corpo preservado verificada no proxy do frontend |
 | — | Atualizar status do pedido (uma etapa por vez) e cancelar com motivo | [IMPLEMENTADO] | Testes de domínio executados |
 | — | Dashboard por situação (RF 4.1.4.2) | [IMPLEMENTADO] | Sem teste automatizado |
-| — | Login, logout e sessão | [IMPLEMENTADO] | Proteção de rotas do frontend verificada em execução (redireciona para `/login`); login real contra a API não executado |
+| — | Login, logout e sessão | [IMPLEMENTADO] | Proteção de rotas do frontend verificada em execução (redireciona para `/login`); login real Admin via HTTP executado em 13/11/2026; perfis específicos de estoque ainda são futuros |
 
 ## 2. Tecnologia e requisitos da entrega
 
 | Item | Situação | Evidência |
 |---|---|---|
-| C#/.NET 8 + ASP.NET Core Web API | [IMPLEMENTADO] | Api compilada contra stubs; não executada |
+| C#/.NET 8 + ASP.NET Core Web API | [OK] | Build real e API em Docker com PostgreSQL executados |
 | Clean Architecture (Domain / Application / Infrastructure / Api / tests) | [OK] | Estrutura e dependências entre projetos conferidas; Domain e Application compilados de verdade |
-| EF Core + migrations | [PARCIAL] | Migration escrita manualmente, sem `ModelSnapshot`. DDL equivalente executada no PostgreSQL 16 [OK]; aplicação pelo EF não executada |
-| PostgreSQL real, `decimal` para dinheiro | [OK] | DDL executada: `numeric(10,2)`, 12 tabelas, 47 índices, 22 FKs, 7 checks |
+| EF Core + migrations | [OK] | Sete migrations aplicadas, snapshot adotado, comparação por catálogo sem divergências funcionais e upgrade com dados preservados |
+| PostgreSQL real, decimal para dinheiro/quantidades | [OK] | 18 tabelas; 211 colunas; 65 índices incluindo PKs; 32 FKs; 15 checks; quantidades numeric(12,3) |
 | Swagger | [IMPLEMENTADO] | Configurado com Bearer e comentários XML (geração do XML compilada) |
 | JWT | [IMPLEMENTADO] | Emissão e validação configuradas; cookie repassado pelo proxy verificado na simulação |
 | BCrypt | [IMPLEMENTADO] | Custo 11 |
@@ -61,16 +61,16 @@ A marca [OK] só aparece quando houve execução real, como build, testes, DDL n
 | shadcn/ui | [PARCIAL] | CLI indisponível; componentes próprios no mesmo padrão (Tailwind + Radix) |
 | TanStack Query + Axios centralizado | [OK] | Build; tratamento de 401 → `/login` implementado |
 | Estrutura do frontend (app, components, features, hooks, lib, services, types, utils) | [OK] | Presente |
-| Nada fixo no frontend (listas e opções vindas da API) | [OK] | Produtos, opções, motivos, responsáveis e cidades vêm de endpoints |
-| Docker (`docker compose up --build`) | [IMPLEMENTADO] | Compose e Dockerfiles escritos; imagem do frontend simulada etapa por etapa [OK]; compose não executado (sem Docker) |
+| Indicadores de negócio da API | [OK] | Estoque recebe saldo disponível, pendências, edição e situações permitidas; formatação e valores iniciais editáveis permanecem na UI |
+| Docker (docker compose up --build) | [OK] | Compose completo do zero executado em projeto isolado; API e frontend respondendo |
 | `.env.example` do frontend e do backend (e da raiz) | [OK] | Presentes |
 | Usuário demo `maria.silva@zalekpersonalizados.com.br` | [IMPLEMENTADO] | Seed |
-| Menu Dashboard, Clientes, Orçamentos e Pedidos + rodapé + Sair | [OK] | Build do layout |
+| Menu Dashboard, Clientes, Orçamentos, Pedidos e Estoque + rodapé + Sair | [OK] | Build do layout |
 | Identidade visual fiel | [IMPLEMENTADO] | Tokens de cor e tipografia do protótipo; sem comparação visual lado a lado neste ambiente |
 | Responsivo (desktop-first) | [IMPLEMENTADO] | Grades e tabelas roláveis; não testado em dispositivos |
 | PWA preparado | [PARCIAL] | Manifest e ícone servidos [OK]; sem service worker |
 | Seed com clientes do protótipo | [IMPLEMENTADO] | DVs corrigidos e documentados |
-| Testes (cliente, orçamento, contatos, decisão, aprovação com rollback, histórico) | [PARCIAL] | 44 escritos; 41 executados e aprovados; 3 de integração compilados, não executados |
+| Testes comerciais, PDF, nomes e estoque | [OK] | 88/88 reais; zero ignorados com PostgreSQL configurado; não representa cobertura total de interface |
 | README (frontend :3000, backend :5000, Swagger :5000/swagger) | [OK] | `README.md` |
 
 ## 3. Telas (protótipos T01–T32)
@@ -111,3 +111,20 @@ Todas as telas foram compiladas no build de produção. Nenhuma foi exercitada c
 | T30 Cliente — Observações | [IMPLEMENTADO] | |
 | T31 Cliente com histórico | [IMPLEMENTADO] | Metalúrgica: 6 orçamentos e 3 pedidos no seed, como no protótipo |
 | T32 Orçamentos filtrados | [IMPLEMENTADO] | |
+
+## 4. Fase 2.0 — evidências atuais
+
+| Item | Situação | Evidência |
+|---|---|---|
+| Reserva completa/parcial, ficha ausente e pedido misto | [OK] | EstoqueTransacionalTests e roteiro HTTP |
+| Concorrência sem dupla reserva | [OK] | Duas conexões/transações PostgreSQL, barreira antes do lock, disponível final zero |
+| Rollback da reserva e bloqueio de produção | [OK] | Falha de INSERT desfaz aprovação; pendência retorna 409 sem alterar status |
+| Baixa própria e cancelamento | [OK] | Saldo de outros pedidos preservado; movimento de liberação registrado |
+| Legado explícito e ativação por ficha | [OK] | Testes de controle_materiais false/true e histórico |
+| Reconciliação e índice parcial | [OK] | Fixture PostgreSQL com duplicidade/sobre-reserva; necessidade preservada |
+| Erros/envio pendente e indicadores nas telas | [IMPLEMENTADO] | TypeScript/build passaram; interação visual não executada |
+| Comparação migrations × modelo | [OK] | 18 tabelas/211 colunas, zero divergências funcionais; ordem ignorada por decisão |
+| OS, consumo real e perfis específicos | [NÃO EXECUTADO] | Fases 2.1/2.2 |
+| Complemento automático e seed de estoque | [NÃO EXECUTADO] | Fase 2.1 |
+
+Relatório e dicionário: [08-mvp2.md](08-mvp2.md). [OK] indica somente o que foi executado; não equivale a validação visual de todos os fluxos.

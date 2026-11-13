@@ -26,7 +26,7 @@ docker compose up --build
 
 Na primeira subida, a API:
 1. espera o PostgreSQL aceitar conexões;
-2. aplica a migration;
+2. aplica as migrations pendentes (sete na Fase 2.0);
 3. confere se todas as colunas do modelo existem no banco;
 4. grava os dados de demonstração.
 
@@ -89,7 +89,7 @@ Os dados de demonstração usam **datas relativas**: o "hoje" do protótipo (24/
 7. **Registrar decisão → Aprovado**, informando o meio de contato e a data/hora. Depois confirme **"Aprovar orçamento e gerar pedido?"**.
    - Na mesma transação, o orçamento vira Aprovado e o **pedido #000057 — Aberto** é criado.
    - O pedido herda itens, personalização, artes, valores e condições. O prazo de entrega é contado em dias úteis a partir da aprovação.
-8. **Pedidos → #000057**: faixa de origem com link para o orçamento, **Atualizar status** (Aberto → Em produção → Pronto → Entregue, uma etapa por vez) e **Cancelar pedido** (com motivo obrigatório).
+8. **Pedidos → #000057**: na Fase 2.0, configure fichas e saldo em **Estoque** antes de iniciar produção; ausência de ficha ou saldo mantém a aprovação e gera pendência. Pedidos legados com controle_materiais=false conservam o fluxo manual. No detalhe: faixa de origem com link para o orçamento, **Atualizar status** (Aberto → Em produção → Pronto → Entregue, uma etapa por vez) e **Cancelar pedido** (com motivo obrigatório).
 9. **Cliente Metalúrgica Horizonte**: veja as abas Visão geral, Orçamentos, Pedidos, Observações e Histórico (6 orçamentos e 3 pedidos, como no protótipo). Filtre Orçamentos por período e por "Aprovado".
 10. Outros exemplos:
     - #000116 **Expirado**: expiração automática, sem ação do atendente;
@@ -138,6 +138,8 @@ Documentação interativa em `/swagger`. Para autenticar lá, chame `POST /api/a
 | PDF do orçamento | `POST /api/orcamentos/{id}/exportacoes?inline=true` exporta e registra histórico · `GET /api/orcamentos/{id}/exportar-pdf?inline=true` pré-visualiza sem gravar. Omitir `inline` baixa o arquivo |
 | Pedidos | `GET /api/pedidos` · `GET /api/pedidos/{id}` · `/historico` · `PATCH /api/pedidos/{id}/status` · `POST /api/pedidos` → **sempre 422** |
 | Anexos | `POST /api/anexos` (multipart `arquivo`; PDF, PNG, JPG, AI, CDR; até 20 MB) · `GET /api/anexos/{id}/download?inline=` · `DELETE /api/anexos/{id}` (só anexos ainda não vinculados) |
+| Estoque | GET/POST /api/estoque/materias-primas; PUT …/materias-primas/{id}; PATCH …/materias-primas/{id}/status; GET …/materias-primas/{id}/movimentos; GET /api/estoque/fichas-tecnicas; PUT …/fichas-tecnicas/{produtoId}; GET/POST /api/estoque/compras; PATCH …/compras/{id}/situacao; GET /api/estoque/pendencias |
+| Materiais do pedido | GET/PUT /api/pedidos/{id}/materiais; POST …/materiais/ficha-tecnica |
 | Apoio | `GET /api/dashboard` · `GET /api/produtos` · `GET /api/produtos/opcoes` · `GET /api/usuarios/responsaveis` · `GET /health` |
 
 Não existe exclusão de orçamentos, pedidos ou clientes (RN10): apenas cancelamento, com o histórico preservado.
@@ -148,7 +150,7 @@ Não existe exclusão de orçamentos, pedidos ou clientes (RN10): apenas cancela
 cd backend && ./scripts/testar.sh      # equivalente a: dotnet test Zalek360.sln
 ```
 
-Na entrega inicial eram 44 testes xUnit (a cobertura original abaixo foi preservada). A suíte atual tem **65 testes**, incluindo 17 cenários de documento na Application, 2 de renderização real e 2 de endpoint HTTP. Execute sempre `dotnet test Zalek360.sln` com os pacotes reais.
+Na entrega inicial eram 44 testes xUnit (a cobertura original abaixo foi preservada). A suíte atual tem **88 testes**: os 65 anteriores, 4 de convenção de nomes e 19 cenários de estoque, incluindo concorrência/backfill em PostgreSQL real. Execute sempre `dotnet test Zalek360.sln` com os pacotes reais. Configure ZALEK_TEST_POSTGRES para um banco descartável com permissão de criar bancos; sem ela, os dois testes PostgreSQL são explicitamente ignorados. Veja [docs/08-mvp2.md](docs/08-mvp2.md).
 - **27 de domínio:** cliente, CPF/CNPJ, cálculo, ciclo do orçamento, expiração e pedido.
 - **14 de casos de uso**, com repositórios em memória:
   - duplicidade de documento;
@@ -196,16 +198,20 @@ Depois, siga o roteiro da seção 3. Os stubs verificam tipos e assinaturas, mas
 - construtores e campos exigidos pelo EF;
 - chaves Guid geradas no domínio.
 
-## 8. Migration
+## 8. Migrations
 
-A migration inicial `20260928120000_InitialCreate` foi **escrita manualmente**, espelhando o mapeamento EF, porque o `dotnet ef` não pôde ser instalado. Ela é aplicada automaticamente na inicialização. A API também compara as colunas do modelo com o `information_schema` e se recusa a subir se faltar alguma coluna.
+As cinco migrations publicadas foram preservadas. A linha atual acrescenta 20261112120000_AlinharEsquemaComModelo (manual aprovada) e 20261113031917_EstabilizarReservasMateriais (gerada por EF e revisada com backfill). O ZalekDbContextModelSnapshot foi adotado sem recriar a migration inicial.
 
-Para regenerá-la com a ferramenta oficial (o que também gera o `ModelSnapshot`, necessário para as próximas migrations), use um **banco novo**:
+O banco tem 18 tabelas de negócio, 211 colunas e duas sequências. A API aplica migrations e verifica a presença das colunas; o comparador verifica também tipos, defaults, PKs, FKs, índices e checks.
 
-```bash
-docker compose down -v
-cd backend && ./scripts/recriar-migration-inicial.sh
-```
+Antes de qualquer migration futura:
+
+~~~powershell
+powershell -ExecutionPolicy Bypass -File backend/tools/comparar-esquema/comparar.ps1
+~~~
+
+O script usa Docker isolado, consulta os catálogos em READ ONLY e remove os recursos temporários. Colunas são comparadas como conjunto; a ordem física é ignorada por decisão aprovada. Não regenerar migrations publicadas nem usar recriar-migration-inicial.sh nesta linha de evolução.
+
 
 ## 9. Documentação
 
@@ -218,6 +224,7 @@ cd backend && ./scripts/recriar-migration-inicial.sh
 | [`docs/05-checklists.md`](docs/05-checklists.md) | Checklists de casos de uso, tecnologia e telas |
 | [`docs/06-revisao-da-modelagem.md`](docs/06-revisao-da-modelagem.md) | MANTIDO / ALTERADO / ADICIONADO / REMOVIDO |
 | [`docs/07-insumos-diagramas-der-dicionario.md`](docs/07-insumos-diagramas-der-dicionario.md) | O que atualizar nos diagramas, no DER e no dicionário de dados |
+| [`docs/08-mvp2.md`](docs/08-mvp2.md) | Fase 2.0: decisões, regras, dicionário físico, provas e limites |
 
 ## 10. Exportar orçamento em PDF
 
@@ -253,3 +260,13 @@ Os testes de endpoint cobrem 401, 403, 404 padronizado, `application/pdf`, `Cont
 **Aceite no navegador e no leitor PDF:** login, download com nome do servidor, nova aba, erro JSON recebido como blob, atalho após apresentação e histórico do cliente verificados no Chrome headless contra o Compose isolado. Os PDFs das seis situações foram lidos com PyMuPDF: proposta de três itens com arte em **2 páginas**, total **R$ 12.840,00** igual ao resumo da API, fontes IBM Plex incorporadas, paginação correta e ausência dos textos internos do histórico. Um orçamento de 12 itens/5 páginas confirmou a repetição do cabeçalho e blocos de item inteiros. PDFs e imagens de revisão ficam em `data/validacao-pdf/` (artefatos locais ignorados pelo Git). A inspeção independente pode ser repetida com `python backend/tools/verificacao-pdf/inspecionar_pdf.py data/validacao-pdf` após instalar `pymupdf`.
 
 Após o aceite, `docker compose up --build -d --wait` também atualizou a instância principal de desenvolvimento (portas 3000/5000), preservando os volumes existentes. Login e GET PDF pelo proxy em `http://localhost:3000` retornaram 200, `application/pdf`, `Content-Disposition: inline` com nome saneado e bytes `%PDF`.
+
+## 11. MVP 2 — Fase 2.0
+
+Estoque do Luiz estabilizado: reserva limitada ao saldo livre, pendências por saldo/ficha, bloqueio concorrente por material, baixa transitória somente da reserva do próprio pedido e liberação no cancelamento. A aprovação nunca é bloqueada por saldo ou ficha. A fila em /estoque e o bloco Materiais do pedido mostram as pendências.
+
+pedidos.controle_materiais identifica o legado explicitamente: existentes sem reserva ficam false; existentes com reservas ficam true; novas aprovações nascem true. Aplicar ficha em legado Aberto ativa o controle e registra histórico.
+
+**Verificado em 13/11/2026:** 88/88 testes reais (zero ignorados, PostgreSQL configurado), TypeScript, build, Compose completo do zero, sete migrations × modelo sem divergências funcionais, upgrade com contagens/hashes preservados e roteiro manual HTTP de saldo suficiente/insuficiente, ficha ausente, início e cancelamento. Navegação visual desta fase: NÃO EXECUTADA.
+
+Dicionário físico, decisões D1–D9, RN 11–28, situação e limites estão em [docs/08-mvp2.md](docs/08-mvp2.md). Complemento automático, perfis específicos e seed de estoque são 2.1; OS/consumo real são 2.2. As fases seguintes não foram implementadas.
