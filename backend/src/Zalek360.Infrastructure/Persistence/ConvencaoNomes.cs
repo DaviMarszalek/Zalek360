@@ -1,4 +1,5 @@
 using System.Text;
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -17,24 +18,47 @@ internal static class ConvencaoNomes
         {
             var tabela = entidade.GetTableName();
             if (tabela is null) continue;
+            tabela = Limitar(tabela);
+            entidade.SetTableName(tabela);
 
             foreach (var propriedade in entidade.GetProperties())
                 if (propriedade.FindAnnotation(RelationalAnnotationNames.ColumnName) is null)
-                    propriedade.SetColumnName(SnakeCase(propriedade.Name));
+                    propriedade.SetColumnName(Limitar(SnakeCase(propriedade.Name)));
+                else
+                    propriedade.SetColumnName(Limitar(propriedade.GetColumnName()!));
 
             var pk = entidade.FindPrimaryKey();
             if (pk is not null)
             {
-                pk.SetName($"pk_{tabela}");
+                pk.SetName(Limitar($"pk_{tabela}"));
                 foreach (var p in pk.Properties) p.ValueGenerated = ValueGenerated.Never;
             }
 
             foreach (var fk in entidade.GetForeignKeys())
-                fk.SetConstraintName($"fk_{tabela}_{Colunas(fk.Properties)}");
+                fk.SetConstraintName(Limitar($"fk_{tabela}_{Colunas(fk.Properties)}"));
 
             foreach (var indice in entidade.GetIndexes())
-                indice.SetDatabaseName($"{(indice.IsUnique ? "ux" : "ix")}_{tabela}_{Colunas(indice.Properties)}");
+                indice.SetDatabaseName(Limitar($"{(indice.IsUnique ? "ux" : "ix")}_{tabela}_{Colunas(indice.Properties)}"));
+
+            foreach (var check in entidade.GetCheckConstraints())
+                if (check.Name is { } nome) check.Name = Limitar(nome);
         }
+    }
+
+    /// <summary>PostgreSQL limita identificadores a 63 bytes. SHA-256 evita colisões por truncamento e é estável entre processos.</summary>
+    public static string Limitar(string nome)
+    {
+        if (Encoding.UTF8.GetByteCount(nome) <= 63) return nome;
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(nome)))[..8].ToLowerInvariant();
+        var prefixo = new StringBuilder();
+        var bytes = 0;
+        foreach (var rune in nome.EnumerateRunes())
+        {
+            if (bytes + rune.Utf8SequenceLength > 54) break;
+            prefixo.Append(rune.ToString());
+            bytes += rune.Utf8SequenceLength;
+        }
+        return $"{prefixo}_{hash}";
     }
 
     private static string Colunas(IEnumerable<IMutableProperty> propriedades) =>

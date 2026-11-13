@@ -192,7 +192,8 @@ public sealed class Cenario
     private static Domain.Entities.Usuario Usuario_(string nome) =>
         Domain.Entities.Usuario.Criar(nome, "maria.silva@zalekpersonalizados.com.br", "hash", PerfilUsuario.Atendente, Dados.Agora.AddYears(-1), Dados.UsuarioId);
 
-    public Application.Services.OrcamentoService Orcamentos() => new(Repos, Repos, Repos, Repos, Repos, Repos, Consultas, Numerador, Uow, Relogio, Usuario);
+    public Application.Services.OrcamentoService Orcamentos() => new(Repos, Repos, Repos, Repos, Repos, Repos, Consultas, Numerador, Uow, Relogio, Usuario,
+        new Application.Services.EstoqueService(new EstoqueSemFichaFake(), Uow, Relogio, Repos, new ConsultasEstoqueFake(), Repos, new ConsultasEstoqueFake()));
     public Application.Services.ClienteService Clientes() => new(Repos, Consultas, Uow, Relogio, Usuario);
     public Application.Services.ExpiracaoOrcamentoService Expiracao() => new(Repos, Uow, Relogio);
 
