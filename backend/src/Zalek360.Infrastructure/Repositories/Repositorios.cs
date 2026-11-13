@@ -10,10 +10,33 @@ internal sealed class EstoqueRepository : IEstoqueRepository
 {
     private readonly ZalekDbContext _db;
     public EstoqueRepository(ZalekDbContext db) => _db = db;
+    public async Task<IReadOnlyList<MateriaPrima>> BloquearMateriasAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct)
+    {
+        if (ids.Count == 0) return Array.Empty<MateriaPrima>();
+        List<MateriaPrima> materiais;
+        if (_db.Database.IsNpgsql())
+        {
+            if (_db.Database.CurrentTransaction is null) throw new InvalidOperationException("O bloqueio de estoque exige uma transação.");
+            var valores = ids.Distinct().ToArray();
+            materiais = await _db.MateriasPrimas.FromSqlInterpolated($"SELECT * FROM materias_primas WHERE id = ANY({valores}) ORDER BY id FOR UPDATE").ToListAsync(ct);
+            // Includes anteriores podem ter carregado um saldo anterior à espera pelo lock.
+            foreach (var material in materiais) await _db.Entry(material).ReloadAsync(ct);
+        }
+        else materiais = await _db.MateriasPrimas.Where(x => ids.Contains(x.Id)).OrderBy(x => x.Id).ToListAsync(ct);
+        return materiais;
+    }
+    public async Task<IReadOnlyList<PendenciaFichaTecnicaPedido>> ListarPendenciasPedidoAsync(Guid id, CancellationToken ct) =>
+        await _db.PendenciasFichaTecnicaPedido.Where(x => x.PedidoId == id && x.ResolvidaEm == null).ToListAsync(ct);
+    public void Adicionar(PendenciaFichaTecnicaPedido pendencia) => _db.PendenciasFichaTecnicaPedido.Add(pendencia);
     public async Task<IReadOnlyList<MateriaPrima>> ListarMateriasAsync(CancellationToken ct) => await _db.MateriasPrimas.AsNoTracking().OrderBy(x => x.Nome).ToListAsync(ct);
     public Task<MateriaPrima?> ObterMateriaAsync(Guid id, CancellationToken ct) => _db.MateriasPrimas.FirstOrDefaultAsync(x => x.Id == id, ct);
     public async Task<IReadOnlyList<CompraMateriaPrima>> ListarComprasAsync(CancellationToken ct) => await _db.ComprasMateriasPrimas.AsNoTracking().Include(x => x.MateriaPrima).OrderBy(x => x.DataPrevista).ThenBy(x => x.CriadaEm).ToListAsync(ct);
-    public Task<CompraMateriaPrima?> ObterCompraAsync(Guid id, CancellationToken ct) => _db.ComprasMateriasPrimas.Include(x => x.MateriaPrima).FirstOrDefaultAsync(x => x.Id == id, ct);
+    public async Task<CompraMateriaPrima?> ObterCompraAsync(Guid id, CancellationToken ct)
+    {
+        if (_db.Database.IsNpgsql() && _db.Database.CurrentTransaction is not null)
+            await _db.Database.ExecuteSqlInterpolatedAsync($"SELECT id FROM compras_materias_primas WHERE id = {id} FOR UPDATE", ct);
+        return await _db.ComprasMateriasPrimas.Include(x => x.MateriaPrima).FirstOrDefaultAsync(x => x.Id == id, ct);
+    }
     public Task<bool> NomeMateriaExisteAsync(string nome, Guid? excetoId, CancellationToken ct) => _db.MateriasPrimas.AnyAsync(x => x.Nome.ToLower() == nome.Trim().ToLower() && (!excetoId.HasValue || x.Id != excetoId.Value), ct);
     public async Task<IReadOnlyList<FichaTecnicaMaterial>> ListarFichasAsync(CancellationToken ct) => await _db.FichasTecnicasMateriasPrimas.AsNoTracking().ToListAsync(ct);
     public async Task<IReadOnlyList<FichaTecnicaMaterial>> ListarFichasPorProdutosAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
@@ -95,8 +118,12 @@ internal sealed class PedidoRepository : IPedidoRepository
     private readonly ZalekDbContext _db;
     public PedidoRepository(ZalekDbContext db) => _db = db;
 
-    public Task<Pedido?> ObterParaAlteracaoAsync(Guid id, CancellationToken ct) =>
-        _db.Pedidos.FirstOrDefaultAsync(p => p.Id == id, ct);
+    public async Task<Pedido?> ObterParaAlteracaoAsync(Guid id, CancellationToken ct)
+    {
+        if (_db.Database.IsNpgsql() && _db.Database.CurrentTransaction is not null)
+            await _db.Database.ExecuteSqlInterpolatedAsync($"SELECT id FROM pedidos WHERE id = {id} FOR UPDATE", ct);
+        return await _db.Pedidos.Include(p => p.Itens).FirstOrDefaultAsync(p => p.Id == id, ct);
+    }
 
     public void Adicionar(Pedido pedido) => _db.Pedidos.Add(pedido);
 }

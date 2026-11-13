@@ -86,7 +86,7 @@ public sealed record ContatoDto(Guid Id, MeioContato Tipo, DateTime DataHora, st
 public sealed record DecisaoRequest(
     ResultadoDecisao? Resultado, MeioContato? MeioContato, DateTimeOffset? DataHora, string? Motivo, string? Observacao, int? Versao);
 
-public sealed record DecisaoResultadoDto(OrcamentoDetalheDto Orcamento, PedidoVinculadoDto? PedidoGerado);
+public sealed record DecisaoResultadoDto(OrcamentoDetalheDto Orcamento, PedidoVinculadoDto? PedidoGerado, MateriaisPedidoDto? Materiais = null);
 
 /// <summary>Opções exibidas no formulário de orçamento (nada fica fixo no frontend).</summary>
 public sealed record OpcoesOrcamentoDto(

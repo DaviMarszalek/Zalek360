@@ -14,6 +14,9 @@ public sealed class EstoqueController : ControllerBase
     private readonly EstoqueService _service;
     public EstoqueController(EstoqueService service) => _service = service;
 
+    [HttpGet("pendencias")]
+    public Task<IReadOnlyList<PendenciaEstoquePedidoDto>> ListarPendencias(CancellationToken ct) => _service.ListarPendenciasAsync(ct);
+
     [HttpGet("materias-primas")]
     public Task<IReadOnlyList<MateriaPrimaDto>> ListarMaterias(CancellationToken ct) => _service.ListarMateriasAsync(ct);
     [HttpGet("materias-primas/{id:guid}/movimentos")]
@@ -52,12 +55,12 @@ public sealed class MateriaisPedidoController : ControllerBase
     public MateriaisPedidoController(EstoqueService service) => _service = service;
 
     [HttpGet]
-    public Task<IReadOnlyList<ReservaPedidoDto>> Listar(Guid pedidoId, CancellationToken ct) => _service.ListarReservasPedidoAsync(pedidoId, ct);
+    public Task<MateriaisPedidoDto> Listar(Guid pedidoId, CancellationToken ct) => _service.ListarReservasPedidoAsync(pedidoId, ct);
 
     [HttpPost("ficha-tecnica")]
-    public Task<IReadOnlyList<ReservaPedidoDto>> AplicarFicha(Guid pedidoId, CancellationToken ct) => _service.AplicarFichaPedidoAsync(pedidoId, ct);
+    public Task<MateriaisPedidoDto> AplicarFicha(Guid pedidoId, CancellationToken ct) => _service.AplicarFichaPedidoAsync(pedidoId, ct);
 
     [HttpPut]
-    public Task<IReadOnlyList<ReservaPedidoDto>> Atualizar(Guid pedidoId, [FromBody] IReadOnlyList<ReservaPedidoRequest> linhas, CancellationToken ct) =>
+    public Task<MateriaisPedidoDto> Atualizar(Guid pedidoId, [FromBody] IReadOnlyList<ReservaPedidoRequest> linhas, CancellationToken ct) =>
         _service.AtualizarReservasPedidoAsync(pedidoId, linhas, ct);
 }

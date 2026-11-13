@@ -767,6 +767,11 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(12,3)")
                         .HasColumnName("quantidade_disponivel");
 
+                    b.Property<decimal>("SaldoReservado")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("saldo_reservado");
+
                     b.Property<string>("Unidade")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -788,6 +793,8 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                     b.ToTable("materias_primas", null, t =>
                         {
                             t.HasCheckConstraint("ck_materias_primas_quantidades", "quantidade_disponivel >= 0 AND estoque_minimo >= 0");
+
+                            t.HasCheckConstraint("ck_materias_primas_reservado", "CAST(saldo_reservado AS NUMERIC) >= 0 AND CAST(saldo_reservado AS NUMERIC) <= CAST(quantidade_disponivel AS NUMERIC)");
                         });
                 });
 
@@ -814,11 +821,25 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("pedido_id");
 
+                    b.Property<decimal?>("SaldoFisicoApos")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("saldo_fisico_apos");
+
+                    b.Property<decimal?>("SaldoReservadoApos")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("saldo_reservado_apos");
+
                     b.Property<string>("Tipo")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("tipo");
+
+                    b.Property<Guid?>("UsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("usuario_id");
 
                     b.Property<decimal>("Variacao")
                         .HasPrecision(12, 3)
@@ -830,6 +851,9 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PedidoId")
                         .HasDatabaseName("ix_movimentos_materias_primas_pedido_id");
+
+                    b.HasIndex("UsuarioId")
+                        .HasDatabaseName("ix_movimentos_materias_primas_usuario_id");
 
                     b.HasIndex("MateriaPrimaId", "CriadoEm")
                         .HasDatabaseName("ix_movimentos_materias_primas_materia_prima_id_criado_em");
@@ -1027,6 +1051,11 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("condicao_pagamento");
 
+                    b.Property<bool>("ControleMateriais")
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("controle_materiais");
+
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("data_criacao");
@@ -1138,6 +1167,49 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Zalek360.Domain.Entities.PendenciaFichaTecnicaPedido", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CriadaEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criada_em");
+
+                    b.Property<Guid>("PedidoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pedido_id");
+
+                    b.Property<Guid>("ProdutoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("produto_id");
+
+                    b.Property<int>("QuantidadeProduto")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantidade_produto");
+
+                    b.Property<DateTime?>("ResolvidaEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resolvida_em");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pendencias_ficha_tecnica_pedido");
+
+                    b.HasIndex("ProdutoId")
+                        .HasDatabaseName("ix_pendencias_ficha_tecnica_pedido_produto_id");
+
+                    b.HasIndex("PedidoId", "ProdutoId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_pendencias_ficha_tecnica_pedido_pedido_id_produto_id")
+                        .HasFilter("resolvida_em IS NULL");
+
+                    b.ToTable("pendencias_ficha_tecnica_pedido", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_pendencias_ficha_quantidade", "quantidade_produto > 0");
+                        });
+                });
+
             modelBuilder.Entity("Zalek360.Domain.Entities.Produto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1197,11 +1269,21 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(12,3)")
                         .HasColumnName("quantidade");
 
+                    b.Property<decimal>("QuantidadeReservada")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("quantidade_reservada");
+
                     b.Property<string>("Situacao")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("situacao");
+
+                    b.Property<int>("Versao")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("versao");
 
                     b.HasKey("Id")
                         .HasName("pk_reservas_materias_primas_pedido");
@@ -1209,12 +1291,19 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                     b.HasIndex("MateriaPrimaId")
                         .HasDatabaseName("ix_reservas_materias_primas_pedido_materia_prima_id");
 
+                    b.HasIndex("PedidoId", "MateriaPrimaId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_reservas_materias_primas_pedido_pedido_id_materia_prima_id")
+                        .HasFilter("situacao = 'Reservada'");
+
                     b.HasIndex("PedidoId", "MateriaPrimaId", "Situacao")
                         .HasDatabaseName("ix_reservas_materias_primas_pedido_pedido_id_materia_p_da9f39ed");
 
                     b.ToTable("reservas_materias_primas_pedido", null, t =>
                         {
                             t.HasCheckConstraint("ck_reservas_materias_primas_quantidade", "quantidade > 0");
+
+                            t.HasCheckConstraint("ck_reservas_materias_primas_reservada", "CAST(quantidade_reservada AS NUMERIC) >= 0 AND CAST(quantidade_reservada AS NUMERIC) <= CAST(quantidade AS NUMERIC)");
                         });
                 });
 
@@ -1433,6 +1522,12 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_movimentos_materias_primas_pedido_id");
 
+                    b.HasOne("Zalek360.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_movimentos_materias_primas_usuario_id");
+
                     b.Navigation("MateriaPrima");
 
                     b.Navigation("Pedido");
@@ -1506,6 +1601,23 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                     b.Navigation("OrcamentoOrigem");
 
                     b.Navigation("Responsavel");
+                });
+
+            modelBuilder.Entity("Zalek360.Domain.Entities.PendenciaFichaTecnicaPedido", b =>
+                {
+                    b.HasOne("Zalek360.Domain.Entities.Pedido", null)
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pendencias_ficha_tecnica_pedido_pedido_id");
+
+                    b.HasOne("Zalek360.Domain.Entities.Produto", null)
+                        .WithMany()
+                        .HasForeignKey("ProdutoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pendencias_ficha_tecnica_pedido_produto_id");
                 });
 
             modelBuilder.Entity("Zalek360.Domain.Entities.ReservaMateriaPrimaPedido", b =>

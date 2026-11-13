@@ -7,6 +7,12 @@ namespace Zalek360.Tests.Suporte;
 /// <summary>Catálogo sem fichas dos testes comerciais originais. Operações não exercitadas falham explicitamente.</summary>
 public sealed class EstoqueSemFichaFake : IEstoqueRepository
 {
+    private readonly List<PendenciaFichaTecnicaPedido> _pendencias = new();
+    public Task<IReadOnlyList<MateriaPrima>> BloquearMateriasAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
+        ids.Count == 0 ? Task.FromResult<IReadOnlyList<MateriaPrima>>(Array.Empty<MateriaPrima>()) : throw new NotSupportedException();
+    public Task<IReadOnlyList<PendenciaFichaTecnicaPedido>> ListarPendenciasPedidoAsync(Guid id, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<PendenciaFichaTecnicaPedido>>(_pendencias.Where(x => x.PedidoId == id && x.ResolvidaEm == null).ToList());
+    public void Adicionar(PendenciaFichaTecnicaPedido pendencia) => _pendencias.Add(pendencia);
     public Task<IReadOnlyList<FichaTecnicaMaterial>> ListarFichasPorProdutosAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<FichaTecnicaMaterial>>(Array.Empty<FichaTecnicaMaterial>());
     public Task<IReadOnlyList<MateriaPrima>> ListarMateriasAsync(CancellationToken ct) => throw new NotSupportedException();
@@ -16,7 +22,7 @@ public sealed class EstoqueSemFichaFake : IEstoqueRepository
     public Task<bool> NomeMateriaExisteAsync(string nome, Guid? excetoId, CancellationToken ct) => throw new NotSupportedException();
     public Task<IReadOnlyList<FichaTecnicaMaterial>> ListarFichasAsync(CancellationToken ct) => throw new NotSupportedException();
     public Task<IReadOnlyList<FichaTecnicaMaterial>> ListarFichasPorProdutoAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
-    public Task<IReadOnlyList<ReservaMateriaPrimaPedido>> ListarReservasPedidoAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
+    public Task<IReadOnlyList<ReservaMateriaPrimaPedido>> ListarReservasPedidoAsync(Guid id, CancellationToken ct) => Task.FromResult<IReadOnlyList<ReservaMateriaPrimaPedido>>(Array.Empty<ReservaMateriaPrimaPedido>());
     public Task<IReadOnlyList<ReservaMateriaPrimaPedido>> ListarReservasAsync(CancellationToken ct) => throw new NotSupportedException();
     public Task<IReadOnlyList<MovimentoMateriaPrima>> ListarMovimentosAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
     public void RemoverFichas(IEnumerable<FichaTecnicaMaterial> fichas) => throw new NotSupportedException();
@@ -29,6 +35,7 @@ public sealed class EstoqueSemFichaFake : IEstoqueRepository
 
 public sealed class ConsultasEstoqueFake : ICatalogoQueries, IPedidoQueries
 {
+    public Task<IReadOnlyList<PendenciaEstoquePedidoDto>> ListarPendenciasMateriaisAsync(CancellationToken ct) => throw new NotSupportedException();
     public Task<IReadOnlyList<ProdutoDto>> ListarProdutosAsync(CancellationToken ct) => throw new NotSupportedException();
     public Task<IReadOnlyList<UsuarioDto>> ListarResponsaveisAsync(CancellationToken ct) => throw new NotSupportedException();
     public Task<ListaComContagemDto<PedidoListaItemDto>> ListarAsync(PedidoFiltro filtro, CancellationToken ct) => throw new NotSupportedException();

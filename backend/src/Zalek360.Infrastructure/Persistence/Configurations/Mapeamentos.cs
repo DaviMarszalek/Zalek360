@@ -48,11 +48,15 @@ internal sealed class MateriaPrimaMap : IEntityTypeConfiguration<MateriaPrima>
     {
         b.ToTable("materias_primas", t => {
             t.HasCheckConstraint("ck_materias_primas_quantidades", "quantidade_disponivel >= 0 AND estoque_minimo >= 0");
+            // SQLite armazena decimal como texto; CAST evita comparacao lexicografica (6 > 10).
+            t.HasCheckConstraint("ck_materias_primas_reservado", "CAST(saldo_reservado AS NUMERIC) >= 0 AND CAST(saldo_reservado AS NUMERIC) <= CAST(quantidade_disponivel AS NUMERIC)");
         });
         b.HasKey(x => x.Id);
         b.Property(x => x.Nome).HasMaxLength(120).IsRequired();
         b.Property(x => x.Unidade).HasMaxLength(20).IsRequired();
         b.Property(x => x.QuantidadeDisponivel).HasPrecision(12, 3);
+        b.Property(x => x.SaldoReservado).HasPrecision(12, 3);
+        b.Ignore(x => x.SaldoDisponivel);
         b.Property(x => x.EstoqueMinimo).HasPrecision(12, 3);
         b.Property(x => x.Versao).IsConcurrencyToken();
         b.HasIndex(x => x.Nome).IsUnique();
@@ -90,13 +94,20 @@ internal sealed class ReservaMateriaPrimaPedidoMap : IEntityTypeConfiguration<Re
 {
     public void Configure(EntityTypeBuilder<ReservaMateriaPrimaPedido> b)
     {
-        b.ToTable("reservas_materias_primas_pedido", t => t.HasCheckConstraint("ck_reservas_materias_primas_quantidade", "quantidade > 0"));
+        b.ToTable("reservas_materias_primas_pedido", t => {
+            t.HasCheckConstraint("ck_reservas_materias_primas_quantidade", "quantidade > 0");
+            t.HasCheckConstraint("ck_reservas_materias_primas_reservada", "CAST(quantidade_reservada AS NUMERIC) >= 0 AND CAST(quantidade_reservada AS NUMERIC) <= CAST(quantidade AS NUMERIC)");
+        });
         b.HasKey(x => x.Id);
         b.Property(x => x.Quantidade).HasPrecision(12, 3);
+        b.Property(x => x.QuantidadeReservada).HasPrecision(12, 3);
+        b.Ignore(x => x.QuantidadePendente);
+        b.Property(x => x.Versao).IsConcurrencyToken();
         b.Property(x => x.Situacao).HasConversion<string>().HasMaxLength(Tipos.Enum).IsRequired();
         b.HasOne<Pedido>().WithMany().HasForeignKey(x => x.PedidoId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.MateriaPrima).WithMany().HasForeignKey(x => x.MateriaPrimaId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => new { x.PedidoId, x.MateriaPrimaId, x.Situacao });
+        b.HasIndex(x => new { x.PedidoId, x.MateriaPrimaId }).IsUnique().HasFilter("situacao = 'Reservada'");
     }
 }
 
@@ -107,12 +118,27 @@ internal sealed class MovimentoMateriaPrimaMap : IEntityTypeConfiguration<Movime
         b.ToTable("movimentos_materias_primas", t => t.HasCheckConstraint("ck_movimentos_materias_primas_variacao", "variacao <> 0"));
         b.HasKey(x => x.Id);
         b.Property(x => x.Variacao).HasPrecision(12, 3);
+        b.Property(x => x.SaldoFisicoApos).HasPrecision(12, 3);
+        b.Property(x => x.SaldoReservadoApos).HasPrecision(12, 3);
+        b.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
         b.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(Tipos.Enum).IsRequired();
         b.Property(x => x.Observacao).HasMaxLength(300);
         b.HasOne(x => x.MateriaPrima).WithMany().HasForeignKey(x => x.MateriaPrimaId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Pedido).WithMany().HasForeignKey(x => x.PedidoId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => new { x.MateriaPrimaId, x.CriadoEm });
         b.HasIndex(x => x.PedidoId);
+    }
+}
+
+internal sealed class PendenciaFichaTecnicaPedidoMap : IEntityTypeConfiguration<PendenciaFichaTecnicaPedido>
+{
+    public void Configure(EntityTypeBuilder<PendenciaFichaTecnicaPedido> b)
+    {
+        b.ToTable("pendencias_ficha_tecnica_pedido", t => t.HasCheckConstraint("ck_pendencias_ficha_quantidade", "quantidade_produto > 0"));
+        b.HasKey(x => x.Id);
+        b.HasOne<Pedido>().WithMany().HasForeignKey(x => x.PedidoId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<Produto>().WithMany().HasForeignKey(x => x.ProdutoId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => new { x.PedidoId, x.ProdutoId }).IsUnique().HasFilter("resolvida_em IS NULL");
     }
 }
 
@@ -285,6 +311,7 @@ internal sealed class PedidoMap : IEntityTypeConfiguration<Pedido>
     {
         b.ToTable("pedidos", t => t.HasCheckConstraint("ck_pedidos_valores", "desconto >= 0 AND valor_total >= 0"));
         b.HasKey(x => x.Id);
+        b.Property(x => x.ControleMateriais).HasDefaultValue(true).ValueGeneratedNever();
         b.Property(x => x.Situacao).HasConversion<string>().HasMaxLength(Tipos.Enum).IsRequired();
         b.Property(x => x.PrazoEstimadoDiasUteis).HasColumnName("prazo_estimado");
         b.Property(x => x.CondicaoPagamento).HasMaxLength(100).IsRequired();

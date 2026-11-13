@@ -4,6 +4,9 @@ namespace Zalek360.Application.Interfaces;
 
 public interface IEstoqueRepository
 {
+    Task<IReadOnlyList<MateriaPrima>> BloquearMateriasAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct);
+    Task<IReadOnlyList<PendenciaFichaTecnicaPedido>> ListarPendenciasPedidoAsync(Guid pedidoId, CancellationToken ct);
+    void Adicionar(PendenciaFichaTecnicaPedido pendencia);
     Task<IReadOnlyList<MateriaPrima>> ListarMateriasAsync(CancellationToken ct);
     Task<MateriaPrima?> ObterMateriaAsync(Guid id, CancellationToken ct);
     Task<IReadOnlyList<CompraMateriaPrima>> ListarComprasAsync(CancellationToken ct);

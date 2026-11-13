@@ -155,7 +155,8 @@ public sealed class OrcamentoService
         }
 
         var detalhe = await _consultas.ObterDetalheAsync(id, ct);
-        return new DecisaoResultadoDto(detalhe, detalhe.Pedido);
+        return new DecisaoResultadoDto(detalhe, detalhe.Pedido,
+            pedido is null ? null : await _estoque.ListarReservasPedidoAsync(pedido.Id, ct));
     }
 
     // ------------------------------------------------------------------ auxiliares
