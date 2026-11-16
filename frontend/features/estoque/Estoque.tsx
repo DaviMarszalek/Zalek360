@@ -133,13 +133,17 @@ export function Estoque() {
             </tbody></table></div>}
     </Cartao>
 
-    <section className="mt-7">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="text-base font-semibold text-texto">Fichas técnicas</h2><p className="mt-0.5 text-sm text-texto-fraco">Defina os materiais consumidos por unidade de produto.</p></div>
-        {podeGerenciarFichas && <Botao variante="secundaria" icone={<ClipboardList className="h-4 w-4" />} onClick={() => setModal("produtos")}>Produtos personalizados</Botao>}
-      </div>
-      <Cartao><p className="text-sm text-texto-suave">Consulte o catálogo e configure a ficha técnica de cada produto personalizado.</p></Cartao>
-    </section>
+    {usuario && <section className="mt-7">
+      {podeGerenciarFichas ? <>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div><h2 className="text-base font-semibold text-texto">Fichas técnicas</h2><p className="mt-0.5 text-sm text-texto-fraco">Defina os materiais consumidos por unidade de produto.</p></div>
+          <Botao variante="secundaria" icone={<ClipboardList className="h-4 w-4" />} onClick={() => setModal("produtos")}>Produtos personalizados</Botao>
+        </div>
+        <Cartao><p className="text-sm text-texto-suave">Consulte o catálogo e configure a ficha técnica de cada produto personalizado.</p></Cartao>
+      </> : <Cartao titulo="Fichas técnicas">
+        <p role="status" className="text-sm text-texto-suave">Acesso restrito: somente Gestor ou Administrador pode consultar fichas técnicas e produtos personalizados. Os materiais dos pedidos permanecem disponíveis para consulta.</p>
+      </Cartao>}
+    </section>}
 
     <section className="mt-7">
       <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-base font-semibold text-texto">Compras previstas e pedidos</h2><p className="mt-0.5 text-sm text-texto-fraco">Os itens entram no saldo disponível quando forem marcados como recebidos.</p></div><Botao variante="secundaria" tamanho="sm" icone={<Plus className="h-3.5 w-3.5" />} onClick={() => abrirCompra()}>Adicionar compra</Botao></div>
@@ -168,7 +172,28 @@ export function Estoque() {
       {fichas.isError ? <ErroCarregamento mensagem={erroDaApi(fichas.error).message} aoTentar={() => fichas.refetch()} />
         : fichas.isLoading ? <p className="py-8 text-center text-sm text-texto-fraco">Carregando produtos…</p>
           : fichas.data?.length === 0 ? <EstadoVazio titulo="Nenhum produto cadastrado" descricao="Cadastre um produto personalizado para incluí-lo no catálogo dos orçamentos." />
-            : <div className="overflow-x-auto"><table className="tabela w-full min-w-[680px] text-sm">
+            : <>
+              <div className="space-y-2 md:hidden">
+                {fichas.data?.map((produto) => <article key={produto.produtoId} className="flex items-start gap-3 rounded-lg border border-borda p-3">
+                  <button type="button" className="min-w-0 flex-1 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria" onClick={() => abrirFicha(produto)}
+                    aria-label={`${produto.temFicha ? "Editar" : "Configurar"} ficha técnica de ${produto.produtoNome}`}>
+                    <span className="block break-words font-medium text-texto">{produto.produtoNome}</span>
+                    {produto.descricaoBase && <span className="mt-1 block whitespace-normal break-words text-xs text-texto-fraco">{produto.descricaoBase}</span>}
+                    <span className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-texto-suave">{produto.categoria}</span>
+                      <span className={`rounded-full px-2 py-1 text-xs ${produto.temFicha ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
+                        {produto.temFicha ? "Com ficha técnica" : "Pendente"}
+                      </span>
+                    </span>
+                  </button>
+                  <AcoesLinha acoes={[{
+                    rotulo: `${produto.temFicha ? "Editar" : "Configurar"} ficha técnica de ${produto.produtoNome}`,
+                    icone: produto.temFicha ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />,
+                    aoAcionar: () => abrirFicha(produto),
+                  }]} />
+                </article>)}
+              </div>
+              <div className="hidden overflow-x-auto md:block"><table className="tabela w-full min-w-[680px] text-sm">
               <thead><tr><th>Produto</th><th>Categoria</th><th>Ficha técnica</th><th className="w-16 text-right">Ações</th></tr></thead>
               <tbody>{fichas.data?.map((produto) => <tr key={produto.produtoId} className="group cursor-pointer hover:bg-slate-50/60" tabIndex={0}
                 onClick={() => abrirFicha(produto)}
@@ -187,7 +212,8 @@ export function Estoque() {
                   aoAcionar: () => abrirFicha(produto),
                 }]} /></td>
               </tr>)}</tbody>
-            </table></div>}
+              </table></div>
+            </>}
     </Modal>
 
     <Modal aberto={modal === "produto-novo"} aoFechar={() => { if (!salvarProduto.isPending) setModal("produtos"); }} titulo="Cadastrar produto personalizado"

@@ -41,7 +41,7 @@ export function MateriaisDoPedido({ pedido }: { pedido: PedidoDetalhe }) {
     },
     onError: (e) => setErro(erroDaApi(e).message),
   });
-  const editavel = !!reservas.data?.podeEditarMateriais;
+  const editavel = podeAplicarFicha && !!reservas.data?.podeEditarMateriais;
   const podeAplicarFichaDoPedido = !!reservas.data?.podeAplicarFicha && podeAplicarFicha;
   const ocupado = salvar.isPending || aplicarFicha.isPending;
   const registros = reservas.data?.reservas ?? [];
