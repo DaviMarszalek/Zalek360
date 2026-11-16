@@ -280,7 +280,7 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
 
                     b.ToTable("compras_materias_primas", null, t =>
                         {
-                            t.HasCheckConstraint("ck_compras_materias_primas_quantidade", "quantidade > 0");
+                            t.HasCheckConstraint("ck_compras_materias_primas_quantidade", "quantidade > 0 AND quantidade = CAST(quantidade AS INTEGER)");
                         });
                 });
 
@@ -424,7 +424,7 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
 
                     b.ToTable("fichas_tecnicas_materias_primas", null, t =>
                         {
-                            t.HasCheckConstraint("ck_fichas_tecnicas_quantidade", "quantidade_por_unidade > 0");
+                            t.HasCheckConstraint("ck_fichas_tecnicas_quantidade", "quantidade_por_unidade > 0 AND quantidade_por_unidade = CAST(quantidade_por_unidade AS INTEGER)");
                         });
                 });
 
@@ -792,7 +792,7 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
 
                     b.ToTable("materias_primas", null, t =>
                         {
-                            t.HasCheckConstraint("ck_materias_primas_quantidades", "quantidade_disponivel >= 0 AND estoque_minimo >= 0");
+                            t.HasCheckConstraint("ck_materias_primas_quantidades", "quantidade_disponivel >= 0 AND estoque_minimo >= 0 AND quantidade_disponivel = CAST(quantidade_disponivel AS INTEGER) AND estoque_minimo = CAST(estoque_minimo AS INTEGER) AND saldo_reservado = CAST(saldo_reservado AS INTEGER)");
 
                             t.HasCheckConstraint("ck_materias_primas_reservado", "CAST(saldo_reservado AS NUMERIC) >= 0 AND CAST(saldo_reservado AS NUMERIC) <= CAST(quantidade_disponivel AS NUMERIC)");
                         });
@@ -860,7 +860,9 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
 
                     b.ToTable("movimentos_materias_primas", null, t =>
                         {
-                            t.HasCheckConstraint("ck_movimentos_materias_primas_variacao", "variacao <> 0");
+                            t.HasCheckConstraint("ck_movimentos_materias_primas_saldos_inteiros", "(saldo_fisico_apos IS NULL OR saldo_fisico_apos = CAST(saldo_fisico_apos AS INTEGER)) AND (saldo_reservado_apos IS NULL OR saldo_reservado_apos = CAST(saldo_reservado_apos AS INTEGER))");
+
+                            t.HasCheckConstraint("ck_movimentos_materias_primas_variacao", "variacao <> 0 AND variacao = CAST(variacao AS INTEGER)");
                         });
                 });
 
@@ -1301,9 +1303,9 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
 
                     b.ToTable("reservas_materias_primas_pedido", null, t =>
                         {
-                            t.HasCheckConstraint("ck_reservas_materias_primas_quantidade", "quantidade > 0");
+                            t.HasCheckConstraint("ck_reservas_materias_primas_quantidade", "quantidade > 0 AND quantidade = CAST(quantidade AS INTEGER)");
 
-                            t.HasCheckConstraint("ck_reservas_materias_primas_reservada", "CAST(quantidade_reservada AS NUMERIC) >= 0 AND CAST(quantidade_reservada AS NUMERIC) <= CAST(quantidade AS NUMERIC)");
+                            t.HasCheckConstraint("ck_reservas_materias_primas_reservada", "CAST(quantidade_reservada AS NUMERIC) >= 0 AND CAST(quantidade_reservada AS NUMERIC) <= CAST(quantidade AS NUMERIC) AND quantidade_reservada = CAST(quantidade_reservada AS INTEGER)");
                         });
                 });
 

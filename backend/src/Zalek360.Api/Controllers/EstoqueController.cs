@@ -30,8 +30,10 @@ public sealed class EstoqueController : ControllerBase
     public Task<MateriaPrimaDto> DefinirMateriaAtiva(Guid id, [FromBody] AtivoRequest request, CancellationToken ct) => _service.DefinirMateriaAtivaAsync(id, request.Ativo, ct);
 
     [HttpGet("fichas-tecnicas")]
-    public Task<IReadOnlyList<FichaTecnicaDto>> ListarFichas(CancellationToken ct) => _service.ListarFichasAsync(ct);
+    [Authorize(Policy = Politicas.GestorAdministrador)]
+    public Task<IReadOnlyList<ProdutoFichaTecnicaDto>> ListarFichas(CancellationToken ct) => _service.ListarFichasAsync(ct);
     [HttpPut("fichas-tecnicas/{produtoId:guid}")]
+    [Authorize(Policy = Politicas.GestorAdministrador)]
     public Task<FichaTecnicaDto> SalvarFicha(Guid produtoId, [FromBody] FichaTecnicaRequest request, CancellationToken ct) =>
         _service.SalvarFichaAsync(request with { ProdutoId = produtoId }, ct);
 
@@ -58,6 +60,7 @@ public sealed class MateriaisPedidoController : ControllerBase
     public Task<MateriaisPedidoDto> Listar(Guid pedidoId, CancellationToken ct) => _service.ListarReservasPedidoAsync(pedidoId, ct);
 
     [HttpPost("ficha-tecnica")]
+    [Authorize(Policy = Politicas.GestorAdministrador)]
     public Task<MateriaisPedidoDto> AplicarFicha(Guid pedidoId, CancellationToken ct) => _service.AplicarFichaPedidoAsync(pedidoId, ct);
 
     [HttpPut]

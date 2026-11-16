@@ -21,6 +21,7 @@ public static class ConfiguracaoServicos
     {
         services.AddScoped<AuthService>();
         services.AddScoped<ClienteService>();
+        services.AddScoped<ProdutoService>();
         services.AddScoped<EstoqueService>();
         services.AddScoped<OrcamentoService>();
         services.AddScoped<OrcamentoDocumentoService>();
@@ -109,6 +110,7 @@ public static class ConfiguracaoServicos
         {
             o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
             o.AddPolicy(Politicas.Comercial, p => p.RequireAuthenticatedUser().RequireRole(Politicas.PerfisComerciais));
+            o.AddPolicy(Politicas.GestorAdministrador, p => p.RequireAuthenticatedUser().RequireRole("Gestor", "Administrador"));
         });
 
         var origens = configuration.GetSection("Cors:Origens").Get<string[]>() ?? Array.Empty<string>();

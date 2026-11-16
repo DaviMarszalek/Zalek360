@@ -88,6 +88,9 @@ public sealed class RepositoriosFake : IUsuarioRepository, IClienteRepository, I
 
     Task<IReadOnlyList<Produto>> IProdutoRepository.ObterPorIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<Produto>>(_b.Produtos.Where(p => ids.Contains(p.Id)).ToList());
+    Task<bool> IProdutoRepository.NomeProdutoExisteAsync(string nome, CancellationToken ct) =>
+        Task.FromResult(_b.Produtos.Any(p => string.Equals(p.Nome, nome.Trim(), StringComparison.OrdinalIgnoreCase)));
+    void IProdutoRepository.Adicionar(Produto produto) => _b.Produtos.Add(produto);
 
     Task<Orcamento?> IOrcamentoRepository.ObterParaAlteracaoAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Orcamentos.FirstOrDefault(o => o.Id == id));
     public Task<IReadOnlyList<Orcamento>> ListarParaExpiracaoAsync(DateOnly hojeLocal, CancellationToken ct) =>

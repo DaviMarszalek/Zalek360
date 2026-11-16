@@ -25,11 +25,15 @@ export interface Usuario { id: string; nome: string; email: string; perfil: Perf
 export interface LoginResposta { usuario: Usuario; accessToken: string; expiraEm: string; manterConectado: boolean }
 
 export interface Produto { id: string; nome: string; categoria: string; descricaoBase: string | null }
+export interface ProdutoRequisicao { nome: string; categoria: string; descricaoBase: string }
 export interface MateriaPrima { id: string; nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number; quantidadeAReceber: number; quantidadeReservada: number; ativo: boolean; saldoDisponivel: number; quantidadePendente: number; noMinimo: boolean; faltaComprar: number }
 export type SituacaoCompraMateriaPrima = "Planejada" | "Pedido" | "Recebida" | "Cancelada";
 export interface CompraMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; fornecedor: string | null; dataPrevista: string; situacao: SituacaoCompraMateriaPrima; criadaEm: string; aberta: boolean; situacaoDescricao: string; situacoesPermitidas: { valor: SituacaoCompraMateriaPrima; rotulo: string }[] }
 export interface FichaTecnicaLinha { materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidadePorUnidade: number }
 export interface FichaTecnica { produtoId: string; produtoNome: string; materiais: FichaTecnicaLinha[] }
+export interface ProdutoFichaTecnica {
+  produtoId: string; produtoNome: string; categoria: string; descricaoBase: string | null; temFicha: boolean; materiais: FichaTecnicaLinha[];
+}
 export interface ReservaPedidoMaterial { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; situacao: "Reservada" | "Consumida" | "Liberada"; quantidadeReservada: number; quantidadePendente: number; ativa: boolean; consumida: boolean; situacaoDescricao: string }
 export interface PendenciaEstoquePedido { pedidoId: string; pedidoNumero: number; prazoEntrega: string; descricao: string }
 export interface MateriaisPedido { controleMateriais: boolean; podeEditarMateriais: boolean; podeAplicarFicha: boolean; temPendencia: boolean; podeIniciarProducao: boolean; reservas: ReservaPedidoMaterial[]; pendenciasFicha: { produtoId: string; produtoNome: string; quantidadeProduto: number; motivo: string }[] }

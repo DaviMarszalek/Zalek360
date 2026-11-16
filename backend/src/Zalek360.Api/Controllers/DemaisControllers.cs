@@ -76,10 +76,16 @@ public sealed class DashboardController : ControllerBase
 public sealed class ProdutosController : ControllerBase
 {
     private readonly ICatalogoQueries _consultas;
-    public ProdutosController(ICatalogoQueries consultas) => _consultas = consultas;
+    private readonly ProdutoService _service;
+    public ProdutosController(ICatalogoQueries consultas, ProdutoService service) { _consultas = consultas; _service = service; }
 
     [HttpGet]
     public Task<IReadOnlyList<ProdutoDto>> Listar(CancellationToken ct) => _consultas.ListarProdutosAsync(ct);
+
+    [HttpPost]
+    [Authorize(Policy = Politicas.GestorAdministrador)]
+    public async Task<ActionResult<ProdutoDto>> Criar([FromBody] ProdutoRequest request, CancellationToken ct) =>
+        StatusCode(StatusCodes.Status201Created, await _service.CriarAsync(request, ct));
 
     /// <summary>Tipos de personalização e condições de pagamento sugeridos no formulário.</summary>
     [HttpGet("opcoes")]

@@ -90,6 +90,10 @@ internal sealed class ProdutoRepository : IProdutoRepository
     public async Task<IReadOnlyList<Produto>> ObterPorIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
         ids.Count == 0 ? Array.Empty<Produto>() : await _db.Produtos.AsNoTracking().Where(p => ids.Contains(p.Id)).ToListAsync(ct);
 
+    public Task<bool> NomeProdutoExisteAsync(string nome, CancellationToken ct) =>
+        _db.Produtos.AnyAsync(p => p.Nome.ToLower() == nome.Trim().ToLower(), ct);
+
+    public void Adicionar(Produto produto) => _db.Produtos.Add(produto);
 }
 
 internal sealed class OrcamentoRepository : IOrcamentoRepository

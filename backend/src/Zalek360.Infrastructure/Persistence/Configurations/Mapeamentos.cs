@@ -47,7 +47,8 @@ internal sealed class MateriaPrimaMap : IEntityTypeConfiguration<MateriaPrima>
     public void Configure(EntityTypeBuilder<MateriaPrima> b)
     {
         b.ToTable("materias_primas", t => {
-            t.HasCheckConstraint("ck_materias_primas_quantidades", "quantidade_disponivel >= 0 AND estoque_minimo >= 0");
+            t.HasCheckConstraint("ck_materias_primas_quantidades",
+                "quantidade_disponivel >= 0 AND estoque_minimo >= 0 AND quantidade_disponivel = CAST(quantidade_disponivel AS INTEGER) AND estoque_minimo = CAST(estoque_minimo AS INTEGER) AND saldo_reservado = CAST(saldo_reservado AS INTEGER)");
             // SQLite armazena decimal como texto; CAST evita comparacao lexicografica (6 > 10).
             t.HasCheckConstraint("ck_materias_primas_reservado", "CAST(saldo_reservado AS NUMERIC) >= 0 AND CAST(saldo_reservado AS NUMERIC) <= CAST(quantidade_disponivel AS NUMERIC)");
         });
@@ -67,7 +68,8 @@ internal sealed class CompraMateriaPrimaMap : IEntityTypeConfiguration<CompraMat
 {
     public void Configure(EntityTypeBuilder<CompraMateriaPrima> b)
     {
-        b.ToTable("compras_materias_primas", t => t.HasCheckConstraint("ck_compras_materias_primas_quantidade", "quantidade > 0"));
+        b.ToTable("compras_materias_primas", t => t.HasCheckConstraint("ck_compras_materias_primas_quantidade",
+            "quantidade > 0 AND quantidade = CAST(quantidade AS INTEGER)"));
         b.HasKey(x => x.Id);
         b.Property(x => x.Quantidade).HasPrecision(12, 3);
         b.Property(x => x.Fornecedor).HasMaxLength(120);
@@ -81,7 +83,8 @@ internal sealed class FichaTecnicaMaterialMap : IEntityTypeConfiguration<FichaTe
 {
     public void Configure(EntityTypeBuilder<FichaTecnicaMaterial> b)
     {
-        b.ToTable("fichas_tecnicas_materias_primas", t => t.HasCheckConstraint("ck_fichas_tecnicas_quantidade", "quantidade_por_unidade > 0"));
+        b.ToTable("fichas_tecnicas_materias_primas", t => t.HasCheckConstraint("ck_fichas_tecnicas_quantidade",
+            "quantidade_por_unidade > 0 AND quantidade_por_unidade = CAST(quantidade_por_unidade AS INTEGER)"));
         b.HasKey(x => x.Id);
         b.Property(x => x.QuantidadePorUnidade).HasPrecision(12, 3);
         b.HasOne<Produto>().WithMany().HasForeignKey(x => x.ProdutoId).OnDelete(DeleteBehavior.Restrict);
@@ -95,8 +98,10 @@ internal sealed class ReservaMateriaPrimaPedidoMap : IEntityTypeConfiguration<Re
     public void Configure(EntityTypeBuilder<ReservaMateriaPrimaPedido> b)
     {
         b.ToTable("reservas_materias_primas_pedido", t => {
-            t.HasCheckConstraint("ck_reservas_materias_primas_quantidade", "quantidade > 0");
-            t.HasCheckConstraint("ck_reservas_materias_primas_reservada", "CAST(quantidade_reservada AS NUMERIC) >= 0 AND CAST(quantidade_reservada AS NUMERIC) <= CAST(quantidade AS NUMERIC)");
+            t.HasCheckConstraint("ck_reservas_materias_primas_quantidade",
+                "quantidade > 0 AND quantidade = CAST(quantidade AS INTEGER)");
+            t.HasCheckConstraint("ck_reservas_materias_primas_reservada",
+                "CAST(quantidade_reservada AS NUMERIC) >= 0 AND CAST(quantidade_reservada AS NUMERIC) <= CAST(quantidade AS NUMERIC) AND quantidade_reservada = CAST(quantidade_reservada AS INTEGER)");
         });
         b.HasKey(x => x.Id);
         b.Property(x => x.Quantidade).HasPrecision(12, 3);
@@ -115,7 +120,13 @@ internal sealed class MovimentoMateriaPrimaMap : IEntityTypeConfiguration<Movime
 {
     public void Configure(EntityTypeBuilder<MovimentoMateriaPrima> b)
     {
-        b.ToTable("movimentos_materias_primas", t => t.HasCheckConstraint("ck_movimentos_materias_primas_variacao", "variacao <> 0"));
+        b.ToTable("movimentos_materias_primas", t =>
+        {
+            t.HasCheckConstraint("ck_movimentos_materias_primas_variacao",
+                "variacao <> 0 AND variacao = CAST(variacao AS INTEGER)");
+            t.HasCheckConstraint("ck_movimentos_materias_primas_saldos_inteiros",
+                "(saldo_fisico_apos IS NULL OR saldo_fisico_apos = CAST(saldo_fisico_apos AS INTEGER)) AND (saldo_reservado_apos IS NULL OR saldo_reservado_apos = CAST(saldo_reservado_apos AS INTEGER))");
+        });
         b.HasKey(x => x.Id);
         b.Property(x => x.Variacao).HasPrecision(12, 3);
         b.Property(x => x.SaldoFisicoApos).HasPrecision(12, 3);

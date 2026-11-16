@@ -16,11 +16,11 @@ public sealed class MateriaPrima : Entidade
 
     private MateriaPrima() { }
     public static MateriaPrima Criar(string nome, string unidade, decimal quantidade, decimal minimo) => new()
-    { Nome = nome.Trim(), Unidade = unidade.Trim(), QuantidadeDisponivel = quantidade, EstoqueMinimo = minimo };
+    { Nome = nome.Trim(), Unidade = "un", QuantidadeDisponivel = quantidade, EstoqueMinimo = minimo };
     public void Atualizar(string nome, string unidade, decimal quantidade, decimal minimo)
     {
         GarantirSaldo(quantidade);
-        Nome = nome.Trim(); Unidade = unidade.Trim(); QuantidadeDisponivel = quantidade; EstoqueMinimo = minimo; Versao++;
+        Nome = nome.Trim(); Unidade = "un"; QuantidadeDisponivel = quantidade; EstoqueMinimo = minimo; Versao++;
     }
     public void AlterarQuantidade(decimal variacao)
     {

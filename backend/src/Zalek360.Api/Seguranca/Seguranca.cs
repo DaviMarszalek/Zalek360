@@ -8,6 +8,7 @@ public static class Politicas
 {
     /// <summary>Perfis que operam o fluxo comercial. Preparado para perfis futuros (Operador, Gestor etc.).</summary>
     public const string Comercial = "Comercial";
+    public const string GestorAdministrador = "GestorAdministrador";
     public static readonly string[] PerfisComerciais = { "Atendente", "Gestor", "Administrador" };
 }
 

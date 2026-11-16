@@ -16,7 +16,7 @@ public class EstoqueTransacionalTests
     internal static async Task<Guid> MaterialAsync(BancoSqlite banco, decimal saldo, bool comFicha = true)
     {
         await using var db = banco.Contexto();
-        var material = MateriaPrima.Criar("Tecido de teste", "m", saldo, 0);
+        var material = MateriaPrima.Criar("Tecido de teste", "un", saldo, 0);
         db.MateriasPrimas.Add(material);
         if (comFicha) db.FichasTecnicasMateriasPrimas.Add(FichaTecnicaMaterial.Criar(banco.ProdutoId, material.Id, 2));
         await db.SaveChangesAsync();
@@ -223,7 +223,7 @@ public class EstoqueTransacionalTests
         await AprovarAsync(banco);
         await using (var db = banco.Contexto())
             await Assert.ThrowsAsync<Zalek360.Domain.Common.DomainException>(() => banco.Estoque(db).AtualizarMateriaAsync(id,
-                new("Tecido de teste", "m", 5, 0), CancellationToken.None));
+                new("Tecido de teste", "un", 5, 0), CancellationToken.None));
         Guid compraId;
         await using (var db = banco.Contexto())
         {
@@ -325,5 +325,48 @@ public class EstoqueTransacionalTests
         }
         var r = await AprovarAsync(banco);
         Assert.Equal(9, Assert.Single(r.Materiais!.Reservas).QuantidadeReservada);
+    }
+
+    [Fact]
+    public async Task Unidade_da_materia_prima_e_fixa_e_unidade_incompativel_e_rejeitada()
+    {
+        await using var banco = await BancoSqlite.CriarAsync();
+        await using var db = banco.Contexto();
+        var service = banco.Estoque(db);
+
+        var criada = await service.CriarMateriaAsync(new("Peça personalizada", null, 4, 1), CancellationToken.None);
+        Assert.Equal("un", criada.Unidade);
+
+        var erro = await Assert.ThrowsAsync<ValidacaoException>(() =>
+            service.CriarMateriaAsync(new("Fita", "m", 4, 1), CancellationToken.None));
+        Assert.Contains("unidade", erro.Erros.Keys);
+    }
+
+    [Fact]
+    public async Task Estoque_compras_fichas_e_reservas_rejeitam_quantidades_fracionarias()
+    {
+        await using var banco = await BancoSqlite.CriarAsync();
+        await using (var db = banco.Contexto())
+        {
+            var service = banco.Estoque(db);
+            await Assert.ThrowsAsync<ValidacaoException>(() =>
+                service.CriarMateriaAsync(new("Saldo fracionário", "un", 1.5m, 0), CancellationToken.None));
+        }
+
+        var material = await MaterialAsync(banco, 10, false);
+        await using (var db = banco.Contexto())
+        {
+            var service = banco.Estoque(db);
+            await Assert.ThrowsAsync<ValidacaoException>(() =>
+                service.CriarCompraAsync(new(material, 1.5m, null, Dados.Hoje), CancellationToken.None));
+            await Assert.ThrowsAsync<ValidacaoException>(() =>
+                service.SalvarFichaAsync(new(banco.ProdutoId, new[] { new FichaTecnicaLinhaRequest(material, 1.5m) }), CancellationToken.None));
+        }
+
+        var pedidoId = (await AprovarAsync(banco)).PedidoGerado!.Id;
+        await using (var db = banco.Contexto())
+            await Assert.ThrowsAsync<ValidacaoException>(() =>
+                banco.Estoque(db).AtualizarReservasPedidoAsync(pedidoId,
+                    new[] { new ReservaPedidoRequest(material, 1.5m) }, CancellationToken.None));
     }
 }

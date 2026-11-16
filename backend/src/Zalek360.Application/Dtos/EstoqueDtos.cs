@@ -14,6 +14,8 @@ public sealed record CompraMateriaPrimaRequest(Guid MateriaPrimaId, decimal Quan
 public sealed record SituacaoCompraRequest(SituacaoCompraMateriaPrima Situacao);
 public sealed record FichaTecnicaLinhaDto(Guid MateriaPrimaId, string MateriaPrimaNome, string Unidade, decimal QuantidadePorUnidade);
 public sealed record FichaTecnicaDto(Guid ProdutoId, string ProdutoNome, IReadOnlyList<FichaTecnicaLinhaDto> Materiais);
+public sealed record ProdutoFichaTecnicaDto(Guid ProdutoId, string ProdutoNome, string Categoria, string? DescricaoBase,
+    bool TemFicha, IReadOnlyList<FichaTecnicaLinhaDto> Materiais);
 public sealed record FichaTecnicaLinhaRequest(Guid MateriaPrimaId, decimal QuantidadePorUnidade);
 public sealed record FichaTecnicaRequest(Guid ProdutoId, IReadOnlyList<FichaTecnicaLinhaRequest> Materiais);
 public sealed record ReservaPedidoDto(Guid Id, Guid MateriaPrimaId, string MateriaPrimaNome, string Unidade, decimal Quantidade,

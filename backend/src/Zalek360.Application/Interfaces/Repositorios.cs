@@ -19,6 +19,8 @@ public interface IClienteRepository
 public interface IProdutoRepository
 {
     Task<IReadOnlyList<Produto>> ObterPorIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct);
+    Task<bool> NomeProdutoExisteAsync(string nome, CancellationToken ct);
+    void Adicionar(Produto produto);
 }
 
 public interface IOrcamentoRepository

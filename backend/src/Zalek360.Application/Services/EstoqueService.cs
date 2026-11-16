@@ -38,7 +38,7 @@ public sealed class EstoqueService
     {
         ValidarMateria(r);
         if (await _repo.NomeMateriaExisteAsync(r.Nome!, null, ct)) throw new ConflitoException(CodigosErro.RegistroDuplicado, "Já existe uma matéria-prima com esse nome.");
-        var item = MateriaPrima.Criar(r.Nome!, r.Unidade!, r.QuantidadeDisponivel, r.EstoqueMinimo);
+        var item = MateriaPrima.Criar(r.Nome!, "un", r.QuantidadeDisponivel, r.EstoqueMinimo);
         _repo.Adicionar(item);
         RegistrarMovimento(item, null, r.QuantidadeDisponivel, TipoMovimentoMateriaPrima.Ajuste, "Saldo inicial do cadastro");
         await _uow.SaveChangesAsync(ct);
@@ -53,7 +53,7 @@ public sealed class EstoqueService
         if (await _repo.NomeMateriaExisteAsync(r.Nome!, id, ct)) throw new ConflitoException(CodigosErro.RegistroDuplicado, "Já existe uma matéria-prima com esse nome.");
         var diferenca = r.QuantidadeDisponivel - item.QuantidadeDisponivel;
         if (diferenca != 0 && !item.Ativo) throw new ConflitoException(CodigosErro.RegistroRelacionado, "Reative o material antes de movimentar o saldo.");
-        item.Atualizar(r.Nome!, r.Unidade!, r.QuantidadeDisponivel, r.EstoqueMinimo);
+        item.Atualizar(r.Nome!, "un", r.QuantidadeDisponivel, r.EstoqueMinimo);
         RegistrarMovimento(item, null, diferenca, TipoMovimentoMateriaPrima.Ajuste, "Ajuste manual do saldo");
         await _uow.SaveChangesAsync(ct);
         await transacao.ConfirmarAsync(ct);
@@ -119,29 +119,32 @@ public sealed class EstoqueService
             x.SaldoDisponivel, pendente, x.SaldoDisponivel <= x.EstoqueMinimo, Math.Max(0, x.EstoqueMinimo + pendente - x.SaldoDisponivel - aReceber));
     private static void ValidarMateria(MateriaPrimaRequest r)
     {
-        ValidarPrecisao(r.QuantidadeDisponivel);
-        ValidarPrecisao(r.EstoqueMinimo);
+        ValidarPrecisao(r.QuantidadeDisponivel, "quantidadeDisponivel");
+        ValidarPrecisao(r.EstoqueMinimo, "estoqueMinimo");
         var e = new Dictionary<string, string[]>();
         if (string.IsNullOrWhiteSpace(r.Nome)) e["nome"] = ["Informe o nome da matéria-prima."];
         else if (r.Nome.Trim().Length > 120) e["nome"] = ["Use até 120 caracteres."];
-        if (string.IsNullOrWhiteSpace(r.Unidade)) e["unidade"] = ["Informe a unidade (un, kg, m, L etc.)."];
-        else if (r.Unidade.Trim().Length > 20) e["unidade"] = ["Use até 20 caracteres."];
+        if (!string.IsNullOrWhiteSpace(r.Unidade) && !string.Equals(r.Unidade.Trim(), "un", StringComparison.OrdinalIgnoreCase))
+            e["unidade"] = ["A unidade de matéria-prima é fixa: un."];
         if (r.QuantidadeDisponivel < 0) e["quantidadeDisponivel"] = ["O saldo não pode ser negativo."];
         if (r.EstoqueMinimo < 0) e["estoqueMinimo"] = ["O mínimo não pode ser negativo."];
         if (e.Count > 0) throw new ValidacaoException(CodigosErro.Validacao, "Corrija os campos destacados.", e);
     }
 
-    public async Task<IReadOnlyList<FichaTecnicaDto>> ListarFichasAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<ProdutoFichaTecnicaDto>> ListarFichasAsync(CancellationToken ct)
     {
         var fichas = await _repo.ListarFichasAsync(ct);
         var produtos = await _catalogo.ListarProdutosAsync(ct);
         var materiais = await _repo.ListarMateriasAsync(ct);
-        var mapaProduto = produtos.ToDictionary(x => x.Id);
         var mapaMaterial = materiais.ToDictionary(x => x.Id);
-        return fichas.Where(x => mapaProduto.ContainsKey(x.ProdutoId) && mapaMaterial.ContainsKey(x.MateriaPrimaId))
-            .GroupBy(x => x.ProdutoId).Select(g => new FichaTecnicaDto(g.Key, mapaProduto[g.Key].Nome,
-                g.Select(x => new FichaTecnicaLinhaDto(x.MateriaPrimaId, mapaMaterial[x.MateriaPrimaId].Nome, mapaMaterial[x.MateriaPrimaId].Unidade, x.QuantidadePorUnidade)).ToList()))
-            .OrderBy(x => x.ProdutoNome).ToList();
+        return produtos.OrderBy(x => x.Nome).Select(produto =>
+        {
+            var linhas = fichas.Where(x => x.ProdutoId == produto.Id && mapaMaterial.ContainsKey(x.MateriaPrimaId))
+                .Select(x => new FichaTecnicaLinhaDto(x.MateriaPrimaId, mapaMaterial[x.MateriaPrimaId].Nome,
+                    mapaMaterial[x.MateriaPrimaId].Unidade, x.QuantidadePorUnidade)).ToList();
+            return new ProdutoFichaTecnicaDto(produto.Id, produto.Nome, produto.Categoria, produto.DescricaoBase,
+                linhas.Count > 0, linhas);
+        }).ToList();
     }
 
     public async Task<FichaTecnicaDto> SalvarFichaAsync(FichaTecnicaRequest r, CancellationToken ct)
@@ -149,9 +152,9 @@ public sealed class EstoqueService
         var produto = (await _produtos.ObterPorIdsAsync(new[] { r.ProdutoId }, ct)).FirstOrDefault() ?? throw new NaoEncontradoException("Produto");
         if (!produto.Ativo) throw new ValidacaoException(CodigosErro.Validacao, "Produto inativo.", new Dictionary<string, string[]> { ["produtoId"] = ["Ative o produto antes de configurar a ficha técnica."] });
         var linhas = r.Materiais ?? Array.Empty<FichaTecnicaLinhaRequest>();
-        foreach (var linha in linhas) ValidarPrecisao(linha.QuantidadePorUnidade);
+        foreach (var linha in linhas) ValidarPrecisao(linha.QuantidadePorUnidade, "quantidadePorUnidade");
         if (linhas.Any(x => x.QuantidadePorUnidade <= 0) || linhas.Select(x => x.MateriaPrimaId).Distinct().Count() != linhas.Count)
-            throw new ValidacaoException(CodigosErro.Validacao, "Revise os materiais e quantidades da ficha.", new Dictionary<string, string[]> { ["materiais"] = ["Cada material deve aparecer uma vez e ter consumo maior que zero."] });
+            throw new ValidacaoException(CodigosErro.Validacao, "Revise os materiais e quantidades da ficha.", new Dictionary<string, string[]> { ["materiais"] = ["Cada material deve aparecer uma vez e ter consumo inteiro maior que zero."] });
         var materiais = (await _repo.ListarMateriasAsync(ct)).ToDictionary(x => x.Id);
         if (linhas.Any(x => !materiais.TryGetValue(x.MateriaPrimaId, out var m) || !m.Ativo))
             throw new ValidacaoException(CodigosErro.Validacao, "A ficha usa material inativo ou inexistente.", new Dictionary<string, string[]> { ["materiais"] = ["Selecione apenas matérias-primas ativas."] });
@@ -323,9 +326,14 @@ public sealed class EstoqueService
 
     private static void ValidarPrecisao(decimal quantidade)
     {
-        if (decimal.Round(quantidade, 3) != quantidade || quantidade < -999999999.999m || quantidade > 999999999.999m)
-            throw new ValidacaoException(CodigosErro.Validacao, "Use uma quantidade de até 999999999,999 com no máximo três casas decimais.",
-                new Dictionary<string, string[]> { ["quantidade"] = ["Quantidade fora da precisão permitida."] });
+        ValidarPrecisao(quantidade, "quantidade");
+    }
+
+    private static void ValidarPrecisao(decimal quantidade, string campo)
+    {
+        if (decimal.Truncate(quantidade) != quantidade || quantidade < -999999999m || quantidade > 999999999m)
+            throw new ValidacaoException(CodigosErro.Validacao, "Informe uma quantidade inteira de até 999999999.",
+                new Dictionary<string, string[]> { [campo] = ["Informe um número inteiro dentro do limite permitido."] });
     }
 
     private static ReservaPedidoDto MapearReserva(ReservaMateriaPrimaPedido x) => new(x.Id, x.MateriaPrimaId,
