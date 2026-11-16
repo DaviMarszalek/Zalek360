@@ -235,7 +235,7 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
                     <Campo rotulo="Produto" obrigatorio erro={e(p + "produtoId")} className="md:col-span-2">
                       <Selecao value={item.produtoId} invalido={!!e(p + "produtoId")} onChange={(ev) => {
                         const prod = produtos.data?.find((x) => x.id === ev.target.value);
-                        atualizarItem(item.chave, { produtoId: ev.target.value, descricao: item.descricao || prod?.descricaoBase || "" });
+                        atualizarItem(item.chave, { produtoId: ev.target.value, descricao: prod?.descricaoBase ?? "" });
                       }}>
                         <option value="">Selecione o produto</option>{produtos.data?.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
                       </Selecao>
