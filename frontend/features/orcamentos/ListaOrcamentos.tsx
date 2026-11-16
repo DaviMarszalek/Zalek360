@@ -3,8 +3,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { FileText, Plus, Search } from "lucide-react";
-import { Abas, BadgeOrcamento, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Paginacao, Selecao } from "@/components/ui";
+import { Eye, FileText, Pencil, Plus, Search } from "lucide-react";
+import { AcoesLinha, Abas, BadgeOrcamento, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Paginacao, Selecao } from "@/components/ui";
 import { FiltroPeriodo, intervaloDoPeriodo, Periodo } from "@/features/comum";
 import { orcamentosService } from "@/services";
 import { useDebounce, useResponsaveis } from "@/hooks";
@@ -60,14 +60,26 @@ export function ListaOrcamentos() {
                 : <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>} />
               : <>
                 <div className="overflow-x-auto"><table className="tabela w-full min-w-[860px] table-fixed text-sm">
-                  <thead><tr><th className="w-[14%]">Orçamento</th><th className="w-[25%]">Cliente</th><th className="w-[21%]">Datas</th><th className="w-[22%] text-center">Valor</th><th className="w-[18%]">Status</th></tr></thead>
+                  <thead><tr><th className="w-[14%]">Orçamento</th><th className="w-[23%]">Cliente</th><th className="w-[20%]">Datas</th><th className="w-[20%] text-center">Valor</th><th className="w-[15%]">Status</th><th className="w-20 text-right">Ações</th></tr></thead>
                   <tbody>{q.data.itens.map((o) => (
-                    <tr key={o.id} className="cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/orcamentos/${o.id}`)}>
+                    <tr key={o.id} tabIndex={0} className="group cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/orcamentos/${o.id}`)}
+                      onKeyDown={(evento) => {
+                        if (evento.target !== evento.currentTarget) return;
+                        if (evento.key === "Enter" || evento.key === " ") { evento.preventDefault(); router.push(`/orcamentos/${o.id}`); }
+                      }}>
                       <td><Link href={`/orcamentos/${o.id}`} className="numero font-medium text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(o.numero)}</Link><div className="mt-0.5 text-xs text-texto-fraco">{o.quantidadeItens} {o.quantidadeItens === 1 ? "item" : "itens"}</div></td>
                       <td className="max-w-[280px] truncate">{o.cliente}<div className="mt-0.5 truncate text-xs text-texto-fraco">Responsável: {o.responsavel}</div></td>
                       <td className="whitespace-nowrap"><div className="numero text-texto-suave">Criado {data(o.data)}</div><div className="mt-0.5 numero text-xs text-texto-fraco">Vence {data(o.validade)}</div></td>
                       <td className="min-w-0 overflow-hidden text-center"><span className="numero inline-block max-w-full truncate align-middle font-medium" title={moeda(o.valorTotal)}>{moeda(o.valorTotal)}</span></td>
                       <td className="overflow-hidden"><BadgeOrcamento situacao={o.situacao} /></td>
+                      <td><AcoesLinha acoes={[
+                        { rotulo: `Ver orçamento ${numeroDocumento(o.numero)}`, icone: <Eye className="h-4 w-4" />, aoAcionar: () => router.push(`/orcamentos/${o.id}`) },
+                        ...(["EmElaboracao", "AguardandoRetorno"].includes(o.situacao) ? [{
+                          rotulo: `Editar orçamento ${numeroDocumento(o.numero)}`,
+                          icone: <Pencil className="h-4 w-4" />,
+                          aoAcionar: () => router.push(`/orcamentos/${o.id}/editar`),
+                        }] : []),
+                      ]} /></td>
                     </tr>))}</tbody></table></div>
                 <Paginacao pagina={q.data.pagina} totalPaginas={q.data.totalPaginas} total={q.data.total} exibindo={q.data.itens.length} nome={["orçamento", "orçamentos"]} aoMudar={setPagina} />
               </>}

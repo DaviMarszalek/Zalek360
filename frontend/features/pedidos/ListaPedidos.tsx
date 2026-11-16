@@ -3,8 +3,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Info, Package, Search } from "lucide-react";
-import { Abas, BadgePedido, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Etiqueta, Paginacao, Selecao } from "@/components/ui";
+import { Eye, Info, Package, Search } from "lucide-react";
+import { AcoesLinha, Abas, BadgePedido, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Etiqueta, Paginacao, Selecao } from "@/components/ui";
 import { FiltroPeriodo, intervaloDoPeriodo, Periodo } from "@/features/comum";
 import { pedidosService } from "@/services";
 import { useDebounce, useResponsaveis } from "@/hooks";
@@ -82,9 +82,13 @@ export function ListaPedidos() {
                   : <Link href="/orcamentos?status=AguardandoRetorno"><Botao variante="secundaria">Ver orçamentos aguardando retorno</Botao></Link>} />
               : <>
                 <div className="overflow-x-auto"><table className="tabela w-full min-w-[860px] table-fixed text-sm">
-                  <thead><tr><th className="w-[14%]">Pedido</th><th className="w-[27%]">Cliente</th><th className="w-[21%]">Data e prazo</th><th className="w-[20%] text-center">Valor</th><th className="w-[18%]">Status</th></tr></thead>
+                  <thead><tr><th className="w-[14%]">Pedido</th><th className="w-[25%]">Cliente</th><th className="w-[20%]">Data e prazo</th><th className="w-[19%] text-center">Valor</th><th className="w-[15%]">Status</th><th className="w-20 text-right">Ações</th></tr></thead>
                   <tbody>{q.data.itens.map((p) => (
-                    <tr key={p.id} className="cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/pedidos/${p.id}`)}>
+                    <tr key={p.id} tabIndex={0} className="group cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/pedidos/${p.id}`)}
+                      onKeyDown={(evento) => {
+                        if (evento.target !== evento.currentTarget) return;
+                        if (evento.key === "Enter" || evento.key === " ") { evento.preventDefault(); router.push(`/pedidos/${p.id}`); }
+                      }}>
                       <td><div className="flex items-center gap-2"><Link href={`/pedidos/${p.id}`} className="numero font-medium text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(p.numero)}</Link>
                         {dataIsoDeInstante(p.criadoEm) === hojeIso() && <Etiqueta className="border-emerald-200 bg-emerald-50 text-emerald-700">Novo</Etiqueta>}</div>
                         <div className="mt-0.5 text-xs text-texto-fraco">Orçamento <Link href={`/orcamentos/${p.orcamentoId}`} className="numero hover:text-primaria hover:underline" onClick={(e) => e.stopPropagation()}>{numeroDocumento(p.orcamentoNumero)}</Link></div></td>
@@ -92,6 +96,11 @@ export function ListaPedidos() {
                       <td className="whitespace-nowrap"><div className="numero text-texto-suave">Criado {data(p.data)}</div><div className="mt-0.5 text-xs text-texto-fraco">Prazo <Prazo prazo={p.prazoEntrega} situacao={p.situacao} /></div></td>
                       <td className="min-w-0 overflow-hidden text-center"><span className="numero inline-block max-w-full truncate align-middle font-medium" title={moeda(p.valorTotal)}>{moeda(p.valorTotal)}</span></td>
                       <td className="overflow-hidden"><BadgePedido situacao={p.situacao} /></td>
+                      <td><AcoesLinha acoes={[{
+                        rotulo: `Ver pedido ${numeroDocumento(p.numero)}`,
+                        icone: <Eye className="h-4 w-4" />,
+                        aoAcionar: () => router.push(`/pedidos/${p.id}`),
+                      }]} /></td>
                     </tr>))}</tbody></table></div>
                 <Paginacao pagina={q.data.pagina} totalPaginas={q.data.totalPaginas} total={q.data.total} exibindo={q.data.itens.length} nome={["pedido", "pedidos"]} aoMudar={setPagina} />
               </>}
