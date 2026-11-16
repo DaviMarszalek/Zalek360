@@ -75,8 +75,14 @@ public sealed class ProdutosPersonalizadosApiTests
 
         client.DefaultRequestHeaders.Authorization = Token(factory, PerfilUsuario.Atendente);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/estoque/fichas-tecnicas")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.PutAsJsonAsync($"/api/estoque/fichas-tecnicas/{produto.Id}",
+            new { produtoId = produto.Id, materiais = Array.Empty<object>() })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/produtos",
             new ProdutoRequest("Produto sem permissão", "Teste", null))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/produtos")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/pedidos/{Guid.NewGuid()}/materiais")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.PutAsJsonAsync($"/api/pedidos/{Guid.NewGuid()}/materiais",
+            Array.Empty<ReservaPedidoRequest>())).StatusCode);
 
         client.DefaultRequestHeaders.Authorization = Token(factory, PerfilUsuario.Gestor);
         var catalogo = await client.GetFromJsonAsync<List<ProdutoDto>>("/api/produtos");

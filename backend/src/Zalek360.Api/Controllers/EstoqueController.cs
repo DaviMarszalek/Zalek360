@@ -64,6 +64,7 @@ public sealed class MateriaisPedidoController : ControllerBase
     public Task<MateriaisPedidoDto> AplicarFicha(Guid pedidoId, CancellationToken ct) => _service.AplicarFichaPedidoAsync(pedidoId, ct);
 
     [HttpPut]
+    [Authorize(Policy = Politicas.GestorAdministrador)]
     public Task<MateriaisPedidoDto> Atualizar(Guid pedidoId, [FromBody] IReadOnlyList<ReservaPedidoRequest> linhas, CancellationToken ct) =>
         _service.AtualizarReservasPedidoAsync(pedidoId, linhas, ct);
 }
