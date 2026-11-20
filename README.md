@@ -11,8 +11,9 @@ O cliente **não acessa o sistema**: WhatsApp, ligação, e-mail ou conversa pre
 | Swagger | http://localhost:5000/swagger |
 | Health check | http://localhost:5000/health |
 
-**Acesso de demonstração:** `maria.silva@zalekpersonalizados.com.br` / `Zalek@2026` (perfil Atendente).
-Também existem `carlos.souza@…` e `fernanda.lima@…` (Atendentes) e `admin@zalekpersonalizados.com.br` (Administrador), todos com a mesma senha.
+**Acesso de demonstração:** `gestor@zalekpersonalizados.com.br` / `Zalek@2026` (perfil Gestor).
+Também existem `admin@zalekpersonalizados.com.br` (Administrador) e as contas históricas Maria Silva, Carlos Souza e Fernanda Lima (perfil Atendente), todas com a mesma senha. Perfis legados são preservados nos dados, mas não autenticam no modelo de acesso atual.
+Em uma base já populada, o seed não é reaplicado. Entre como Administrador e crie a conta Gestor pela rota `POST /api/usuarios` no Swagger; essa ação não altera nem exclui contas ou históricos existentes.
 
 ---
 
@@ -140,7 +141,7 @@ Documentação interativa em `/swagger`. Para autenticar lá, chame `POST /api/a
 | Anexos | `POST /api/anexos` (multipart `arquivo`; PDF, PNG, JPG, AI, CDR; até 20 MB) · `GET /api/anexos/{id}/download?inline=` · `DELETE /api/anexos/{id}` (só anexos ainda não vinculados) |
 | Estoque | GET/POST /api/estoque/materias-primas; PUT …/materias-primas/{id}; PATCH …/materias-primas/{id}/status; GET …/materias-primas/{id}/movimentos; GET /api/estoque/fichas-tecnicas; PUT …/fichas-tecnicas/{produtoId}; GET/POST /api/estoque/compras; PATCH …/compras/{id}/situacao; GET /api/estoque/pendencias |
 | Materiais do pedido | GET/PUT /api/pedidos/{id}/materiais; POST …/materiais/ficha-tecnica |
-| Apoio | `GET /api/dashboard` · `GET /api/produtos` · `GET /api/produtos/opcoes` · `GET /api/usuarios/responsaveis` · `GET /health` |
+| Apoio | `GET /api/dashboard` · `GET /api/produtos` · `GET /api/produtos/opcoes` · `GET /api/usuarios/responsaveis` · `GET/POST /api/usuarios` (Administrador; POST cria conta Gestor) · `GET /health` |
 
 Não existe exclusão de orçamentos, pedidos ou clientes (RN10): apenas cancelamento, com o histórico preservado.
 

@@ -54,8 +54,9 @@ internal sealed class DbSeeder
         var maria = Usuario.Criar("Maria Silva", "maria.silva@zalekpersonalizados.com.br", hash, PerfilUsuario.Atendente, desde);
         var carlos = Usuario.Criar("Carlos Souza", "carlos.souza@zalekpersonalizados.com.br", hash, PerfilUsuario.Atendente, desde);
         var fernanda = Usuario.Criar("Fernanda Lima", "fernanda.lima@zalekpersonalizados.com.br", hash, PerfilUsuario.Atendente, desde);
+        var gestor = Usuario.Criar("Gestor Zalek", "gestor@zalekpersonalizados.com.br", hash, PerfilUsuario.Gestor, desde);
         var admin = Usuario.Criar("Administrador Zalek", "admin@zalekpersonalizados.com.br", hash, PerfilUsuario.Administrador, desde);
-        _db.Usuarios.AddRange(maria, carlos, fernanda, admin);
+        _db.Usuarios.AddRange(maria, carlos, fernanda, gestor, admin);
 
         // ------------------------------------------------------------------ catálogo
         var dryFit = Produto.Criar("Camiseta Dry Fit", "Camiseta", "Camiseta Dry Fit unissex, malha 100% poliéster 160 g/m², gola careca");

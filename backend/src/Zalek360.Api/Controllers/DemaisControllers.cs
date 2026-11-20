@@ -11,7 +11,7 @@ namespace Zalek360.Api.Controllers;
 /// <summary>Artes e referências anexadas aos itens (PDF, PNG, JPG, AI, CDR — até 20 MB).</summary>
 [ApiController]
 [Route("api/anexos")]
-[Authorize(Policy = Politicas.Comercial)]
+[Authorize(Policy = Politicas.Consulta)]
 public sealed class AnexosController : ControllerBase
 {
     private readonly AnexoService _servico;
@@ -20,6 +20,7 @@ public sealed class AnexosController : ControllerBase
 
     /// <summary>Envia um arquivo. O anexo fica pendente até ser vinculado a um item ao salvar o orçamento.</summary>
     [HttpPost]
+    [Authorize(Policy = Politicas.Operacao)]
     [RequestSizeLimit(25L * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 25L * 1024 * 1024)]
     [Consumes("multipart/form-data")]
@@ -50,6 +51,7 @@ public sealed class AnexosController : ControllerBase
 
     /// <summary>Remove um upload ainda não vinculado.</summary>
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Politicas.Operacao)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Remover(Guid id, CancellationToken ct)
     {
@@ -60,7 +62,7 @@ public sealed class AnexosController : ControllerBase
 
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Policy = Politicas.Comercial)]
+[Authorize(Policy = Politicas.Consulta)]
 public sealed class DashboardController : ControllerBase
 {
     private readonly IDashboardQueries _consultas;
@@ -72,7 +74,7 @@ public sealed class DashboardController : ControllerBase
 
 [ApiController]
 [Route("api/produtos")]
-[Authorize(Policy = Politicas.Comercial)]
+[Authorize(Policy = Politicas.Consulta)]
 public sealed class ProdutosController : ControllerBase
 {
     private readonly ICatalogoQueries _consultas;
@@ -83,7 +85,7 @@ public sealed class ProdutosController : ControllerBase
     public Task<IReadOnlyList<ProdutoDto>> Listar(CancellationToken ct) => _consultas.ListarProdutosAsync(ct);
 
     [HttpPost]
-    [Authorize(Policy = Politicas.GestorAdministrador)]
+    [Authorize(Policy = Politicas.Operacao)]
     public async Task<ActionResult<ProdutoDto>> Criar([FromBody] ProdutoRequest request, CancellationToken ct) =>
         StatusCode(StatusCodes.Status201Created, await _service.CriarAsync(request, ct));
 
@@ -95,11 +97,40 @@ public sealed class ProdutosController : ControllerBase
 
 [ApiController]
 [Route("api/usuarios")]
-[Authorize(Policy = Politicas.Comercial)]
+[Authorize(Policy = Politicas.Consulta)]
 public sealed class UsuariosController : ControllerBase
 {
     private readonly ICatalogoQueries _consultas;
-    public UsuariosController(ICatalogoQueries consultas) => _consultas = consultas;
+    private readonly UsuarioService _usuarios;
+    private readonly IUsuarioAtual _usuarioAtual;
+    private readonly ILogger<UsuariosController> _logger;
+
+    public UsuariosController(
+        ICatalogoQueries consultas,
+        UsuarioService usuarios,
+        IUsuarioAtual usuarioAtual,
+        ILogger<UsuariosController> logger)
+    {
+        _consultas = consultas;
+        _usuarios = usuarios;
+        _usuarioAtual = usuarioAtual;
+        _logger = logger;
+    }
+
+    [HttpGet]
+    [Authorize(Policy = Politicas.Administracao)]
+    public Task<IReadOnlyList<UsuarioAcessoDto>> Listar(CancellationToken ct) => _usuarios.ListarAsync(ct);
+
+    [HttpPost]
+    [Authorize(Policy = Politicas.Administracao)]
+    [ProducesResponseType(typeof(UsuarioAcessoDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<UsuarioAcessoDto>> CriarGestor([FromBody] CriarGestorRequest request, CancellationToken ct)
+    {
+        var usuario = await _usuarios.CriarGestorAsync(request, ct);
+        _logger.LogInformation("Administrador {AdministradorId} criou a conta Gestor {GestorId}.",
+            _usuarioAtual.Id, usuario.Id);
+        return StatusCode(StatusCodes.Status201Created, usuario);
+    }
 
     /// <summary>Colaboradores que podem ser responsáveis por orçamentos.</summary>
     [HttpGet("responsaveis")]

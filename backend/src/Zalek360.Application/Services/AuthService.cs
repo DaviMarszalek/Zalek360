@@ -3,6 +3,7 @@ using Zalek360.Application.Dtos;
 using Zalek360.Application.Interfaces;
 using Zalek360.Domain.Common;
 using Zalek360.Domain.Entities;
+using Zalek360.Domain.Enums;
 
 namespace Zalek360.Application.Services;
 
@@ -31,7 +32,7 @@ public sealed class AuthService
 
         var usuario = await _usuarios.ObterPorEmailAsync(Usuario.NormalizarEmail(request.Email!), ct);
         var senhaOk = _hasher.Verificar(request.Senha!, usuario?.SenhaHash ?? HashFicticio);
-        if (usuario is null || !usuario.Ativo || !senhaOk)
+        if (usuario is null || !usuario.Ativo || !PerfilPermitido(usuario.Perfil) || !senhaOk)
             throw new NaoAutenticadoException(CodigosErro.CredenciaisInvalidas, "E-mail ou senha inválidos.");
 
         var token = _tokens.Gerar(usuario, request.ManterConectado);
@@ -41,10 +42,13 @@ public sealed class AuthService
     public async Task<UsuarioDto> ObterAsync(Guid usuarioId, CancellationToken ct)
     {
         var usuario = await _usuarios.ObterPorIdAsync(usuarioId, ct);
-        if (usuario is null || !usuario.Ativo)
+        if (usuario is null || !usuario.Ativo || !PerfilPermitido(usuario.Perfil))
             throw new NaoAutenticadoException(CodigosErro.NaoAutenticado, "Sua sessão expirou. Entre novamente.");
         return Mapear(usuario);
     }
+
+    private static bool PerfilPermitido(PerfilUsuario perfil) =>
+        perfil is PerfilUsuario.Gestor or PerfilUsuario.Administrador;
 
     public static UsuarioDto Mapear(Usuario u) => new(u.Id, u.Nome, u.Email, u.Perfil, Usuario.CalcularIniciais(u.Nome));
 }

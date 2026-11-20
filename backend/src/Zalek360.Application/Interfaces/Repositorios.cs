@@ -6,6 +6,9 @@ public interface IUsuarioRepository
 {
     Task<Usuario?> ObterPorEmailAsync(string emailNormalizado, CancellationToken ct);
     Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken ct);
+    Task<IReadOnlyList<Usuario>> ListarAsync(CancellationToken ct);
+    Task<bool> EmailExisteAsync(string emailNormalizado, CancellationToken ct);
+    void Adicionar(Usuario usuario);
 }
 
 public interface IClienteRepository

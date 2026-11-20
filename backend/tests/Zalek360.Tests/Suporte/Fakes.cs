@@ -80,6 +80,11 @@ public sealed class RepositoriosFake : IUsuarioRepository, IClienteRepository, I
     public Task<Usuario?> ObterPorEmailAsync(string emailNormalizado, CancellationToken ct) =>
         Task.FromResult(_b.Usuarios.FirstOrDefault(u => u.Email == emailNormalizado));
     Task<Usuario?> IUsuarioRepository.ObterPorIdAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Usuarios.FirstOrDefault(u => u.Id == id));
+    Task<IReadOnlyList<Usuario>> IUsuarioRepository.ListarAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<Usuario>>(_b.Usuarios.OrderBy(u => u.Nome).ToList());
+    Task<bool> IUsuarioRepository.EmailExisteAsync(string emailNormalizado, CancellationToken ct) =>
+        Task.FromResult(_b.Usuarios.Any(u => u.Email == emailNormalizado));
+    void IUsuarioRepository.Adicionar(Usuario usuario) => _b.Usuarios.Add(usuario);
 
     Task<Cliente?> IClienteRepository.ObterParaAlteracaoAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Clientes.FirstOrDefault(c => c.Id == id));
     public Task<bool> ExisteAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Clientes.Any(c => c.Id == id));

@@ -65,6 +65,14 @@ internal sealed class UsuarioRepository : IUsuarioRepository
 
     public Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken ct) =>
         _db.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, ct);
+
+    public async Task<IReadOnlyList<Usuario>> ListarAsync(CancellationToken ct) =>
+        await _db.Usuarios.AsNoTracking().OrderBy(u => u.Nome).ToListAsync(ct);
+
+    public Task<bool> EmailExisteAsync(string emailNormalizado, CancellationToken ct) =>
+        _db.Usuarios.AnyAsync(u => u.Email == emailNormalizado, ct);
+
+    public void Adicionar(Usuario usuario) => _db.Usuarios.Add(usuario);
 }
 
 internal sealed class ClienteRepository : IClienteRepository

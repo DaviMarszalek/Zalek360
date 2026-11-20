@@ -79,8 +79,8 @@ public sealed class ProdutosPersonalizadosApiTests
             new { produtoId = produto.Id, materiais = Array.Empty<object>() })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/produtos",
             new ProdutoRequest("Produto sem permissão", "Teste", null))).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/produtos")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/pedidos/{Guid.NewGuid()}/materiais")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/produtos")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync($"/api/pedidos/{Guid.NewGuid()}/materiais")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PutAsJsonAsync($"/api/pedidos/{Guid.NewGuid()}/materiais",
             Array.Empty<ReservaPedidoRequest>())).StatusCode);
 
