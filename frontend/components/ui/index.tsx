@@ -5,6 +5,8 @@ import { AlertCircle, CheckCircle2, Info, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { estiloSituacaoOrcamento, estiloSituacaoPedido, rotuloSituacaoOrcamento, rotuloSituacaoPedido } from "@/lib/status";
 import type { SituacaoOrcamento, SituacaoPedido } from "@/types/api";
+export { AcoesLinha } from "./AcoesLinha";
+export type { AcaoLinha } from "./AcoesLinha";
 
 type Variante = "primaria" | "secundaria" | "fantasma" | "perigo" | "sucesso";
 const variantes: Record<Variante, string> = {

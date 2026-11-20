@@ -3,8 +3,8 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Package, Pencil, Plus, StickyNote } from "lucide-react";
-import { Abas, AreaTexto, BadgeOrcamento, BadgePedido, Botao, CabecalhoPagina, Cartao, Carregando, ErroCarregamento, EstadoVazio, Etiqueta, Info2, Selecao } from "@/components/ui";
+import { Eye, FileText, Package, Pencil, Plus, StickyNote } from "lucide-react";
+import { AcoesLinha, Abas, AreaTexto, BadgeOrcamento, BadgePedido, Botao, CabecalhoPagina, Cartao, Carregando, ErroCarregamento, EstadoVazio, Etiqueta, Info2, Selecao } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, FiltroPeriodo, intervaloDoPeriodo, LinhaDoTempo, Periodo, Voltar } from "@/features/comum";
 import { clientesService } from "@/services";
@@ -97,6 +97,7 @@ function VisaoGeral({ id }: { id: string }) {
 }
 
 function AbaOrcamentos({ cliente }: { cliente: ClienteDetalhe }) {
+  const router = useRouter();
   const [periodo, setPeriodo] = useState<Periodo>("todos");
   const [status, setStatus] = useState<SituacaoOrcamento | "">("");
   const q = useQuery({ queryKey: ["cliente", cliente.id, "orcamentos", periodo, status], queryFn: () => clientesService.orcamentos(cliente.id, { ...intervaloDoPeriodo(periodo), status }) });
@@ -114,19 +115,25 @@ function AbaOrcamentos({ cliente }: { cliente: ClienteDetalhe }) {
               acao={<Link href={`/orcamentos/novo?clienteId=${cliente.id}`}><Botao icone={<Plus className="h-4 w-4" />}>Criar orçamento</Botao></Link>} />
           : q.data.itens.length === 0 ? <EstadoVazio titulo="Nenhum orçamento com esses filtros" acao={<Botao variante="secundaria" onClick={() => { setPeriodo("todos"); setStatus(""); }}>Limpar filtros</Botao>} />
             : <div className="overflow-x-auto"><table className="tabela w-full min-w-[640px] text-sm">
-              <thead><tr><th>Número</th><th>Data</th><th>Validade</th><th>Itens</th><th className="text-right">Valor</th><th>Status</th></tr></thead>
+              <thead><tr><th>Número</th><th>Data</th><th>Validade</th><th>Itens</th><th className="text-right">Valor</th><th>Status</th><th className="w-16 text-right">Ações</th></tr></thead>
               <tbody>{q.data.itens.map((o) => (
-                <tr key={o.id} className="hover:bg-slate-50/60">
+                <tr key={o.id} className="group hover:bg-slate-50/60">
                   <td><Link href={`/orcamentos/${o.id}`} className="numero font-medium text-primaria hover:underline">{numeroDocumento(o.numero)}</Link></td>
                   <td className="numero text-texto-suave">{data(o.data)}</td><td className="numero text-texto-suave">{data(o.validade)}</td>
                   <td className="text-texto-suave">{o.quantidadeItens} · {o.totalUnidades} un.</td>
                   <td className="numero text-right">{moeda(o.valorTotal)}</td><td><BadgeOrcamento situacao={o.situacao} /></td>
+                  <td><AcoesLinha acoes={[{
+                    rotulo: `Ver orçamento ${numeroDocumento(o.numero)}`,
+                    icone: <Eye className="h-4 w-4" />,
+                    aoAcionar: () => router.push(`/orcamentos/${o.id}`),
+                  }]} /></td>
                 </tr>))}</tbody></table></div>}
     </Cartao>
   );
 }
 
 function AbaPedidos({ id }: { id: string }) {
+  const router = useRouter();
   const [periodo, setPeriodo] = useState<Periodo>("todos");
   const [status, setStatus] = useState<SituacaoPedido | "">("");
   const q = useQuery({ queryKey: ["cliente", id, "pedidos", periodo, status], queryFn: () => clientesService.pedidos(id, { ...intervaloDoPeriodo(periodo), status }) });
@@ -143,13 +150,18 @@ function AbaPedidos({ id }: { id: string }) {
           ? <EstadoVazio icone={<Package className="h-5 w-5" />} titulo="Nenhum pedido para este cliente" descricao="Pedidos são gerados automaticamente quando um orçamento é aprovado." />
           : q.data.itens.length === 0 ? <EstadoVazio titulo="Nenhum pedido com esses filtros" />
             : <div className="overflow-x-auto"><table className="tabela w-full min-w-[640px] text-sm">
-              <thead><tr><th>Pedido</th><th>Orçamento</th><th>Data</th><th>Entrega prevista</th><th className="text-right">Valor</th><th>Status</th></tr></thead>
+              <thead><tr><th>Pedido</th><th>Orçamento</th><th>Data</th><th>Entrega prevista</th><th className="text-right">Valor</th><th>Status</th><th className="w-16 text-right">Ações</th></tr></thead>
               <tbody>{q.data.itens.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50/60">
+                <tr key={p.id} className="group hover:bg-slate-50/60">
                   <td><Link href={`/pedidos/${p.id}`} className="numero font-medium text-primaria hover:underline">{numeroDocumento(p.numero)}</Link></td>
                   <td><Link href={`/orcamentos/${p.orcamentoId}`} className="numero text-texto-suave hover:underline">{numeroDocumento(p.orcamentoNumero)}</Link></td>
                   <td className="numero text-texto-suave">{data(p.data)}</td><td className="numero text-texto-suave">{data(p.prazoEntrega)}</td>
                   <td className="numero text-right">{moeda(p.valorTotal)}</td><td><BadgePedido situacao={p.situacao} /></td>
+                  <td><AcoesLinha acoes={[{
+                    rotulo: `Ver pedido ${numeroDocumento(p.numero)}`,
+                    icone: <Eye className="h-4 w-4" />,
+                    aoAcionar: () => router.push(`/pedidos/${p.id}`),
+                  }]} /></td>
                 </tr>))}</tbody></table></div>}
     </Cartao>
   );

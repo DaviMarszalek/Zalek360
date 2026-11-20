@@ -30,6 +30,7 @@ public interface IOrcamentoQueries
 
 public interface IPedidoQueries
 {
+    Task<IReadOnlyList<PendenciaEstoquePedidoDto>> ListarPendenciasMateriaisAsync(CancellationToken ct);
     Task<ListaComContagemDto<PedidoListaItemDto>> ListarAsync(PedidoFiltro filtro, CancellationToken ct);
     Task<PedidoDetalheDto> ObterDetalheAsync(Guid id, CancellationToken ct);
     Task<IReadOnlyList<HistoricoEventoDto>> ObterHistoricoAsync(Guid id, CancellationToken ct);

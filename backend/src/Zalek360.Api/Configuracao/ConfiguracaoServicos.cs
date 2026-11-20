@@ -10,6 +10,7 @@ using Zalek360.Api.Seguranca;
 using Zalek360.Application.Interfaces;
 using Zalek360.Application.Services;
 using Zalek360.Domain.Common;
+using Zalek360.Domain.Enums;
 using Zalek360.Infrastructure.Options;
 
 namespace Zalek360.Api.Configuracao;
@@ -20,7 +21,9 @@ public static class ConfiguracaoServicos
     public static IServiceCollection AddZalekApplication(this IServiceCollection services)
     {
         services.AddScoped<AuthService>();
+        services.AddScoped<UsuarioService>();
         services.AddScoped<ClienteService>();
+        services.AddScoped<ProdutoService>();
         services.AddScoped<EstoqueService>();
         services.AddScoped<OrcamentoService>();
         services.AddScoped<OrcamentoDocumentoService>();
@@ -108,7 +111,12 @@ public static class ConfiguracaoServicos
         services.AddAuthorization(o =>
         {
             o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
-            o.AddPolicy(Politicas.Comercial, p => p.RequireAuthenticatedUser().RequireRole(Politicas.PerfisComerciais));
+            o.AddPolicy(Politicas.Consulta, p => p.RequireAuthenticatedUser()
+                .RequireRole(nameof(PerfilUsuario.Gestor), nameof(PerfilUsuario.Administrador)));
+            o.AddPolicy(Politicas.Operacao, p => p.RequireAuthenticatedUser()
+                .RequireRole(nameof(PerfilUsuario.Gestor)));
+            o.AddPolicy(Politicas.Administracao, p => p.RequireAuthenticatedUser()
+                .RequireRole(nameof(PerfilUsuario.Administrador)));
         });
 
         var origens = configuration.GetSection("Cors:Origens").Get<string[]>() ?? Array.Empty<string>();

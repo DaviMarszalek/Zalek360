@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CheckCircle2, Clock, FileText, Package, Plus, UserPlus } from "lucide-react";
-import { BadgeOrcamento, Botao, CabecalhoPagina, Cartao, ErroCarregamento, Esqueleto, EstadoVazio } from "@/components/ui";
+import { ArrowRight, CheckCircle2, Clock, Eye, FileText, Package, Plus, UserPlus } from "lucide-react";
+import { AcoesLinha, BadgeOrcamento, Botao, CabecalhoPagina, Cartao, ErroCarregamento, Esqueleto, EstadoVazio } from "@/components/ui";
 import { dashboardService } from "@/services";
 import { useUsuarioAtual } from "@/hooks";
 import { data, moeda, numeroDocumento, relativo } from "@/utils/formatos";
@@ -24,6 +25,7 @@ function Indicador({ titulo, valor, detalhe, icone, href }: { titulo: string; va
 }
 
 export function Dashboard() {
+  const router = useRouter();
   const { data: usuario } = useUsuarioAtual();
   const q = useQuery({ queryKey: ["dashboard"], queryFn: dashboardService.obter, refetchInterval: 60_000 });
   const d = q.data;
@@ -50,35 +52,47 @@ export function Dashboard() {
         </>}
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_380px]">
-        <Cartao titulo="Orçamentos recentes" semPadding acao={<Link href="/orcamentos" className="text-[13px] font-medium text-primaria hover:underline">Ver todos</Link>}>
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <Cartao titulo="Orçamentos recentes" semPadding className="min-w-0" acao={<Link href="/orcamentos" className="text-[13px] font-medium text-primaria hover:underline">Ver todos</Link>}>
           {!d ? <div className="space-y-2 p-5">{Array.from({ length: 5 }).map((_, i) => <Esqueleto key={i} className="h-9" />)}</div>
             : d.orcamentosRecentes.length === 0 ? <EstadoVazio titulo="Nenhum orçamento ainda" descricao="Crie o primeiro orçamento para um cliente cadastrado." />
               : <div className="overflow-x-auto"><table className="tabela w-full min-w-[560px] text-sm">
-                <thead><tr><th>Número</th><th>Cliente</th><th>Data</th><th className="text-right">Valor</th><th>Status</th></tr></thead>
+                <thead><tr><th>Número</th><th>Cliente</th><th>Data</th><th className="text-right">Valor</th><th>Status</th><th className="w-16 text-right">Ações</th></tr></thead>
                 <tbody>{d.orcamentosRecentes.map((o) => (
-                  <tr key={o.id} className="hover:bg-slate-50/60">
+                  <tr key={o.id} className="group hover:bg-slate-50/60">
                     <td><Link href={`/orcamentos/${o.id}`} className="numero font-medium text-primaria hover:underline">{numeroDocumento(o.numero)}</Link></td>
                     <td className="max-w-[220px] truncate">{o.cliente}</td>
                     <td className="numero text-texto-suave">{data(o.data)}</td>
                     <td className="numero text-right">{moeda(o.valorTotal)}</td>
                     <td><BadgeOrcamento situacao={o.situacao} /></td>
+                    <td><AcoesLinha acoes={[{
+                      rotulo: `Ver orçamento ${numeroDocumento(o.numero)}`,
+                      icone: <Eye className="h-4 w-4" />,
+                      aoAcionar: () => router.push(`/orcamentos/${o.id}`),
+                    }]} /></td>
                   </tr>))}</tbody></table></div>}
         </Cartao>
 
-        <Cartao titulo={<span>Aguardando retorno {d && <span className="numero ml-1 text-texto-fraco">{d.totalAguardandoRetorno}</span>}</span>} semPadding
+        <Cartao titulo={<span>Aguardando retorno {d && <span className="numero ml-1 text-texto-fraco">{d.totalAguardandoRetorno}</span>}</span>} semPadding className="min-w-0"
           acao={<Link href="/orcamentos?status=AguardandoRetorno" className="text-[13px] font-medium text-primaria hover:underline">Ver todos</Link>}>
           {!d ? <div className="space-y-2 p-5">{Array.from({ length: 3 }).map((_, i) => <Esqueleto key={i} className="h-14" />)}</div>
             : d.aguardandoRetorno.length === 0 ? <p className="px-5 py-8 text-center text-sm text-texto-fraco">Nenhuma proposta aguardando retorno.</p>
               : <ul className="divide-y divide-borda">{d.aguardandoRetorno.map((a) => (
-                <li key={a.id}><Link href={`/orcamentos/${a.id}`} className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/60">
-                  <div className="min-w-0 flex-1">
+                <li key={a.id} className="group flex items-center gap-2 px-5 hover:bg-slate-50/60">
+                  <Link href={`/orcamentos/${a.id}`} className="flex min-w-0 flex-1 items-center gap-3 py-3.5">
+                    <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium"><span className="numero text-primaria">{numeroDocumento(a.numero)}</span> · {a.cliente}</p>
                     <p className="mt-0.5 text-xs text-texto-fraco">{a.apresentadoEm ? `Apresentado ${relativo(a.apresentadoEm)}` : "Apresentado"} · <span className={a.diasParaVencer <= 1 ? "font-medium text-red-600" : a.diasParaVencer <= 3 ? "text-amber-700" : ""}>
                       {a.diasParaVencer < 0 ? "vencido" : a.diasParaVencer === 0 ? "vence hoje" : a.diasParaVencer === 1 ? "vence amanhã" : `vence em ${a.diasParaVencer} dias`}</span></p>
                   </div>
-                  <span className="numero text-sm">{moeda(a.valorTotal)}</span><ArrowRight className="h-4 w-4 text-texto-fraco" />
-                </Link></li>))}</ul>}
+                    <span className="numero text-sm">{moeda(a.valorTotal)}</span><ArrowRight className="h-4 w-4 text-texto-fraco" />
+                  </Link>
+                  <AcoesLinha acoes={[{
+                    rotulo: `Ver orçamento ${numeroDocumento(a.numero)}`,
+                    icone: <Eye className="h-4 w-4" />,
+                    aoAcionar: () => router.push(`/orcamentos/${a.id}`),
+                  }]} />
+                </li>))}</ul>}
         </Cartao>
       </div>
     </>

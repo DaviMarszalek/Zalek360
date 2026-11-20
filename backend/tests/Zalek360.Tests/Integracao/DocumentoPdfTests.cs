@@ -118,7 +118,7 @@ public class EndpointPdfTests
         var db = scope.ServiceProvider.GetRequiredService<ZalekDbContext>();
         var o = await db.Orcamentos.SingleAsync(o => o.Numero == 123);
         var antes = await db.HistoricoEventos.CountAsync();
-        var usuario = await db.Usuarios.FirstAsync();
+        var usuario = await db.Usuarios.FirstAsync(u => u.Perfil == PerfilUsuario.Gestor);
         var tokens = scope.ServiceProvider.GetRequiredService<ITokenService>();
         var operador = Zalek360.Domain.Entities.Usuario.Criar("Operador", "operador@example.com", "hash",
             PerfilUsuario.Operador, factory.Relogio.AgoraUtc);
@@ -146,7 +146,7 @@ public class EndpointPdfTests
         Assert.Equal(HttpStatusCode.Unauthorized, semLogin.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized,
             (await client.PostAsync($"/api/orcamentos/{inexistente}/exportacoes", null)).StatusCode);
-        var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "maria.silva@zalekpersonalizados.com.br", senha = "Zalek@2026", manterConectado = false });
+        var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "gestor@zalekpersonalizados.com.br", senha = "Zalek@2026", manterConectado = false });
         login.EnsureSuccessStatusCode();
         var json = await login.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", json.GetProperty("accessToken").GetString());

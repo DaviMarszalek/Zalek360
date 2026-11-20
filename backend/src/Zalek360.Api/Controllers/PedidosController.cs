@@ -11,7 +11,7 @@ namespace Zalek360.Api.Controllers;
 /// <summary>Pedidos — sempre originados de orçamentos aprovados (RN8/RN9).</summary>
 [ApiController]
 [Route("api/pedidos")]
-[Authorize(Policy = Politicas.Comercial)]
+[Authorize(Policy = Politicas.Consulta)]
 public sealed class PedidosController : ControllerBase
 {
     private readonly PedidoService _servico;
@@ -46,6 +46,7 @@ public sealed class PedidosController : ControllerBase
 
     /// <summary>Evolui o status (Aberto → Em produção → Pronto → Entregue) ou cancela (motivo obrigatório).</summary>
     [HttpPatch("{id:guid}/status")]
+    [Authorize(Policy = Politicas.Operacao)]
     public Task<PedidoDetalheDto> AtualizarStatus(Guid id, [FromBody] AtualizarSituacaoPedidoRequest request, CancellationToken ct) =>
         _servico.AtualizarSituacaoAsync(id, request, ct);
 }

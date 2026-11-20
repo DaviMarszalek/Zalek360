@@ -95,7 +95,7 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     [*] --> Aberto: somente via aprovação do orçamento (RN9)
-    Aberto --> EmProducao: atualizar status
+    Aberto --> EmProducao: legado sem controle ou materiais sem pendência (baixa transitória)
     EmProducao --> Pronto: atualizar status
     Pronto --> Entregue: atualizar status
     Aberto --> Cancelado: motivo obrigatório
@@ -125,7 +125,7 @@ As mudanças em relação ao DER atual:
 - `arquivos_anexos` pode pertencer a item de orçamento **ou** item de pedido (e guarda `anexo_origem_id`, referência lógica sem FK);
 - `contatos_orcamento` e `decisoes_orcamento` ligam-se a `usuarios`.
 
-As 22 chaves estrangeiras abaixo são as da migration.
+O diagrama abaixo registra as 22 FKs da base comercial original. O complemento de estoque ao final acrescenta 10 FKs, totalizando 32.
 
 ```mermaid
 erDiagram
@@ -220,10 +220,34 @@ erDiagram
    - `perfil`: Atendente, Gestor, Operador, Administrador
    - `historico_eventos.tipo`: acrescentar `OrcamentoExportadoPdf` (valor 18 no enum, persistido como texto `varchar(40)` por `HasConversion<string>()`); título “Orçamento exportado em PDF”, usuário e data UTC. Um evento referencia cliente e orçamento; nenhuma migration é necessária.
 5. **Tipos:** `datetime` → `timestamp with time zone` (UTC); `decimal 10,2` → `numeric(10,2)`; `text` de livre digitação → `varchar(2000)` (ou 500 para `referencia_arte`, `descricao` do item e `motivo_cancelamento`).
-6. **Restrições:** listar os 7 índices únicos e os 7 checks, cujos nomes estão em `03-alteracoes-e-complementos-na-modelagem.md`.
+6. **Restrições atuais:** 11 índices únicos de negócio (além das 18 PKs), 15 checks e 32 FKs. A base original e o complemento de estoque estão em 03 e 08.
 
 ## 9. Plano de testes (seção 11)
 
 Referenciar os testes automatizados por caso de uso, conforme a tabela "Cobertura resumida" de `02-matriz-rastreabilidade.md`. Acrescentar:
 - o cenário de **rollback da aprovação**, já automatizado em duas camadas;
 - o roteiro manual de demonstração (README, seção 3) como teste de aceitação.
+
+## 10. Complemento de estoque — Fase 2.0
+
+Atualizar RF 4.1.5.1: a aprovação calcula necessidades, reserva até o disponível e registra pendências, sem rejeitar por saldo/ficha. Em pedido controlado, iniciar produção exige ausência de pendências e baixa apenas sua própria reserva. O legado é identificado por controle_materiais, não por data. OS, arte, apontamentos e consumo real não estão implementados.
+
+Adicionar ao DER as relações abaixo; o dicionário físico completo, tipos, filtros dos índices e diferenças para o alvo estão em [08-mvp2.md](08-mvp2.md).
+
+~~~mermaid
+erDiagram
+    PRODUTOS ||--o{ FICHAS_TECNICAS_MATERIAS_PRIMAS : produto_id
+    MATERIAS_PRIMAS ||--o{ FICHAS_TECNICAS_MATERIAS_PRIMAS : materia_prima_id
+    MATERIAS_PRIMAS ||--o{ COMPRAS_MATERIAS_PRIMAS : materia_prima_id
+    PEDIDOS ||--o{ RESERVAS_MATERIAS_PRIMAS_PEDIDO : pedido_id
+    MATERIAS_PRIMAS ||--o{ RESERVAS_MATERIAS_PRIMAS_PEDIDO : materia_prima_id
+    MATERIAS_PRIMAS ||--o{ MOVIMENTOS_MATERIAS_PRIMAS : materia_prima_id
+    PEDIDOS |o--o{ MOVIMENTOS_MATERIAS_PRIMAS : pedido_id
+    USUARIOS |o--o{ MOVIMENTOS_MATERIAS_PRIMAS : usuario_id
+    PEDIDOS ||--o{ PENDENCIAS_FICHA_TECNICA_PEDIDO : pedido_id
+    PRODUTOS ||--o{ PENDENCIAS_FICHA_TECNICA_PEDIDO : produto_id
+~~~
+
+Enums persistidos adicionais: reservas = Reservada/Consumida/Liberada; compras = Planejada/Pedido/Recebida/Cancelada; movimentos = EntradaCompra/SaidaPedido/Ajuste/Reserva/LiberacaoReserva. Histórico acrescenta ControleMateriaisAtivado e MateriaisPedidoAtualizados.
+
+No plano de testes, acrescentar EstoqueTransacionalTests e EstoquePostgresTests: reserva completa/parcial, ficha ausente em pedido misto, cancelamento, baixa própria, bloqueio, rollback, legado e concorrência PostgreSQL. Testes criam os próprios dados; o seed continua comercial. BDD-12/OS fica para 2.2. Evidências de execução e limites de cobertura estão em 08; interação visual da Fase 2.0 não foi executada.

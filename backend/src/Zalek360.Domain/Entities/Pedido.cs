@@ -33,6 +33,7 @@ public class Pedido : RaizAgregado
     public DateTime? EntregueEm { get; private set; }
     public DateTime? CanceladoEm { get; private set; }
     public string? MotivoCancelamento { get; private set; }
+    public bool ControleMateriais { get; private set; } = true;
 
     public IReadOnlyCollection<ItemPedido> Itens => _itens;
 
@@ -50,6 +51,19 @@ public class Pedido : RaizAgregado
     };
 
     public bool PodeCancelar => Situacao is SituacaoPedido.Aberto or SituacaoPedido.EmProducao or SituacaoPedido.Pronto;
+
+    public void RegistrarRevisaoMateriais(DateTime agora, Guid usuarioId, bool ativarControle = false)
+    {
+        if (Situacao != SituacaoPedido.Aberto)
+            throw new DomainException(CodigosErro.PedidoTransicaoInvalida, "Os materiais só podem ser ajustados enquanto o pedido aguarda produção.", CategoriaErro.Conflito);
+        var ativado = ativarControle && !ControleMateriais;
+        if (ativarControle) ControleMateriais = true;
+        RegistrarHistorico(Evento(ativado ? TipoEventoHistorico.ControleMateriaisAtivado : TipoEventoHistorico.MateriaisPedidoAtualizados,
+            ativado ? "Controle de materiais ativado" : "Materiais do pedido atualizados",
+            ativado ? "Pedido legado passou a controlar materiais pela aplicação da ficha técnica." : "Necessidades, reservas e pendências revisadas.", agora, agora, usuarioId));
+        MarcarAlteracao(agora, usuarioId);
+        IncrementarVersao();
+    }
 
     /// <summary>Fábrica única: herda cliente, itens, personalização, artes, valores, prazo, condições e observações.</summary>
     public static Pedido CriarAPartirDe(Orcamento orcamento, int numero, DateOnly dataAprovacaoLocal, DateTime agoraUtc, Guid? usuarioId)

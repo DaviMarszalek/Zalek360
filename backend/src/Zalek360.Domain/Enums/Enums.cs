@@ -40,5 +40,7 @@ public enum TipoEventoHistorico
     PedidoCriado = 30,
     PedidoStatusInicial = 31,
     PedidoStatusAlterado = 32,
-    PedidoCancelado = 33
+    PedidoCancelado = 33,
+    ControleMateriaisAtivado = 34,
+    MateriaisPedidoAtualizados = 35
 }

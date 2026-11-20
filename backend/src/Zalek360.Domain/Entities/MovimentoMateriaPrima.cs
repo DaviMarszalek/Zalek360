@@ -1,6 +1,6 @@
 namespace Zalek360.Domain.Entities;
 
-public enum TipoMovimentoMateriaPrima { EntradaCompra, SaidaPedido, Ajuste }
+public enum TipoMovimentoMateriaPrima { EntradaCompra, SaidaPedido, Ajuste, Reserva, LiberacaoReserva }
 
 public sealed class MovimentoMateriaPrima : Zalek360.Domain.Common.Entidade
 {
@@ -12,7 +12,12 @@ public sealed class MovimentoMateriaPrima : Zalek360.Domain.Common.Entidade
     public TipoMovimentoMateriaPrima Tipo { get; private set; }
     public string? Observacao { get; private set; }
     public DateTime CriadoEm { get; private set; }
+    public decimal? SaldoFisicoApos { get; private set; }
+    public decimal? SaldoReservadoApos { get; private set; }
+    public Guid? UsuarioId { get; private set; }
     private MovimentoMateriaPrima() { }
-    public static MovimentoMateriaPrima Criar(Guid materialId, Guid? pedidoId, decimal variacao, TipoMovimentoMateriaPrima tipo, string? observacao, DateTime agora) => new()
-    { MateriaPrimaId = materialId, PedidoId = pedidoId, Variacao = variacao, Tipo = tipo, Observacao = observacao, CriadoEm = agora };
+    public static MovimentoMateriaPrima Criar(Guid materialId, Guid? pedidoId, decimal variacao, TipoMovimentoMateriaPrima tipo, string? observacao, DateTime agora,
+        decimal? saldoFisicoApos = null, decimal? saldoReservadoApos = null, Guid? usuarioId = null) => new()
+    { MateriaPrimaId = materialId, PedidoId = pedidoId, Variacao = variacao, Tipo = tipo, Observacao = observacao, CriadoEm = agora,
+        SaldoFisicoApos = saldoFisicoApos, SaldoReservadoApos = saldoReservadoApos, UsuarioId = usuarioId };
 }

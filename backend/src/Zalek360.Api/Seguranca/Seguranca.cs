@@ -1,14 +1,15 @@
 using Zalek360.Application.Common;
 using Zalek360.Application.Interfaces;
 using Zalek360.Domain.Common;
+using Zalek360.Domain.Enums;
 
 namespace Zalek360.Api.Seguranca;
 
 public static class Politicas
 {
-    /// <summary>Perfis que operam o fluxo comercial. Preparado para perfis futuros (Operador, Gestor etc.).</summary>
-    public const string Comercial = "Comercial";
-    public static readonly string[] PerfisComerciais = { "Atendente", "Gestor", "Administrador" };
+    public const string Consulta = "Consulta";
+    public const string Operacao = "Operacao";
+    public const string Administracao = "Administracao";
 }
 
 public sealed class OpcoesCookieAuth

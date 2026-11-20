@@ -32,14 +32,16 @@ public sealed class PedidoService
 
     public async Task<PedidoDetalheDto> AtualizarSituacaoAsync(Guid id, AtualizarSituacaoPedidoRequest request, CancellationToken ct)
     {
+        await using var transacao = await _uow.IniciarTransacaoAsync(ct);
         var pedido = await _pedidos.ObterParaAlteracaoAsync(id, ct) ?? throw new NaoEncontradoException("Pedido");
         Concorrencia.VerificarVersao(pedido.Versao, request.Versao);
         pedido.AtualizarSituacao(request.NovaSituacao, request.Observacao, _clock.AgoraUtc, _usuario.Id);
-        if (pedido.Situacao == Zalek360.Domain.Enums.SituacaoPedido.EmProducao)
+        if (pedido.ControleMateriais && pedido.Situacao == Zalek360.Domain.Enums.SituacaoPedido.EmProducao)
             await _estoque.ConsumirReservasPedidoAsync(id, ct);
         else if (pedido.Situacao == Zalek360.Domain.Enums.SituacaoPedido.Cancelado && request.NovaSituacao == Zalek360.Domain.Enums.SituacaoPedido.Cancelado)
             await _estoque.LiberarReservasPedidoAsync(id, ct);
         await _uow.SaveChangesAsync(ct);
+        await transacao.ConfirmarAsync(ct);
         return await _consultas.ObterDetalheAsync(id, ct);
     }
 }

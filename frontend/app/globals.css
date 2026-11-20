@@ -53,6 +53,21 @@
   .tabela tbody tr:last-child td {
     @apply border-b-0;
   }
+
+  .acoes-linha {
+    @apply flex items-center justify-end gap-1 opacity-0 transition-opacity;
+  }
+
+  .group:hover .acoes-linha,
+  .group:focus-within .acoes-linha {
+    @apply opacity-100;
+  }
+
+  @media (hover: none), (max-width: 640px) {
+    .acoes-linha {
+      @apply opacity-100;
+    }
+  }
 }
 
 

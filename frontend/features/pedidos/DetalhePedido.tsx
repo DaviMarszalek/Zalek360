@@ -82,7 +82,7 @@ function ModalStatus({ p, alvo, aoFechar }: { p: PedidoDetalhe; alvo: SituacaoPe
     mutationFn: () => pedidosService.atualizarStatus(p.id, alvo!, obs, p.versao),
     onSuccess: (d) => {
       qc.setQueryData(["pedido", p.id], d);
-      for (const k of [["pedido", p.id], ["pedidos"], ["dashboard"], ["cliente", p.cliente.id], ["estoque", "materias"]]) qc.invalidateQueries({ queryKey: k });
+      for (const k of [["pedido", p.id], ["pedidos"], ["dashboard"], ["cliente", p.cliente.id], ["estoque"]]) qc.invalidateQueries({ queryKey: k });
       toast("sucesso", cancelando ? `Pedido ${numeroDocumento(p.numero)} cancelado.` : `Pedido ${numeroDocumento(p.numero)} agora está ${rotuloSituacaoPedido[d.situacao]}.`);
       fechar();
     },
@@ -212,12 +212,12 @@ export function PedidoManualBloqueado() {
       <Cartao className="max-w-2xl">
         <div className="flex gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700"><Info className="h-5 w-5" /></div>
-          <div className="text-sm">
+          <div className="min-w-0 text-sm">
             <p className="text-base font-semibold">Pedido deve ser originado de um orçamento aprovado.</p>
             <p className="mt-2 text-texto-suave">No Zalek360 não existe cadastro manual de pedido. Abra um orçamento que esteja <b>Aguardando Retorno</b> e registre a aprovação do cliente — o pedido é gerado automaticamente com os itens, personalização, artes e valores do orçamento.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/orcamentos?status=AguardandoRetorno"><Botao>Ver orçamentos aguardando retorno</Botao></Link>
-              <Link href="/pedidos"><Botao variante="secundaria">Voltar para pedidos</Botao></Link>
+            <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
+              <Link href="/orcamentos?status=AguardandoRetorno" className="block min-w-0"><Botao className="max-w-full whitespace-normal text-left sm:whitespace-nowrap">Ver orçamentos aguardando retorno</Botao></Link>
+              <Link href="/pedidos" className="block min-w-0"><Botao variante="secundaria" className="max-w-full whitespace-normal text-left sm:whitespace-nowrap">Voltar para pedidos</Botao></Link>
             </div>
           </div>
         </div>

@@ -3,8 +3,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ChevronRight, Plus, Search, SearchX, Users } from "lucide-react";
-import { Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Etiqueta, Paginacao, Selecao } from "@/components/ui";
+import { Eye, Pencil, Plus, Search, SearchX, Users } from "lucide-react";
+import { AcoesLinha, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Etiqueta, Paginacao, Selecao } from "@/components/ui";
 import { clientesService } from "@/services";
 import { useDebounce } from "@/hooks";
 import { erroDaApi } from "@/lib/api";
@@ -59,16 +59,23 @@ export function ListaClientes() {
                   acao={<Link href="/clientes/novo"><Botao icone={<Plus className="h-4 w-4" />}>Cadastrar cliente</Botao></Link>} />)
               : <>
                 <div className="overflow-x-auto"><table className="tabela w-full min-w-[820px] text-sm">
-                  <thead><tr><th>Cliente</th><th>CPF/CNPJ</th><th>Contato</th><th>Cidade</th><th>Último orçamento</th><th className="w-8" /></tr></thead>
+                  <thead><tr><th>Cliente</th><th>CPF/CNPJ</th><th>Contato</th><th>Cidade</th><th>Último orçamento</th><th className="w-24 text-right">Ações</th></tr></thead>
                   <tbody>{q.data.itens.map((c) => (
-                    <tr key={c.id} className="cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/clientes/${c.id}`)}>
+                    <tr key={c.id} tabIndex={0} className="group cursor-pointer hover:bg-slate-50/60" onClick={() => router.push(`/clientes/${c.id}`)}
+                      onKeyDown={(evento) => {
+                        if (evento.target !== evento.currentTarget) return;
+                        if (evento.key === "Enter" || evento.key === " ") { evento.preventDefault(); router.push(`/clientes/${c.id}`); }
+                      }}>
                       <td><Link href={`/clientes/${c.id}`} className="font-medium text-texto hover:text-primaria" onClick={(e) => e.stopPropagation()}>{c.nome}</Link>
                         {c.razaoSocial && c.razaoSocial !== c.nome && <p className="mt-0.5 text-xs text-texto-fraco">{c.razaoSocial}</p>}</td>
                       <td className="numero text-texto-suave">{documento(c.documento)}</td>
                       <td className="text-texto-suave"><p className="numero">{telefone(c.whatsApp ?? c.telefone) || "—"}</p>{c.email && <p className="text-xs text-texto-fraco">{c.email}</p>}</td>
                       <td className="text-texto-suave">{c.cidade ?? "—"}</td>
                       <td>{c.ultimoOrcamento ? <><span className="numero text-texto">{numeroDocumento(c.ultimoOrcamento.numero)}</span><span className="numero ml-2 text-xs text-texto-fraco">{data(c.ultimoOrcamento.data)}</span></> : <span className="text-texto-fraco">Sem orçamentos</span>}</td>
-                      <td><ChevronRight className="h-4 w-4 text-texto-fraco" /></td>
+                      <td><AcoesLinha acoes={[
+                        { rotulo: `Ver cliente ${c.nome}`, icone: <Eye className="h-4 w-4" />, aoAcionar: () => router.push(`/clientes/${c.id}`) },
+                        { rotulo: `Editar cliente ${c.nome}`, icone: <Pencil className="h-4 w-4" />, aoAcionar: () => router.push(`/clientes/${c.id}/editar`) },
+                      ]} /></td>
                     </tr>))}</tbody></table></div>
                 <Paginacao pagina={q.data.pagina} totalPaginas={q.data.totalPaginas} total={q.data.total} exibindo={q.data.itens.length} nome={["cliente", "clientes"]} aoMudar={setPagina} />
               </>}

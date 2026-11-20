@@ -80,6 +80,11 @@ public sealed class RepositoriosFake : IUsuarioRepository, IClienteRepository, I
     public Task<Usuario?> ObterPorEmailAsync(string emailNormalizado, CancellationToken ct) =>
         Task.FromResult(_b.Usuarios.FirstOrDefault(u => u.Email == emailNormalizado));
     Task<Usuario?> IUsuarioRepository.ObterPorIdAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Usuarios.FirstOrDefault(u => u.Id == id));
+    Task<IReadOnlyList<Usuario>> IUsuarioRepository.ListarAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<Usuario>>(_b.Usuarios.OrderBy(u => u.Nome).ToList());
+    Task<bool> IUsuarioRepository.EmailExisteAsync(string emailNormalizado, CancellationToken ct) =>
+        Task.FromResult(_b.Usuarios.Any(u => u.Email == emailNormalizado));
+    void IUsuarioRepository.Adicionar(Usuario usuario) => _b.Usuarios.Add(usuario);
 
     Task<Cliente?> IClienteRepository.ObterParaAlteracaoAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Clientes.FirstOrDefault(c => c.Id == id));
     public Task<bool> ExisteAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Clientes.Any(c => c.Id == id));
@@ -88,6 +93,9 @@ public sealed class RepositoriosFake : IUsuarioRepository, IClienteRepository, I
 
     Task<IReadOnlyList<Produto>> IProdutoRepository.ObterPorIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<Produto>>(_b.Produtos.Where(p => ids.Contains(p.Id)).ToList());
+    Task<bool> IProdutoRepository.NomeProdutoExisteAsync(string nome, CancellationToken ct) =>
+        Task.FromResult(_b.Produtos.Any(p => string.Equals(p.Nome, nome.Trim(), StringComparison.OrdinalIgnoreCase)));
+    void IProdutoRepository.Adicionar(Produto produto) => _b.Produtos.Add(produto);
 
     Task<Orcamento?> IOrcamentoRepository.ObterParaAlteracaoAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Orcamentos.FirstOrDefault(o => o.Id == id));
     public Task<IReadOnlyList<Orcamento>> ListarParaExpiracaoAsync(DateOnly hojeLocal, CancellationToken ct) =>
@@ -192,7 +200,9 @@ public sealed class Cenario
     private static Domain.Entities.Usuario Usuario_(string nome) =>
         Domain.Entities.Usuario.Criar(nome, "maria.silva@zalekpersonalizados.com.br", "hash", PerfilUsuario.Atendente, Dados.Agora.AddYears(-1), Dados.UsuarioId);
 
-    public Application.Services.OrcamentoService Orcamentos() => new(Repos, Repos, Repos, Repos, Repos, Repos, Consultas, Numerador, Uow, Relogio, Usuario);
+    public Application.Services.OrcamentoService Orcamentos() => new(Repos, Repos, Repos, Repos, Repos, Repos, Consultas, Numerador, Uow, Relogio, Usuario,
+        new Application.Services.EstoqueService(Estoque, Uow, Relogio, Repos, new ConsultasEstoqueFake(), Repos, new ConsultasEstoqueFake(), Usuario));
+    public EstoqueSemFichaFake Estoque { get; } = new();
     public Application.Services.ClienteService Clientes() => new(Repos, Consultas, Uow, Relogio, Usuario);
     public Application.Services.ExpiracaoOrcamentoService Expiracao() => new(Repos, Uow, Relogio);
 

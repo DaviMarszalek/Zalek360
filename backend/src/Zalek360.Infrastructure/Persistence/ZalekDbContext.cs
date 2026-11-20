@@ -25,6 +25,7 @@ public sealed class ZalekDbContext : DbContext, IUnitOfWork
     public DbSet<FichaTecnicaMaterial> FichasTecnicasMateriasPrimas => Set<FichaTecnicaMaterial>();
     public DbSet<ReservaMateriaPrimaPedido> ReservasMateriasPrimasPedido => Set<ReservaMateriaPrimaPedido>();
     public DbSet<MovimentoMateriaPrima> MovimentosMateriasPrimas => Set<MovimentoMateriaPrima>();
+    public DbSet<PendenciaFichaTecnicaPedido> PendenciasFichaTecnicaPedido => Set<PendenciaFichaTecnicaPedido>();
     public DbSet<Orcamento> Orcamentos => Set<Orcamento>();
     public DbSet<ItemOrcamento> ItensOrcamento => Set<ItemOrcamento>();
     public DbSet<ArquivoAnexo> ArquivosAnexos => Set<ArquivoAnexo>();
@@ -63,6 +64,8 @@ public sealed class ZalekDbContext : DbContext, IUnitOfWork
     /// <summary>Eventos de histórico produzidos pelos agregados são gravados na mesma operação (mesma transação).</summary>
     private void ColetarHistoricoPendente()
     {
+        if (ChangeTracker.Entries<MovimentoMateriaPrima>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Movimentos de estoque são imutáveis; registre um novo movimento para corrigir o saldo.");
         var agregados = ChangeTracker.Entries()
             .Select(e => e.Entity)
             .OfType<IPossuiHistorico>()

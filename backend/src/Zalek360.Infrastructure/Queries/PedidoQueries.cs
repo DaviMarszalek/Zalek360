@@ -15,6 +15,21 @@ internal sealed class PedidoQueries : IPedidoQueries
 
     public PedidoQueries(ZalekDbContext db) => _db = db;
 
+    public async Task<IReadOnlyList<PendenciaEstoquePedidoDto>> ListarPendenciasMateriaisAsync(CancellationToken ct)
+    {
+        var linhas = await _db.Pedidos.AsNoTracking().Where(p => p.ControleMateriais && p.Situacao == SituacaoPedido.Aberto)
+            .Select(p => new {
+                p.Id, p.Numero, p.PrazoEntrega,
+                FaltaFicha = _db.PendenciasFichaTecnicaPedido.Any(x => x.PedidoId == p.Id && x.ResolvidaEm == null),
+                FaltaSaldo = _db.ReservasMateriasPrimasPedido.Any(x => x.PedidoId == p.Id && x.Situacao == SituacaoReservaMaterial.Reservada && x.QuantidadeReservada < x.Quantidade),
+                Inativo = _db.ReservasMateriasPrimasPedido.Any(x => x.PedidoId == p.Id && x.Situacao == SituacaoReservaMaterial.Reservada && !x.MateriaPrima.Ativo),
+                SemReserva = !_db.ReservasMateriasPrimasPedido.Any(x => x.PedidoId == p.Id && x.Situacao == SituacaoReservaMaterial.Reservada)
+            }).Where(x => x.FaltaFicha || x.FaltaSaldo || x.Inativo || x.SemReserva).OrderBy(x => x.PrazoEntrega).ThenBy(x => x.Numero).ToListAsync(ct);
+        return linhas.Select(x => new PendenciaEstoquePedidoDto(x.Id, x.Numero, x.PrazoEntrega,
+            string.Join("; ", new[] { x.FaltaFicha ? "Ficha técnica ausente" : null, x.FaltaSaldo ? "Saldo insuficiente" : null,
+                x.Inativo ? "Material inativo" : null, x.SemReserva && !x.FaltaFicha ? "Materiais ainda não definidos" : null }.Where(s => s is not null)))).ToList();
+    }
+
     public async Task<ListaComContagemDto<PedidoListaItemDto>> ListarAsync(PedidoFiltro filtro, CancellationToken ct)
     {
         var (pagina, tamanho) = Paginacao.Normalizar(filtro.Pagina, filtro.TamanhoPagina);

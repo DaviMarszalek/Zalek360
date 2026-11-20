@@ -92,4 +92,21 @@
 | UC05 Consultar Histórico | T27–T32 | 1 I |
 | Pedidos (status, cancelamento, bloqueio) | T25, T26 | 2 D + 1 A |
 
-Cada teste foi contado no caso de uso que ele exercita principalmente, e o total fecha em 27 D + 14 A + 3 I = 44. As lacunas de teste automatizado são o login, o dashboard e as consultas do UC05. Elas estão listadas como próximo passo no relatório final.
+A tabela acima é a cobertura histórica inicial: 27 D + 14 A + 3 I = 44. A suíte atual tem 88 testes, incluindo PDF, quatro casos de nomes e 19 cenários de estoque. Login/dashboard e interação visual da Fase 2.0 não têm cobertura completa.
+
+## Matriz adicionada na Fase 2.0
+
+| Fluxo / regra | Tela | Endpoint | Entidade / tabela | Teste / situação |
+|---|---|---|---|---|
+| Necessidade e reserva limitada (RN11/13) | Aprovação e Materiais do pedido | POST /api/orcamentos/{id}/decisao; GET /api/pedidos/{id}/materiais | MateriaPrima, ReservaMateriaPrimaPedido | EstoqueTransacionalTests: completa, parcial e zero saldo — OK |
+| Produto sem ficha (RN12) | Aprovação, pedido e /estoque | GET /api/estoque/pendencias | PendenciaFichaTecnicaPedido | Pedido_misto_reserva_o_produto_com_ficha_e_expoe_a_ficha_ausente — OK |
+| Sem dupla reserva (D3/RN14) | Aprovação | POST …/decisao | saldo_reservado, versões, índice parcial | EstoquePostgresTests.Duas_aprovacoes_disputam_o_mesmo_saldo_sem_dupla_reserva — OK em PostgreSQL |
+| Ajuste e ficha | Materiais do pedido | PUT …/materiais; POST …/materiais/ficha-tecnica | Reservas, pendências e histórico | Ajustar_consumo_preserva_a_reserva_dos_outros_pedidos; Aplicar_ficha_corrigida_resolve_a_pendencia_sem_ficha — OK |
+| Baixa / bloqueio | Detalhe do pedido | PATCH /api/pedidos/{id}/status | Material, reserva, movimento, pedido | Baixa_transitoria_consume_somente_a_propria_reserva; Pendencia_de_saldo_ou_ficha_bloqueia_producao_com_rollback_do_status — OK |
+| Cancelamento (RN16) | Pedido | PATCH …/status | Liberação e movimento | Cancelamento_libera_somente_a_reserva_do_pedido_e_registra_movimento — OK |
+| Rollback | Aprovação | POST …/decisao | Transação completa | Falha_na_gravacao_da_reserva_desfaz_toda_a_aprovacao — OK |
+| Legado (D7) | Materiais do pedido | POST …/materiais/ficha-tecnica | pedidos.controle_materiais | Legado_mantem_fluxo_manual_ou_ativa_controle_explicitamente — OK |
+| Compra, ajuste, ficha e movimentos | /estoque | /api/estoque/* | Estoque e movimentos | EstoqueTransacionalTests: recebimento, cancelamento, inativo, ficha e imutabilidade — OK |
+| Reconciliação | Migration | Migrate | Reservas e saldos | Backfill_consolida_duplicadas_prioriza_prazo_e_preserva_pedidos_legados — OK em PostgreSQL |
+
+Os cenários de estoque implementam o resumo aprovado associado a BDD-8–BDD-11. OS/apontamentos e BDD-12 são futuros. Dicionário e situação das regras em [08-mvp2.md](08-mvp2.md).

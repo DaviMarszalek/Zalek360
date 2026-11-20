@@ -13,7 +13,7 @@ import { erroCampo, erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { meiosContato, rotuloMeio, rotuloResultado, rotuloSituacaoOrcamento } from "@/lib/status";
 import { agoraLocalInput, data, dataDeInstante, dataHora, diasEntre, hojeIso, localInputParaIso, moeda, numeroDocumento, relativo, tamanhoArquivo } from "@/utils/formatos";
-import type { ErroApi, MeioContato, OrcamentoDetalhe, PedidoVinculado, ResultadoDecisao } from "@/types/api";
+import type { ErroApi, MateriaisPedido, MeioContato, OrcamentoDetalhe, PedidoVinculado, ResultadoDecisao } from "@/types/api";
 
 function Etapas({ o }: { o: OrcamentoDetalhe }) {
   const decidido = !["EmElaboracao", "AguardandoRetorno"].includes(o.situacao);
@@ -125,7 +125,7 @@ function ModalApresentar({ o, aberto, aoFechar }: { o: OrcamentoDetalhe; aberto:
   );
 }
 
-function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o: OrcamentoDetalhe; aberto: boolean; aoFechar: () => void; somenteCancelar?: boolean; aoAprovado: (p: PedidoVinculado) => void }) {
+function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o: OrcamentoDetalhe; aberto: boolean; aoFechar: () => void; somenteCancelar?: boolean; aoAprovado: (p: PedidoVinculado, materiais: MateriaisPedido | null) => void }) {
   const qc = useQueryClient();
   const toast = useToast();
   const [resultado, setResultado] = useState<ResultadoDecisao | null>(somenteCancelar ? "Cancelado" : null);
@@ -145,7 +145,7 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
       for (const k of [["orcamento", o.id], ["orcamentos"], ["pedidos"], ["dashboard"], ["cliente", o.cliente.id]]) qc.invalidateQueries({ queryKey: k });
       setConfirmar(false);
       aoFechar();
-      if (r.pedidoGerado) aoAprovado(r.pedidoGerado);
+      if (r.pedidoGerado) { qc.invalidateQueries({ queryKey: ["estoque"] }); aoAprovado(r.pedidoGerado, r.materiais); }
       else toast("sucesso", `Decisão registrada: ${rotuloResultado[r.orcamento.decisao?.resultado ?? "Recusado"]}.`);
     },
     onError: (e) => {
@@ -226,6 +226,8 @@ export function DetalheOrcamento() {
   const historico = useQuery({ queryKey: ["orcamento", id, "historico", aba], queryFn: () => orcamentosService.historico(id, aba || undefined), enabled: !!q.data });
   const [modal, setModal] = useState<"contato" | "apresentar" | "decisao" | "cancelar" | null>(null);
   const [pedidoGerado, setPedidoGerado] = useState<PedidoVinculado | null>(null);
+  const [materiaisGerados, setMateriaisGerados] = useState<MateriaisPedido | null>(null);
+  const aoAprovado = (p: PedidoVinculado, materiais: MateriaisPedido | null) => { setPedidoGerado(p); setMateriaisGerados(materiais); };
   const pdf = useExportarOrcamento(id, q.data?.cliente.id ?? "");
 
   if (q.isError) return <ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} />;
@@ -309,11 +311,12 @@ export function DetalheOrcamento() {
 
       <ModalContato o={o} aberto={modal === "contato"} aoFechar={() => setModal(null)} />
       <ModalApresentar o={o} aberto={modal === "apresentar"} aoFechar={() => setModal(null)} />
-      <ModalDecisao key={`d-${o.versao}`} o={o} aberto={modal === "decisao"} aoFechar={() => setModal(null)} aoAprovado={setPedidoGerado} />
-      <ModalDecisao key={`c-${o.versao}`} o={o} aberto={modal === "cancelar"} aoFechar={() => setModal(null)} somenteCancelar aoAprovado={setPedidoGerado} />
+      <ModalDecisao key={`d-${o.versao}`} o={o} aberto={modal === "decisao"} aoFechar={() => setModal(null)} aoAprovado={aoAprovado} />
+      <ModalDecisao key={`c-${o.versao}`} o={o} aberto={modal === "cancelar"} aoFechar={() => setModal(null)} somenteCancelar aoAprovado={aoAprovado} />
 
       <Modal aberto={!!pedidoGerado} aoFechar={() => setPedidoGerado(null)} titulo="Pedido gerado com sucesso"
         rodape={<><Botao variante="secundaria" onClick={() => setPedidoGerado(null)}>Voltar ao orçamento</Botao>{pedidoGerado && <Link href={`/pedidos/${pedidoGerado.id}`}><Botao icone={<Package className="h-4 w-4" />}>Ver pedido {numeroDocumento(pedidoGerado.numero)}</Botao></Link>}</>}>
+        {materiaisGerados?.temPendencia && <Aviso tipo="alerta">A aprovação foi mantida. Há pendências de materiais ou ficha técnica no pedido; resolva-as antes de iniciar a produção.</Aviso>}
         {pedidoGerado && <div className="flex gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><CheckCircle2 className="h-6 w-6" /></div>
           <div className="text-sm"><p>O orçamento <b className="numero">{numeroDocumento(o.numero)}</b> foi aprovado e o pedido <b className="numero">{numeroDocumento(pedidoGerado.numero)}</b> foi criado com status <b>Aberto</b>.</p>
