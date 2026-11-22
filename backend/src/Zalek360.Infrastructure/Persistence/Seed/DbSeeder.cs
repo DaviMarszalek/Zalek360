@@ -54,7 +54,7 @@ internal sealed class DbSeeder
         var maria = Usuario.Criar("Maria Silva", "maria.silva@zalekpersonalizados.com.br", hash, PerfilUsuario.Atendente, desde);
         var carlos = Usuario.Criar("Carlos Souza", "carlos.souza@zalekpersonalizados.com.br", hash, PerfilUsuario.Atendente, desde);
         var fernanda = Usuario.Criar("Fernanda Lima", "fernanda.lima@zalekpersonalizados.com.br", hash, PerfilUsuario.Atendente, desde);
-        var gestor = Usuario.Criar("Gestor Zalek", "gestor@zalekpersonalizados.com.br", hash, PerfilUsuario.Gestor, desde);
+        var gestor = Usuario.Criar("Gestor Zalek", "gestao@zalekpersonalizados.com.br", hash, PerfilUsuario.Gestor, desde);
         var admin = Usuario.Criar("Administrador Zalek", "admin@zalekpersonalizados.com.br", hash, PerfilUsuario.Administrador, desde);
         _db.Usuarios.AddRange(maria, carlos, fernanda, gestor, admin);
 

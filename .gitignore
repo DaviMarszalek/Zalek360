@@ -5,6 +5,8 @@ out/
 *.tsbuildinfo
 **/bin/
 **/obj/
+frontend/test-results/
+frontend/playwright-report/
 
 # Ambiente e dados locais
 .env

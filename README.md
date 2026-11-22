@@ -11,9 +11,9 @@ O cliente **não acessa o sistema**: WhatsApp, ligação, e-mail ou conversa pre
 | Swagger | http://localhost:5000/swagger |
 | Health check | http://localhost:5000/health |
 
-**Acesso de demonstração:** `gestor@zalekpersonalizados.com.br` / `Zalek@2026` (perfil Gestor).
-Também existem `admin@zalekpersonalizados.com.br` (Administrador) e as contas históricas Maria Silva, Carlos Souza e Fernanda Lima (perfil Atendente), todas com a mesma senha. Perfis legados são preservados nos dados, mas não autenticam no modelo de acesso atual.
-Em uma base já populada, o seed não é reaplicado. Entre como Administrador e crie a conta Gestor pela rota `POST /api/usuarios` no Swagger; essa ação não altera nem exclui contas ou históricos existentes.
+**Acessos de demonstração em banco novo:** `admin@zalekpersonalizados.com.br` (Administrador) e `gestao@zalekpersonalizados.com.br` (Gestor), ambos com senha `Zalek@2026`.
+As contas históricas Maria Silva, Carlos Souza e Fernanda Lima (perfil Atendente) continuam no seed, com a mesma senha. Perfis legados são preservados nos dados, mas não autenticam no modelo de acesso atual.
+Em bases já populadas pelo seed anterior, a conta Gestor existente continua com `gestor@zalekpersonalizados.com.br`; o seed não renomeia nem cria contas quando já há usuários. Entre como Administrador e crie uma conta Gestor pela rota `POST /api/usuarios` no Swagger; essa ação não altera nem exclui contas ou históricos existentes.
 
 ---
 
@@ -69,6 +69,16 @@ npm run dev
 ```
 
 O navegador chama sempre `/api/*` no próprio frontend, e o Next.js encaminha para `API_INTERNAL_URL`. Assim o cookie de sessão fica no mesmo domínio e o navegador não precisa de CORS.
+
+**Testes E2E** usam Playwright e o Microsoft Edge instalado (`channel: msedge`). Com o ambiente isolado já iniciado:
+
+```powershell
+cd frontend
+$env:E2E_BASE_URL = "http://localhost:3100"
+npm run e2e
+```
+
+O comando não inicia nem altera dados automaticamente; a URL deve apontar para um ambiente descartável.
 
 ## 3. Roteiro de demonstração (segue os protótipos)
 

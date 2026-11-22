@@ -50,9 +50,14 @@ public static class ConfiguracaoServicos
                 {
                     var erros = contexto.ModelState
                         .Where(e => e.Value?.Errors.Count > 0)
+                        .GroupBy(e => NormalizarCampo(e.Key), StringComparer.OrdinalIgnoreCase)
                         .ToDictionary(
-                            e => NormalizarCampo(e.Key),
-                            e => e.Value!.Errors.Select(x => string.IsNullOrWhiteSpace(x.ErrorMessage) ? "Valor inválido." : TraduzirMensagem(x.ErrorMessage)).ToArray());
+                            grupo => grupo.Key,
+                            grupo => grupo.SelectMany(e => e.Value!.Errors)
+                                .Select(x => string.IsNullOrWhiteSpace(x.ErrorMessage) ? "Valor inválido." : TraduzirMensagem(x.ErrorMessage))
+                                .Distinct()
+                                .ToArray(),
+                            StringComparer.OrdinalIgnoreCase);
                     var resposta = new ErroResposta(StatusCodes.Status400BadRequest, CodigosErro.Validacao,
                         "Alguns campos estão com formato inválido.", erros, null, contexto.HttpContext.TraceIdentifier);
                     return new BadRequestObjectResult(resposta);
