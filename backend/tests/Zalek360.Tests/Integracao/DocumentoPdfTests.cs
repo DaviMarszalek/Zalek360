@@ -109,6 +109,26 @@ public sealed class ApiPdfFactory : WebApplicationFactory<Program>
 public class EndpointPdfTests
 {
     [Fact]
+    public async Task Json_malformado_retorna_400_no_contrato_de_erro_padrao()
+    {
+        await using var factory = new ApiPdfFactory();
+        await factory.PrepararSeedAsync();
+        using var client = factory.CreateClient();
+        using var corpo = new StringContent("{\"email\":", Encoding.UTF8, "application/json");
+
+        var resposta = await client.PostAsync("/api/auth/login", corpo);
+
+        Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
+        using var json = await System.Text.Json.JsonDocument.ParseAsync(await resposta.Content.ReadAsStreamAsync());
+        var raiz = json.RootElement;
+        Assert.Equal(400, raiz.GetProperty("status").GetInt32());
+        Assert.False(string.IsNullOrWhiteSpace(raiz.GetProperty("code").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(raiz.GetProperty("message").GetString()));
+        Assert.Equal(System.Text.Json.JsonValueKind.Object, raiz.GetProperty("errors").ValueKind);
+        Assert.NotEmpty(raiz.GetProperty("errors").EnumerateObject());
+    }
+
+    [Fact]
     public async Task Falha_na_geracao_nao_registra_exportacao_e_perfil_operador_nao_tem_acesso()
     {
         await using var factory = new ApiPdfFactory(new GeradorComFalha());
@@ -146,7 +166,7 @@ public class EndpointPdfTests
         Assert.Equal(HttpStatusCode.Unauthorized, semLogin.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized,
             (await client.PostAsync($"/api/orcamentos/{inexistente}/exportacoes", null)).StatusCode);
-        var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "gestor@zalekpersonalizados.com.br", senha = "Zalek@2026", manterConectado = false });
+        var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "gestao@zalekpersonalizados.com.br", senha = "Zalek@2026", manterConectado = false });
         login.EnsureSuccessStatusCode();
         var json = await login.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", json.GetProperty("accessToken").GetString());

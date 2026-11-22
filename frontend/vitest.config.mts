@@ -10,5 +10,6 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    include: ["features/**/*.test.{ts,tsx}"],
   },
 });
