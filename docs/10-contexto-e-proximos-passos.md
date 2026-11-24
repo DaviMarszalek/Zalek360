@@ -48,7 +48,7 @@
 - **Validação final da Fase 2:** backend **117 aprovados, 0 falhas, 0 ignorados** com PostgreSQL real; Vitest **5/5**; Edge **8/8**; `npm ci`, typecheck, build local e Compose aprovados, em sequência.
 - Produtos/Configurações e formulários verificados em 360 px/1280 px, sem rolagem horizontal, com Escape nos modais. Dados/capturas locais ficam ignorados em `data/revisao-fase2`.
 - Antes dos E2E, o upgrade preservou contagens e hashes dos 8 produtos, 16 orçamentos e 7 pedidos existentes na revisão. Testes adicionais incluem consulta atrasada durante exclusão, 403 em configurações e apresentação correta de valores nulos.
-- Fase 3 autorizada e implementada na branch `revisao/fase-3-orcamento`: preço automático com aviso/restauração; análise interna de custo/margem para Gestor e Administrador; cadastro de produto em modal mantendo os dados do orçamento; miniaturas de referência no orçamento/pedido; necessidade/saldo/falta de materiais por item, informativos.
+- Fase 3 — [PR #6 aberto](https://github.com/DaviMarszalek/Zalek360/pull/6), autorizada e implementada na branch `revisao/fase-3-orcamento`: preço automático com aviso/restauração; análise interna de custo/margem para Gestor e Administrador; cadastro de produto em modal mantendo os dados do orçamento; miniaturas de referência no orçamento/pedido; necessidade/saldo/falta de materiais por item, informativos.
 - Migration via EF `20261124231443_CustoInternoNoItemOrcamento`: somente custo nullable no item, sem backfill. Histórico de nome/preço/custo preservado; catálogo não altera itens existentes.
 - Validação Fase 3: backend **124 aprovados, 0 falhas, 0 ignorados**, PostgreSQL real; Vitest **8/8**; Edge **10/10**; `npm ci`, typecheck, build local e Compose aprovados, em sequência. Comparador: **0 divergências**, 19 tabelas, 222 colunas, 67 constraints, 67 índices, 2 sequências.
 - Upgrade da Fase 3 preservou contagens/hashes de **14 produtos, 19 orçamentos, 28 itens e 7 pedidos**, antes dos dados novos dos E2E. Ambiente principal não foi acessado.
@@ -105,6 +105,6 @@ Criar branch nova da fase seguinte a partir do `main` atualizado somente depois 
 1. Ler `AGENTS.md` e este arquivo.
 2. Conferir `git status` e a branch antes de trocar de contexto. Retomar `revisao/fase-3-orcamento` enquanto seu PR estiver aberto; atualizar `origin` e integrar `origin/main` por merge, preservando alterações locais.
 3. Abrir Docker Desktop e confirmar “Engine running”. Não tocar no projeto principal.
-4. PR #5 está mesclado. Conferir o PR da Fase 3 no GitHub; não mesclar sem novo OK do usuário.
+4. PR #5 está mesclado. Conferir o [PR #6 da Fase 3](https://github.com/DaviMarszalek/Zalek360/pull/6), aberto para revisão; não mesclar sem novo OK do usuário.
 5. Usar o ambiente de revisão com `docker compose -p zalek360-revisao --env-file .env.revisao ...`; nunca exibir ou adicionar o `.env.revisao`.
 6. Aguardar aprovação para mesclar a Fase 3 e para iniciar a Fase 4, em branch nova do `main` atualizado e com plano curto aprovado.

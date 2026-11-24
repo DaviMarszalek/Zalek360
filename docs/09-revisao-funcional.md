@@ -56,7 +56,7 @@ Implementação na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R
 
 ## Atualização — Fase 3: orçamento (24/11/2026)
 
-- Branch `revisao/fase-3-orcamento`, criada de `main` em `3c827a0` após o merge autorizado do PR #5. Plano aprovado pelo usuário.
+- [PR #6 aberto](https://github.com/DaviMarszalek/Zalek360/pull/6), branch `revisao/fase-3-orcamento`, criada de `main` em `3c827a0` após o merge autorizado do PR #5. Plano aprovado pelo usuário; aguardar novo OK para merge.
 - Preço aplicado na seleção do produto, com edição, aviso e restauração. Abrir edição não altera preço histórico; produto sem preço pede valor manual.
 - Modal compartilha o cadastro do catálogo e seleciona o novo produto mantendo os dados do orçamento. Descrição/preço já preenchidos no item são preservados.
 - Análise interna por API para os dois perfis: total com personalização após desconto menos custo dos produtos, sem despesas adicionais; percentual sobre a venda. Valores incompletos/custo ausente não geram margem fictícia; total zero não gera percentual.
