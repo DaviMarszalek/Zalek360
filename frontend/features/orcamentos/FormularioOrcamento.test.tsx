@@ -7,9 +7,9 @@ import type { ItemDetalhe, OrcamentoDetalhe } from "@/types/api";
 
 const mocks = vi.hoisted(() => ({
   produtos: [
-    { id: "p1", nome: "Produto A", categoria: "Canecas", descricaoBase: "Descrição do produto A" },
-    { id: "p2", nome: "Produto B", categoria: "Canecas", descricaoBase: null },
-    { id: "p3", nome: "Produto C", categoria: "Canecas", descricaoBase: "Descrição do produto C" },
+    { id: "p1", nome: "Produto A", categoria: "Canecas", descricaoBase: "Descrição do produto A", precoVenda: 25, custo: 10 },
+    { id: "p2", nome: "Produto B", categoria: "Canecas", descricaoBase: null, precoVenda: null, custo: null },
+    { id: "p3", nome: "Produto C", categoria: "Canecas", descricaoBase: "Descrição do produto C", precoVenda: 60, custo: 25 },
   ],
   anexo: { id: "a1", nome: "arte.png", extensao: ".png", contentType: "image/png", tamanhoBytes: 1, ehImagem: true },
 }));
@@ -32,9 +32,14 @@ vi.mock("@/services", () => ({
   clientesService: { obter: vi.fn() },
   orcamentosService: {
     calcular: vi.fn(async () => ({ itens: [], quantidadeItens: 0, totalUnidades: 0, subtotalProdutos: 0, valorPersonalizacao: 0, desconto: 0, valorTotal: 0, descontoExcedeValor: false })),
+    analisar: vi.fn(async () => ({ receita: 0, custoTotal: null, margemValor: null, margemPercentual: null, completa: false, itens: [] })),
     criar: vi.fn(),
     atualizar: vi.fn(),
   },
+}));
+
+vi.mock("@/features/produtos/FormularioProduto", () => ({
+  FormularioProduto: ({ aoSalvar }: { aoSalvar: (p: unknown) => void }) => <button onClick={() => aoSalvar({ id: "p4", nome: "Produto novo", descricaoBase: "Nova descrição", precoVenda: 90, custo: 30 })}>Salvar produto simulado</button>,
 }));
 
 vi.mock("@/components/ui/toast", () => ({ useToast: () => vi.fn() }));
@@ -184,4 +189,44 @@ describe("itens do orçamento", () => {
     expect(valor(controle(1, "Medidas"))).toBe("10 cm");
     expect(linhaItem(1).getByText("arte.png")).not.toBeNull();
   });
+  it("aplica preço cadastrado, permite alteração e restaura; produto sem preço exige valor manual", async () => {
+    const user = userEvent.setup();
+    renderFormulario();
+    await adicionarItem(user);
+    await selecionarProduto(user, 1, "p1");
+    expect(valor(controle(1, "Valor unitário (R$)"))).toBe("25,00");
+    fireEvent.change(controle(1, "Valor unitário (R$)"), { target: { value: "35,00" } });
+    expect(screen.getByText(/Valor diferente do preço cadastrado/)).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Restaurar preço cadastrado" }));
+    expect(valor(controle(1, "Valor unitário (R$)"))).toBe("25,00");
+    await selecionarProduto(user, 1, "p2");
+    expect(valor(controle(1, "Valor unitário (R$)"))).toBe("");
+    expect(screen.getByText("Produto sem preço cadastrado. Informe o valor unitário.")).not.toBeNull();
+  });
+
+  it("mantém preço histórico ao abrir edição mesmo com preço diferente no catálogo", () => {
+    renderFormulario(orcamentoExistente([itemExistente("i1", "p1", "Produto A", "Descrição", "Azul")]));
+    expect(valor(controle(1, "Valor unitário (R$)"))).toBe("10,00");
+    expect(screen.getByRole("button", { name: "Restaurar preço cadastrado" })).not.toBeNull();
+  });
+
+  it("cria produto no modal preservando cliente, outros itens, valores, personalização e anexos", async () => {
+    const user = userEvent.setup();
+    const item = itemExistente("i1", "p1", "Produto A", "Descrição manual", "Azul");
+    item.anexos = [mocks.anexo];
+    renderFormulario(orcamentoExistente([item, itemExistente("i2", "p3", "Produto C", "Segundo item", "Verde")]));
+    fireEvent.change(screen.getByRole("textbox", { name: "Desconto" }), { target: { value: "5,00" } });
+    await user.click(linhaItem(1).getByRole("button", { name: "Novo produto neste item" }));
+    await user.click(screen.getByRole("button", { name: "Salvar produto simulado" }));
+    expect(valor(controle(1, "Produto"))).toBe("p4");
+    expect(valor(controle(1, "Descrição"))).toBe("Descrição manual");
+    expect(valor(controle(1, "Valor unitário (R$)"))).toBe("10,00");
+    expect(valor(controle(1, "Cor da peça"))).toBe("Azul");
+    expect(linhaItem(1).getByText("arte.png")).not.toBeNull();
+    expect(valor(controle(2, "Produto"))).toBe("p3");
+    expect(valor(controle(2, "Descrição"))).toBe("Segundo item");
+    expect(valor(screen.getByRole("textbox", { name: "Desconto" }))).toBe("5,00");
+    expect(screen.getByRole("link", { name: "Cliente" })).not.toBeNull();
+  });
+
 });
