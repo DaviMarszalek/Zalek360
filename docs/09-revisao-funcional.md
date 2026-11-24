@@ -34,9 +34,25 @@ Implementação na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R
 - Playwright Edge em `http://localhost:3100`: **4/4**, incluindo login/menu dos dois perfis, cadastro de cliente e criação/edição de orçamento pelo Gestor (responsável automático e “A combinar”), 403 em GET/POST usuários e erro da primeira aba inválida no cliente.
 - `docker compose -p zalek360-revisao --env-file .env.revisao up --build -d --wait`: concluído; os serviços ficaram saudáveis.
 - Migration `CondicaoPagamentoOpcional` preservada: comparação anterior com 0 divergências (18 tabelas, 211 colunas, 66 constraints e 65 índices). O comparador não foi reexecutado nesta revisão de permissões; nenhuma migration/modelo foi alterado.
-- Escopo confirmado pelo usuário: Configurações e tela de Usuários permanecem nas fases previstas; o 403 de Configurações ainda não é testável porque não há endpoint. Não foram criadas rotas artificiais.
+- Na Fase 1, Configurações e tela de Usuários ficaram nas fases previstas; o 403 de Configurações só passou a ser testável na Fase 2 com seu endpoint real. A tela de Usuários permanece pendente.
 - Ainda não verificados: cenário Homem-Aranha completo, validação visual em 360 px/1280 px e navegação/retorno de foco em todos os modais. Alinhamentos de quantidades foram preservados sem alteração de estilos.
 - O comando .NET do `AGENTS.md` foi ajustado e validado no PowerShell 5.1: script pela entrada padrão, preservação de aspas e remoção de CRLF sem expor credenciais.
+
+## Atualização — Fase 2: catálogo e opções (24/11/2026)
+
+- Branch `revisao/fase-2-catalogo`, criada de `main` em `9fc55ff` após o merge autorizado do PR #3.
+- Produtos passa a ser uma tela própria para os dois perfis, com busca, formulário único de dados/valores/composição, duplicação, inativação/reativação e exclusão definitiva por Administrador apenas quando nunca usado. Estoque oferece acesso à tela Produtos, sem um segundo editor de catálogo.
+- Preço/custo são opcionais, não negativos e limitados a duas casas; registros antigos continuam com nulo. Valores e textos dos itens históricos não são reescritos.
+- Categorias, personalizações, condições e motivos vêm de `opcoes_catalogo`. Configurações é exclusivo do Administrador; desativação preserva valores históricos. Categorias legadas são incorporadas de forma aditiva.
+- Cadastro/edição de produto com composição é transacional. API verifica versão e nome único; exclusão é protegida também pelas FKs existentes.
+- Migration via EF: `20261124220121_CatalogoProdutosEOpcoes`. Comparador na rede de revisão: 0 divergências, 19 tabelas, 221 colunas, 67 constraints, 67 índices, 2 sequências. Teste PostgreSQL verifica upgrade de produto/categoria legado sem inventar preço/custo.
+- **Validação final da Fase 2:** backend **117 aprovados, 0 falhas, 0 ignorados** com PostgreSQL real; Vitest **5/5**; Edge **8/8**; `npm ci`, typecheck, build local e Compose aprovados, em sequência no ambiente `zalek360-revisao`.
+- E2E cobre Gestor criando/editando/duplicando/inativando produto com custo e composição, 403 em Configurações/exclusão, Administrador gerenciando categoria e excluindo produto nunca usado, valores não informados, consulta atrasada durante exclusão, menus e regressões da Fase 1.
+- Telas Produtos/Configurações e seus formulários verificados em **360 px e 1280 px**, sem rolagem horizontal; Escape dos modais confirmado. Capturas locais ignoradas pelo Git em `data/revisao-fase2`.
+- Upgrade do Compose preservou contagens e hashes dos **8 produtos, 16 orçamentos e 7 pedidos** existentes, antes dos novos dados de E2E. O ambiente principal não foi acessado.
+- Consulta de pesquisa anterior à exclusão é cancelada antes de atualizar o catálogo, para não reapresentar o item removido. Preço/custo nulos aparecem como “Não informado”, sem serem convertidos em zero.
+- Pendências gerais mantidas: cenário Homem-Aranha completo, inspeção das demais rotas em tamanhos móveis e foco/teclado em todos os modais.
+- Preço automático, margem no orçamento, produto novo dentro do orçamento e miniaturas permanecem na Fase 3. Tela de Usuários e demais configurações administrativas não foram antecipadas.
 
 ## Limitações da execução ponta a ponta
 
@@ -56,7 +72,7 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R1.6 Gestor opera clientes, orçamentos e pedidos | Atende | Consultas retornam 200; mutações comerciais, status/cancelamento com motivo e materiais usam `Operacao`. API testa os contratos de validação/404/422 sem bloqueio de perfil, e E2E cria cliente e cria/edita orçamento. GET/POST usuários retornam 403 ao Gestor. | Preservar; Configurações e sua matriz 403 ficam para a fase prevista. | P | Baixo |
 | R1.7 Administrador pode operar conforme R1 | Atende | Política `Operacao` permite Gestor e Administrador; operações restritas por perfil usam `Administracao`. Testes de autorização cobrem ambos. | Preservar e manter auditoria das ações existentes. | P | Baixo |
 | R1.8 Atendente e Operador retirados da interface | Atende | Menus e ações são filtrados por perfil; perfis legados continuam no enum e banco para compatibilidade. | Preservar dados e código legado. | P | Baixo |
-| R1.9 Menu por perfil | Atende | [AppShell.tsx](../frontend/components/layout/AppShell.tsx) mostra o mesmo menu operacional completo aos dois perfis, sem badge Consulta. | Configurações e Usuários serão exclusivos do Administrador quando suas telas existirem, conforme escopo confirmado pelo usuário. | P | Baixo |
+| R1.9 Menu por perfil | Atende | [AppShell.tsx](../frontend/components/layout/AppShell.tsx) mostra o mesmo menu operacional completo aos dois perfis, sem badge Consulta. | Configurações é exclusivo do Administrador na Fase 2. Tela de Usuários permanece pendente e terá a mesma restrição. | P | Baixo |
 | R1.10 Credenciais de demonstração Gestor | Atende em banco novo; legado preservado | Seed atualizado para `gestao@zalekpersonalizados.com.br`; E2E de Gestor aprovado em banco descartável novo. Bases antigas mantêm `gestor@zalekpersonalizados.com.br`, pois não são reseedadas. | Preservar compatibilidade e não renomear contas existentes automaticamente. | P | Baixo |
 | R1.11 Credenciais de demonstração Administrador | Atende | Login de Administrador verificado pelo Playwright Edge no ambiente isolado. | Preservar. | P | Baixo |
 | R1.12 Login válido e corpo inválido | Atende na Fase 0 | Login E2E Edge 2/2; JSON malformado retorna 400 no envelope padrão e tem teste de integração. A primeira tentativa manual usou JSON quebrado pelo `curl.exe` no PowerShell. | Preservar testes de contrato. | P | Baixo |
@@ -72,12 +88,12 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R2.9 Ajuste com motivo | Parcial | Existe ajuste de saldo, mas o motivo informado detalhado está pendente; o motivo de movimento usa texto legado. | Adicionar motivo obrigatório, enum simples de ajustes e histórico. | M | Médio |
 | R2.10 Saldo físico/reservado/disponível | Atende | Estoque mostra físico, reservado, livre, mínimo e a receber em [Estoque.tsx](../frontend/features/estoque/Estoque.tsx). | Preservar e padronizar rótulos em todas as telas. | P | Baixo |
 | R2.11 Histórico de movimentos por item | Atende | Endpoint `materias-primas/{id}/movimentos` e interface mostram histórico. | Preservar; melhorar filtros por tipo/período se necessário. | P | Baixo |
-| R3.1 Produto com nome, descrição e composição | Parcial | Produto contém nome/categoria/descrição; composição é configurada por ficha técnica em [Estoque.tsx](../frontend/features/estoque/Estoque.tsx). | Integrar composição ao fluxo de produtos sem duplicar conceitos. | M | Alto |
-| R3.2 Cadastro de produto na tela de produtos | Parcial | Existe modal "Cadastrar produto" dentro da tela de estoque/fichas e API `/api/produtos`. | Criar uma tela/rota clara de produtos e manter o cadastro atual como reutilizável. | M | Médio |
+| R3.1 Produto com nome, descrição e composição | Atende na Fase 2 | [FormularioProduto.tsx](../frontend/features/produtos/FormularioProduto.tsx) salva dados, valores e composição no mesmo fluxo; operação transacional na API. | Preservar. | M | Alto |
+| R3.2 Cadastro de produto na tela de produtos | Atende na Fase 2 | Rota `/produtos`, menu para Gestor/Administrador, pesquisa, cadastro e edição; Estoque aponta para o catálogo. | Preservar. | M | Médio |
 | R3.3 Produto criado dentro do orçamento | Não atende | O formulário de orçamento lista produtos existentes, mas não possui modal "Novo produto". | Criar modal no próprio formulário, criar via API, atualizar lista e selecionar sem limpar a descrição/anexos já preenchidos. | M | Alto |
-| R3.4 Produto criado entra no catálogo | Não atende | Não há criação a partir do orçamento. O cadastro existente em estoque cria catálogo, mas não retorna ao fluxo do orçamento. | Compartilhar o mesmo serviço/API e atualizar TanStack Query após criação. | M | Alto |
-| R3.5 Duplicar produto | Não atende | Não foi encontrada ação ou endpoint de duplicação. | Adicionar “Duplicar produto”, copiando descrição e composição, mas não anexos históricos. Exigir novo nome único. | M | Médio |
-| R3.6 Preço sugerido no produto | Não atende | Produto não possui preço; orçamento usa valor unitário informado manualmente. | **Aprovado nas Fases 2/3:** produto terá preço de venda e custo; preço preenche o item, editável com aviso e opção de restaurar. Custo/margem visíveis na tela para Gestor e Administrador, nunca no PDF ou em mensagens ao cliente. | M | Alto |
+| R3.4 Produto criado entra no catálogo | Não atende | Não há criação a partir do orçamento. O cadastro na tela Produtos cria catálogo, mas não retorna ao fluxo do orçamento. | Compartilhar o mesmo serviço/API e atualizar TanStack Query após criação. | M | Alto |
+| R3.5 Duplicar produto | Atende na Fase 2 | API e interface duplicam descrição, preço/custo e composição; nome novo obrigatório, sem copiar vínculos históricos. | Preservar. | M | Médio |
+| R3.6 Preço sugerido no produto | Parcial — catálogo pronto na Fase 2 | Produto já possui preço de venda/custo opcionais. Orçamento mantém o valor informado manualmente. | Fase 3: aplicar preço com aviso/restauração e margem interna para Gestor/Administrador; nunca incluir custo/margem em PDF ou mensagens. | M | Alto |
 | R4.1 Escolher cliente | Atende | Formulário possui busca e seleção de cliente em [FormularioOrcamento.tsx](../frontend/features/orcamentos/FormularioOrcamento.tsx). | Preservar. | P | Baixo |
 | R4.2 Escolher produto existente | Atende | Formulário lista produtos existentes e permite quantidade/valores/personalização. | Preservar. | P | Baixo |
 | R4.3 Criar novo produto no item | Não atende | Não existe modal ou ação no formulário. | Criar modal compartilhado; manter cliente, itens, desconto e anexos. | M | Alto |
@@ -118,13 +134,13 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 
 ## Evidências técnicas adicionais
 
-- As políticas de autorização estão em [ConfiguracaoServicos.cs](../backend/src/Zalek360.Api/Configuracao/ConfiguracaoServicos.cs): `Operacao` permite todo o fluxo diário para Gestor e Administrador; `Administracao` restringe usuários ao Administrador. Configurações e exclusão definitiva de produto ainda não têm endpoints e seguirão `Administracao` nas fases previstas.
+- As políticas de autorização estão em [ConfiguracaoServicos.cs](../backend/src/Zalek360.Api/Configuracao/ConfiguracaoServicos.cs): `Operacao` permite todo o fluxo diário para Gestor e Administrador; `Administracao` restringe usuários ao Administrador. Configurações e exclusão definitiva de produto usam `Administracao` na Fase 2, com matriz de permissões testada.
 - [AppShell.tsx](../frontend/components/layout/AppShell.tsx) oferece o mesmo menu operacional aos dois perfis. Atendente e Operador permanecem nos enums e dados históricos, mas não recebem acesso aos módulos.
 - O responsável do orçamento é obtido por `IUsuarioAtual`; a API ignora o `ResponsavelId` recebido e preserva o responsável persistido ao editar.
 - A coluna `condicao_pagamento` em orçamentos e pedidos agora permite nulo; a migration nova não transforma os valores existentes.
 - O seed de banco novo contém `gestao@zalekpersonalizados.com.br`; bancos já preenchidos mantêm suas contas anteriores.
 - Quantidades inteiras já estão presentes em migration/modelo; o cadastro fixa unidade `un`.
-- O catálogo permite criar produto em estoque, mas não duplicar e não mostra preço sugerido.
+- O catálogo da Fase 2 permite dados/valores/composição, duplicação, inativação/reativação e exclusão por Administrador de produto nunca usado; aplicação do preço no orçamento fica na Fase 3.
 - Não existe chamada de produto novo no formulário de orçamento.
 - A disponibilidade das matérias-primas não é apresentada no cálculo do orçamento.
 - O dashboard usa orçamentos aprovados no mês e não pedidos entregues em quantidade/valor.
@@ -163,8 +179,8 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 
 ### Médio
 
-7. **Duplicar produto não existe**
-8. **Preço sugerido não existe**
+7. **Duplicar produto — resolvido na Fase 2**
+8. **Preço sugerido — cadastrado no catálogo na Fase 2; aplicação no orçamento pendente na Fase 3**
 9. **Disponibilidade da ficha não aparece no orçamento**
 10. **Dashboard não possui vendas entregues nem reposição**
 11. **Estoque não possui filtro dedicado abaixo do mínimo**
