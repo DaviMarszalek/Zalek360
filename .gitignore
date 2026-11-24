@@ -12,6 +12,7 @@ frontend/playwright-report/
 # Ambiente e dados locais
 .env
 .env.local
+.env.revisao
 backend/src/Zalek360.Api/data/
 data/
 

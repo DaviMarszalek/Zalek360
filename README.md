@@ -38,6 +38,38 @@ Quando o log mostrar `Now listening on: http://[::]:8080`, abra http://localhost
 - **Portas ocupadas:** se 3000, 5000 ou 5432 já estiverem em uso, copie `.env.example` para `.env` e altere `FRONTEND_PORTA_HOST`, `BACKEND_PORTA_HOST` ou `POSTGRES_PORTA_HOST`.
 - **Fora da demonstração local:** defina `POSTGRES_PASSWORD` e `JWT_CHAVE` no `.env`. Gere a chave com `openssl rand -base64 48`; a API não inicia com chave de menos de 32 caracteres.
 
+### Ambiente isolado de revisão e testes
+
+O ambiente de revisão nunca compartilha containers, portas, banco ou volumes com o projeto principal. Use sempre o projeto Compose `zalek360-revisao` e o arquivo local ignorado `.env.revisao`; não execute `down -v` sem especificar esse projeto.
+
+Na primeira utilização, copie o exemplo e defina uma senha exclusiva para o banco descartável:
+
+```powershell
+Copy-Item .env.revisao.example .env.revisao
+```
+
+Suba o ambiente com:
+
+```powershell
+docker compose -p zalek360-revisao --env-file .env.revisao up --build -d --wait
+```
+
+O ambiente usa frontend `http://localhost:3100`, API `http://localhost:5100` e PostgreSQL `localhost:55432`. O banco de teste chama-se `zalek360_revisao`; seus dados ficam nos volumes próprios do projeto. Para remover somente o ambiente descartável e seus dados:
+
+```powershell
+docker compose -p zalek360-revisao --env-file .env.revisao down -v
+```
+
+Rode os testes de navegador apontando para esse ambiente:
+
+```powershell
+Set-Location frontend
+$env:E2E_BASE_URL = "http://localhost:3100"
+npm run e2e
+```
+
+Nunca use o nome do projeto `zalek360` para testes ou limpeza: ele identifica o ambiente principal nas portas 3000/5000/5432.
+
 ## 2. Executar localmente (sem Docker)
 
 Pré-requisitos: .NET SDK 8, Node.js 22 e PostgreSQL 16.
