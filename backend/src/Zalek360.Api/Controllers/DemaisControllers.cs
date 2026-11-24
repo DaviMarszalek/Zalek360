@@ -79,7 +79,9 @@ public sealed class ProdutosController : ControllerBase
 {
     private readonly ICatalogoQueries _consultas;
     private readonly ProdutoService _service;
-    public ProdutosController(ICatalogoQueries consultas, ProdutoService service) { _consultas = consultas; _service = service; }
+    private readonly ConfiguracaoCatalogoService _configuracoes;
+    public ProdutosController(ICatalogoQueries consultas, ProdutoService service, ConfiguracaoCatalogoService configuracoes)
+    { _consultas = consultas; _service = service; _configuracoes = configuracoes; }
 
     [HttpGet]
     public Task<IReadOnlyList<ProdutoDto>> Listar(CancellationToken ct) => _consultas.ListarProdutosAsync(ct);
@@ -91,8 +93,23 @@ public sealed class ProdutosController : ControllerBase
 
     /// <summary>Tipos de personalização e condições de pagamento sugeridos no formulário.</summary>
     [HttpGet("opcoes")]
-    public OpcoesOrcamentoDto Opcoes() => new(ArquivoAnexo.TiposPermitidos.Keys.ToList(), ArquivoAnexo.TamanhoMaximoBytes,
-        OpcoesOrcamento.TiposPersonalizacao, OpcoesOrcamento.CondicoesPagamento);
+    public async Task<OpcoesOrcamentoDto> Opcoes(CancellationToken ct) => new(ArquivoAnexo.TiposPermitidos.Keys.ToList(), ArquivoAnexo.TamanhoMaximoBytes,
+        await _configuracoes.NomesAsync(TipoOpcaoCatalogo.TipoPersonalizacao, ct), await _configuracoes.NomesAsync(TipoOpcaoCatalogo.CondicaoPagamento, ct));
+
+    [HttpGet("catalogo")]
+    public Task<IReadOnlyList<ProdutoDto>> Catalogo([FromQuery] string? busca, [FromQuery] bool incluirInativos, CancellationToken ct) => _service.ListarAsync(busca, incluirInativos, ct);
+    [HttpGet("{id:guid}")]
+    public Task<ProdutoDto> Obter(Guid id, CancellationToken ct) => _service.ObterAsync(id, ct);
+    [HttpPut("{id:guid}")]
+    public Task<ProdutoDto> Atualizar(Guid id, ProdutoRequest r, CancellationToken ct) => _service.AtualizarAsync(id, r, ct);
+    [HttpPatch("{id:guid}/status")]
+    public Task<ProdutoDto> Situacao(Guid id, SituacaoProdutoRequest r, CancellationToken ct) => _service.SituacaoAsync(id, r, ct);
+    [HttpPost("{id:guid}/duplicar")]
+    public async Task<ActionResult<ProdutoDto>> Duplicar(Guid id, DuplicarProdutoRequest r, CancellationToken ct) => StatusCode(201, await _service.DuplicarAsync(id, r, ct));
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Politicas.Administracao)]
+    public async Task<IActionResult> Remover(Guid id, [FromQuery] int? versao, CancellationToken ct)
+    { await _service.RemoverAsync(id, versao, ct); return NoContent(); }
 }
 
 [ApiController]
