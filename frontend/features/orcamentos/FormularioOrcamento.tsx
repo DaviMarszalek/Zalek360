@@ -3,8 +3,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileImage, FileText, Loader2, PackagePlus, Paperclip, Plus, Search, Trash2, UserPlus, X } from "lucide-react";
-import { Aviso, AreaTexto, Botao, Campo, Cartao, Entrada, EstadoVazio, Selecao } from "@/components/ui";
+import { FileText, Loader2, PackagePlus, Paperclip, Plus, Search, Trash2, UserPlus, X } from "lucide-react";
+import { Aviso, AreaTexto, Botao, Campo, Cartao, Entrada, EstadoVazio, Modal, Selecao } from "@/components/ui";
+import { ReferenciaAnexo } from "@/components/ui/ReferenciaAnexo";
+import { FormularioProduto } from "@/features/produtos/FormularioProduto";
+import { DisponibilidadeItem, ResumoAnaliseInterna } from "./AnaliseInterna";
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente } from "@/features/comum";
 import { anexosService, clientesService, orcamentosService } from "@/services";
@@ -12,7 +15,7 @@ import { useDebounce, useOpcoesOrcamento, useProdutos, useUsuarioAtual } from "@
 import { erroCampo, erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { data, documento, hojeIso, moeda, numeroDocumento, paraNumero, paraTextoDecimal, somarDias, tamanhoArquivo } from "@/utils/formatos";
-import type { Anexo, ClienteCard, ErroApi, OrcamentoDetalhe, OrcamentoRequisicao } from "@/types/api";
+import type { Anexo, ClienteCard, ErroApi, OrcamentoDetalhe, OrcamentoRequisicao, Produto } from "@/types/api";
 
 interface AnexoForm { chave: string; anexo?: Anexo; nome: string; tamanho: number; progresso: number; erro?: string }
 interface ItemForm {
@@ -65,7 +68,7 @@ function ListaAnexos({ anexos, aoRemover }: { anexos: AnexoForm[]; aoRemover: (c
     <ul className="mt-2 space-y-1.5">
       {anexos.map((a) => (
         <li key={a.chave} className={cn("flex items-center gap-3 rounded-md border px-3 py-2 text-sm", a.erro ? "border-red-200 bg-red-50" : "border-borda bg-white")}>
-          {a.anexo?.ehImagem ? <FileImage className="h-4 w-4 text-texto-fraco" /> : <FileText className="h-4 w-4 text-texto-fraco" />}
+          {a.anexo ? <ReferenciaAnexo anexo={a.anexo} /> : <FileText className="h-4 w-4 text-texto-fraco" />}
           <div className="min-w-0 flex-1">
             {a.anexo ? <a href={anexosService.url(a.anexo.id, true)} target="_blank" rel="noreferrer" className="block truncate hover:text-primaria">{a.nome}</a> : <p className="truncate">{a.nome}</p>}
             {a.erro ? <p className="text-xs text-red-700">{a.erro}</p> : !a.anexo ? (
@@ -88,6 +91,9 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
   const { data: usuario } = useUsuarioAtual();
   const produtos = useProdutos();
   const opcoes = useOpcoesOrcamento();
+  const [produtosCriados, setProdutosCriados] = useState<Produto[]>([]);
+  const [produtoNovoEm, setProdutoNovoEm] = useState<string | null>(null);
+  const catalogoDisponivel = useMemo(() => [...new Map([...(produtos.data ?? []), ...produtosCriados].map(p => [p.id, p])).values()], [produtos.data, produtosCriados]);
   const clienteParam = params.get("clienteId");
   const clienteInicial = useQuery({ queryKey: ["cliente", clienteParam], queryFn: () => clientesService.obter(clienteParam!), enabled: !edicao && !!clienteParam });
 
@@ -117,7 +123,15 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
   const chaveCalculo = useDebounce(JSON.stringify([linhas, paraNumero(desconto)]), 300);
   const calculo = useQuery({ queryKey: ["orcamento", "calculo", chaveCalculo], queryFn: () => orcamentosService.calcular(linhas, paraNumero(desconto)), placeholderData: (p) => p });
 
+  const dadosAnalise = JSON.stringify({ orcamentoId: orcamento?.id ?? null, desconto: paraNumero(desconto), itens: itens.map(i => ({ id: i.id ?? null, produtoId: i.produtoId || null, quantidade: paraNumero(i.quantidade), valorUnitario: paraNumero(i.valorUnitario), valorPersonalizacaoUnitario: paraNumero(i.valorPersonalizacao) ?? 0 })) });
+  const chaveAnalise = useDebounce(dadosAnalise, 300);
+  const analise = useQuery({ queryKey: ["orcamento", "analise-interna-previa", chaveAnalise], queryFn: ({ signal }) => orcamentosService.analisar(JSON.parse(chaveAnalise), signal), enabled: itens.length > 0 && !!usuario && (usuario.perfil === "Gestor" || usuario.perfil === "Administrador"), retry: false });
+  const analisePendente = dadosAnalise !== chaveAnalise || analise.isFetching;
+
   const atualizarItem = (chave: string, patch: Partial<ItemForm>) => setItens((l) => l.map((i) => (i.chave === chave ? { ...i, ...patch } : i)));
+  function selecionarProduto(chave: string, produto?: Produto, preservar = false) {
+    setItens(l => l.map(i => i.chave !== chave ? i : { ...i, produtoId: produto?.id ?? "", descricao: preservar && i.descricao ? i.descricao : produto?.descricaoBase ?? "", valorUnitario: preservar && i.valorUnitario ? i.valorUnitario : produto?.precoVenda == null ? "" : paraTextoDecimal(produto.precoVenda) }));
+  }
   const removerItem = (chave: string) => setItens((l) => l.filter((i) => i.chave !== chave));
 
   async function enviarArquivos(chaveItem: string, arquivos: FileList | null) {
@@ -222,6 +236,9 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
             : <div className="divide-y divide-borda">{itens.map((item, idx) => {
               const p = `itens[${idx}].`;
               const totalItem = c?.itens[idx]?.valorTotal;
+              const produtoCatalogo = catalogoDisponivel.find(x => x.id === item.produtoId);
+              const precoSugerido = produtoCatalogo?.precoVenda;
+              const precoAlterado = precoSugerido != null && paraNumero(item.valorUnitario) !== precoSugerido;
               return (
                 <div key={item.chave} className="p-5">
                   <div className="mb-4 flex items-center justify-between">
@@ -232,12 +249,14 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
                   <div className="grid gap-4 md:grid-cols-4">
                     <Campo rotulo="Produto" obrigatorio erro={e(p + "produtoId")} className="md:col-span-2">
                       <Selecao value={item.produtoId} invalido={!!e(p + "produtoId")} onChange={(ev) => {
-                        const prod = produtos.data?.find((x) => x.id === ev.target.value);
-                        atualizarItem(item.chave, { produtoId: ev.target.value, descricao: prod?.descricaoBase ?? "" });
+                        selecionarProduto(item.chave, catalogoDisponivel.find(x => x.id === ev.target.value));
                       }}>
-                        <option value="">Selecione o produto</option>{produtos.data?.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+                        <option value="">Selecione o produto</option>
+                        {item.produtoId && !produtoCatalogo && <option value={item.produtoId}>{orcamento?.itens.find(x => x.id === item.id)?.produtoNome ?? "Produto registrado"} (fora do catálogo ativo)</option>}
+                        {catalogoDisponivel.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
                       </Selecao>
                     </Campo>
+                    <div className="md:col-span-2"><Botao variante="secundaria" tamanho="sm" onClick={() => setProdutoNovoEm(item.chave)}>Novo produto neste item</Botao></div>
                     <Campo rotulo="Quantidade" obrigatorio erro={e(p + "quantidade")}>
                       <Entrada className="numero" inputMode="numeric" value={item.quantidade} invalido={!!e(p + "quantidade")} onChange={(ev) => atualizarItem(item.chave, { quantidade: ev.target.value.replace(/\D/g, "").slice(0, 7) })} />
                     </Campo>
@@ -254,6 +273,10 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
                       <Entrada value={item.descricao} maxLength={500} onChange={(ev) => atualizarItem(item.chave, { descricao: ev.target.value })} />
                     </Campo>
                   </div>
+                  {item.produtoId && <div className="mt-3 text-xs text-texto-fraco">
+                    {!produtoCatalogo ? <p>Produto fora do catálogo ativo. Os valores registrados foram preservados.</p> : precoSugerido == null ? <p>Produto sem preço cadastrado. Informe o valor unitário.</p> : precoAlterado ? <div className="flex flex-wrap items-center gap-2"><p className="text-amber-800">Valor diferente do preço cadastrado ({moeda(precoSugerido)}).</p><Botao tamanho="sm" variante="secundaria" onClick={() => atualizarItem(item.chave, { valorUnitario: paraTextoDecimal(precoSugerido) })}>Restaurar preço cadastrado</Botao></div> : <p>Preço cadastrado aplicado: {moeda(precoSugerido)}.</p>}
+                  </div>}
+                  <DisponibilidadeItem dados={!analisePendente ? analise.data?.itens[idx] : undefined} carregando={!!item.produtoId && analisePendente} />
                   <div className="mt-5 rounded-lg border border-borda bg-slate-50/60 p-4">
                     <p className="mb-3 text-[13px] font-semibold text-texto-suave">Especificação da personalização</p>
                     <div className="grid gap-4 md:grid-cols-3">
@@ -287,7 +310,7 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
         </Cartao>
       </div>
 
-      <aside className="xl:sticky xl:top-6 xl:self-start">
+      <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
         <Cartao titulo="Resumo">
           <dl className="space-y-2.5 text-sm">
             <div className="flex justify-between"><dt className="text-texto-fraco">Itens</dt><dd className="numero">{c ? `${c.quantidadeItens} · ${c.totalUnidades} un.` : "—"}</dd></div>
@@ -307,7 +330,18 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
           </div>
           {!edicao && <p className="mt-3 text-center text-xs text-texto-fraco">O orçamento será criado com status <b>Em Elaboração</b>.</p>}
         </Cartao>
+        <ResumoAnaliseInterna dados={analise.data} carregando={analisePendente} erro={analise.isError ? erroDaApi(analise.error).message : undefined} aoTentar={() => analise.refetch()} />
       </aside>
+      <Modal aberto={!!produtoNovoEm} aoFechar={() => setProdutoNovoEm(null)} titulo="Novo produto para o orçamento" descricao="Ao salvar, o produto será selecionado neste item. Os demais dados do orçamento serão mantidos." largura="max-w-3xl">
+        {produtoNovoEm && <FormularioProduto key={produtoNovoEm} aoSalvar={async p => {
+          const chave = produtoNovoEm;
+          setProdutosCriados(l => [...l.filter(x => x.id !== p.id), p]);
+          selecionarProduto(chave, p, true);
+          await qc.invalidateQueries({ queryKey: ["catalogo"] });
+          setProdutoNovoEm(null);
+          toast("sucesso", `Produto ${p.nome} cadastrado e selecionado.`);
+        }} />}
+      </Modal>
     </div>
   );
 }

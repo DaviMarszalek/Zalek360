@@ -127,6 +127,11 @@ export interface Calculo {
   valorTotal: number; descontoExcedeValor: boolean;
 }
 
+export interface ItemAnaliseRequest { id?: string | null; produtoId: string | null; quantidade: number | null; valorUnitario: number | null; valorPersonalizacaoUnitario: number | null }
+export interface AnaliseOrcamentoRequest { orcamentoId: string | null; itens: ItemAnaliseRequest[]; desconto: number | null }
+export interface ItemAnalise { indice: number; itemId: string | null; produtoId: string | null; custoUnitario: number | null; custoTotal: number | null; semFicha: boolean; materiais: { id: string; nome: string; unidade: string; necessario: number; disponivel: number; falta: number; ativo: boolean }[] }
+export interface AnaliseOrcamento { receita: number; custoTotal: number | null; margemValor: number | null; margemPercentual: number | null; completa: boolean; itens: ItemAnalise[] }
+
 export interface Contato { id: string; tipo: MeioContato; dataHora: string; observacao: string; registradoPor: string; criadoEm: string }
 export interface DecisaoResultado { orcamento: OrcamentoDetalhe; pedidoGerado: PedidoVinculado | null; materiais: MateriaisPedido | null }
 

@@ -3,10 +3,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Ban, CheckCircle2, Download, ExternalLink, FileImage, FileText, Gavel, MessageSquarePlus, Package, Pencil, Plus, Send } from "lucide-react";
+import { AlertTriangle, Ban, CheckCircle2, Download, ExternalLink, FileText, Gavel, MessageSquarePlus, Package, Pencil, Plus, Send } from "lucide-react";
 import { useExportarOrcamento } from "@/hooks/useExportarOrcamento";
 import { useUsuarioAtual } from "@/hooks";
 import { Abas, AreaTexto, Aviso, BadgeOrcamento, Botao, CabecalhoPagina, Campo, Cartao, Carregando, Entrada, ErroCarregamento, Info2, Modal, Selecao } from "@/components/ui";
+import { ReferenciaAnexo } from "@/components/ui/ReferenciaAnexo";
+import { DisponibilidadeItem, ResumoAnaliseInterna } from "./AnaliseInterna";
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, IconeMeio, LinhaDoTempo, Voltar } from "@/features/comum";
 import { anexosService, orcamentosService } from "@/services";
@@ -225,6 +227,7 @@ export function DetalheOrcamento() {
   const { data: usuario } = useUsuarioAtual();
   const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const q = useQuery({ queryKey: ["orcamento", id], queryFn: () => orcamentosService.obter(id) });
+  const analise = useQuery({ queryKey: ["orcamento", id, "analise-interna"], queryFn: ({ signal }) => orcamentosService.analiseInterna(id, signal), enabled: !!q.data && podeEditar });
   const [aba, setAba] = useState<"" | "alteracoes" | "contatos">("");
   const historico = useQuery({ queryKey: ["orcamento", id, "historico", aba], queryFn: () => orcamentosService.historico(id, aba || undefined), enabled: !!q.data });
   const [modal, setModal] = useState<"contato" | "apresentar" | "decisao" | "cancelar" | null>(null);
@@ -277,9 +280,10 @@ export function DetalheOrcamento() {
                   {i.personalizacao.referenciaArte && <Info2 rotulo="Referência da arte">{i.personalizacao.referenciaArte}</Info2>}
                   {i.personalizacao.observacoesTecnicas && <Info2 rotulo="Observações técnicas" className="col-span-2 md:col-span-3">{i.personalizacao.observacoesTecnicas}</Info2>}
                 </dl>
+                <DisponibilidadeItem dados={analise.data?.itens.find(x => x.itemId === i.id)} carregando={analise.isFetching} />
                 {i.anexos.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{i.anexos.map((a) => (
                   <a key={a.id} href={anexosService.url(a.id, true)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-md border border-borda bg-white px-2.5 py-1.5 text-[13px] hover:border-primaria">
-                    {a.ehImagem ? <FileImage className="h-4 w-4 text-texto-fraco" /> : <FileText className="h-4 w-4 text-texto-fraco" />}{a.nome}<span className="numero text-xs text-texto-fraco">{tamanhoArquivo(a.tamanhoBytes)}</span>
+                    <ReferenciaAnexo anexo={a} />{a.nome}<span className="numero text-xs text-texto-fraco">{tamanhoArquivo(a.tamanhoBytes)}</span>
                   </a>))}</div>}
               </li>))}</ul>
           </Cartao>
@@ -302,6 +306,7 @@ export function DetalheOrcamento() {
               {o.observacoesComerciais && <Info2 rotulo="Observações comerciais" className="col-span-2"><span className="whitespace-pre-line">{o.observacoesComerciais}</span></Info2>}
             </dl>
           </Cartao>
+          <ResumoAnaliseInterna dados={analise.data} carregando={analise.isFetching} erro={analise.isError ? erroDaApi(analise.error).message : undefined} aoTentar={() => analise.refetch()} />
           <Cartao titulo="Resumo financeiro">
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between"><dt className="text-texto-fraco">Subtotal dos produtos</dt><dd className="numero">{moeda(o.resumo.subtotalProdutos)}</dd></div>
