@@ -531,6 +531,11 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("cores_arte");
 
+                    b.Property<decimal?>("CustoUnitarioInterno")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("custo_unitario_interno");
+
                     b.Property<string>("Descricao")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")

@@ -196,10 +196,17 @@ public sealed class OrcamentoService
             var r = requests[i];
             var prefixo = $"itens[{i}].";
             var produtoNome = string.Empty;
+            decimal? custoInterno = null;
+            var anterior = r.Id.HasValue ? existente?.Itens.FirstOrDefault(x => x.Id == r.Id.Value) : null;
+            var mesmoProduto = anterior is not null && anterior.ProdutoId == r.ProdutoId;
             if (r.ProdutoId is null) erros.Adicionar(prefixo + "produtoId", "Selecione o produto.");
-            else if (!produtos.TryGetValue(r.ProdutoId.Value, out var produto) || !produto.Ativo)
+            else if (!produtos.TryGetValue(r.ProdutoId.Value, out var produto) || !produto.Ativo && !mesmoProduto)
                 erros.Adicionar(prefixo + "produtoId", "Produto não encontrado no catálogo.");
-            else produtoNome = produto.Nome;
+            else
+            {
+                produtoNome = mesmoProduto ? anterior!.ProdutoNome : produto.Nome;
+                custoInterno = mesmoProduto ? anterior!.CustoUnitarioInterno : produto.Custo;
+            }
 
             if (r.Id is { } itemId && existente is not null && existente.Itens.All(x => x.Id != itemId))
                 erros.Adicionar(prefixo + "id", "Este item não pertence ao orçamento. Recarregue a página.");
@@ -233,7 +240,7 @@ public sealed class OrcamentoService
                 r.ValorPersonalizacaoUnitario ?? 0,
                 new DadosPersonalizacao(r.TipoPersonalizacao, r.CorPeca, r.CoresArte, r.Medidas,
                     r.LocalAplicacao, r.ReferenciaArte, r.ObservacoesTecnicas),
-                anexosItem));
+                anexosItem, custoInterno));
         }
         return resultado;
     }

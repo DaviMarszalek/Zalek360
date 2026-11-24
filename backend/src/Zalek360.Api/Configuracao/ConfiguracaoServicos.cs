@@ -28,6 +28,7 @@ public static class ConfiguracaoServicos
         services.AddScoped<EstoqueService>();
         services.AddScoped<OrcamentoService>();
         services.AddScoped<OrcamentoDocumentoService>();
+        services.AddScoped<AnaliseOrcamentoService>();
         services.AddScoped<PedidoService>();
         services.AddScoped<AnexoService>();
         services.AddScoped<ExpiracaoOrcamentoService>();

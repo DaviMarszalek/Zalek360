@@ -60,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<IPedidoQueries, PedidoQueries>();
         services.AddScoped<IDashboardQueries, DashboardQueries>();
         services.AddScoped<ICatalogoQueries, CatalogoQueries>();
+        services.AddScoped<IAnaliseOrcamentoQueries, AnaliseOrcamentoQueries>();
 
         services.AddSingleton<IClock>(sp => new RelogioComFusoHorario(sp.GetRequiredService<IOptions<AplicacaoOptions>>().Value.FusoHorario));
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
