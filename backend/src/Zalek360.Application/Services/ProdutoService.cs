@@ -82,10 +82,10 @@ public sealed class ProdutoService(IProdutoRepository produtos, IGestaoCatalogoR
     {
         var antigas = await estoque.ListarFichasPorProdutoAsync(id, ct);
         var materias = (await estoque.ListarMateriasAsync(ct)).ToDictionary(x => x.Id);
-        if (linhas.Any(x => x.QuantidadePorUnidade <= 0 || x.QuantidadePorUnidade > int.MaxValue || decimal.Truncate(x.QuantidadePorUnidade) != x.QuantidadePorUnidade ||
+        if (linhas.Any(x => x.QuantidadePorUnidade <= 0 || x.QuantidadePorUnidade > 999999999m || decimal.Truncate(x.QuantidadePorUnidade) != x.QuantidadePorUnidade ||
                 !materias.TryGetValue(x.MateriaPrimaId, out var m) || !m.Ativo && !antigas.Any(a => a.MateriaPrimaId == x.MateriaPrimaId && a.QuantidadePorUnidade == x.QuantidadePorUnidade)) ||
             linhas.Select(x => x.MateriaPrimaId).Distinct().Count() != linhas.Count)
-            throw new ValidacaoException(CodigosErro.Validacao, "Revise a composição.", new Dictionary<string, string[]> { ["materiais"] = ["Use materiais ativos, sem repetição, com quantidade inteira maior que zero."] });
+            throw new ValidacaoException(CodigosErro.Validacao, "Revise a composição.", new Dictionary<string, string[]> { ["materiais"] = ["Use materiais ativos, sem repetição, com quantidade inteira entre 1 e 999999999."] });
         estoque.RemoverFichas(antigas);
         foreach (var linha in linhas) estoque.Adicionar(FichaTecnicaMaterial.Criar(id, linha.MateriaPrimaId, linha.QuantidadePorUnidade));
     }

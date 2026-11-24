@@ -55,6 +55,8 @@ public sealed class CatalogoFase2ApiTests
         Assert.Equal(HttpStatusCode.Conflict, (await c.PutAsJsonAsync($"/api/produtos/{p.Id}", request with { Versao = p.Versao })).StatusCode);
         var invalido = request with { PrecoVenda = 99, Versao = atualizado.Versao, Materiais = [new(Guid.NewGuid(), 1)] };
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync($"/api/produtos/{p.Id}", invalido)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync($"/api/produtos/{p.Id}",
+            invalido with { Materiais = [new(materia.Id, 1000000000)] })).StatusCode);
         var preservado = await Ler<ProdutoDto>(await c.GetAsync($"/api/produtos/{p.Id}"));
         Assert.Equal(55, preservado.PrecoVenda); Assert.Equal(atualizado.Versao, preservado.Versao);
         Assert.Single(preservado.Materiais!);
