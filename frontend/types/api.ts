@@ -102,7 +102,7 @@ export interface PedidoVinculado { id: string; numero: number; situacao: Situaca
 
 export interface OrcamentoDetalhe {
   id: string; numero: number; situacao: SituacaoOrcamento; cliente: ClienteCard; dataOrcamento: string; criadoEm: string; validade: string;
-  prazoEstimadoDiasUteis: number; previsaoEntrega: string; condicaoPagamento: string; observacoesComerciais: string | null;
+  prazoEstimadoDiasUteis: number; previsaoEntrega: string; condicaoPagamento: string | null; observacoesComerciais: string | null;
   responsavelId: string; responsavel: string; itens: ItemDetalhe[]; resumo: ResumoFinanceiro; decisao: Decisao | null;
   pedido: PedidoVinculado | null; aguardandoRetornoDesde: string | null; dataUltimaEdicao: string | null; podeSerEditado: boolean; versao: number;
 }
@@ -115,7 +115,7 @@ export interface ItemOrcamentoRequisicao {
 
 export interface OrcamentoRequisicao {
   clienteId: string | null; responsavelId: string | null; validade: string | null; prazoEstimadoDiasUteis: number | null;
-  condicaoPagamento: string; observacoesComerciais: string; desconto: number | null; itens: ItemOrcamentoRequisicao[]; versao?: number;
+  condicaoPagamento: string | null; observacoesComerciais: string; desconto: number | null; itens: ItemOrcamentoRequisicao[]; versao?: number;
 }
 
 export interface Calculo {
@@ -135,7 +135,7 @@ export interface PedidoListaItem {
 export interface PedidoDetalhe {
   id: string; numero: number; situacao: SituacaoPedido; cliente: ClienteCard;
   origem: { orcamentoId: string; orcamentoNumero: number; validadeOrcamento: string; aprovadoEm: string | null; meioContato: MeioContato | null; decisaoRegistradaPor: string | null };
-  dataPedido: string; criadoEm: string; prazoEntrega: string; prazoEstimadoDiasUteis: number; condicaoPagamento: string;
+  dataPedido: string; criadoEm: string; prazoEntrega: string; prazoEstimadoDiasUteis: number; condicaoPagamento: string | null;
   observacoesComerciais: string | null; observacaoDecisao: string | null; responsavelId: string; responsavel: string;
   itens: ItemDetalhe[]; resumo: ResumoFinanceiro; proximaSituacao: SituacaoPedido | null; podeCancelar: boolean;
   entregueEm: string | null; canceladoEm: string | null; motivoCancelamento: string | null; versao: number;

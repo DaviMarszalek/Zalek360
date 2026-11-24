@@ -70,6 +70,14 @@ npm run e2e
 
 Nunca use o nome do projeto `zalek360` para testes ou limpeza: ele identifica o ambiente principal nas portas 3000/5000/5432.
 
+### Perfis e orçamentos
+
+- **Administrador:** acesso a todos os módulos e operações administrativas/comerciais.
+- **Gestor:** gerencia produtos e composição, matérias-primas e estoque; consulta clientes, orçamentos e pedidos sem alterá-los.
+- **Atendente** e **Operador** permanecem apenas por compatibilidade com dados históricos e não aparecem na interface.
+- Contas de demonstração em banco novo: `admin@zalekpersonalizados.com.br` e `gestao@zalekpersonalizados.com.br`, senha `Zalek@2026`. Bancos já populados mantêm a conta legada `gestor@zalekpersonalizados.com.br`; o seed não renomeia nem substitui usuários existentes.
+- O responsável de um orçamento é sempre o usuário autenticado. A condição de pagamento é opcional; quando não informada, é apresentada como **A combinar**.
+
 ## 2. Executar localmente (sem Docker)
 
 Pré-requisitos: .NET SDK 8, Node.js 22 e PostgreSQL 16.

@@ -16,7 +16,7 @@ export function MateriaisDoPedido({ pedido }: { pedido: PedidoDetalhe }) {
   const qc = useQueryClient();
   const toast = useToast();
   const { data: usuario } = useUsuarioAtual();
-  const podeAplicarFicha = usuario?.perfil === "Gestor" || usuario?.perfil === "Administrador";
+  const podeAplicarFicha = usuario?.perfil === "Administrador";
   const [editando, setEditando] = useState(false);
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [erro, setErro] = useState("");
@@ -58,7 +58,14 @@ export function MateriaisDoPedido({ pedido }: { pedido: PedidoDetalhe }) {
             {linhas.map((linha, i) => <div key={i} className="grid grid-cols-[1fr_130px_36px] items-end gap-2"><Campo rotulo={i === 0 ? "Matéria-prima" : undefined}><Selecao required disabled={ocupado} value={linha.materiaPrimaId} onChange={(e) => setLinhas(linhas.map((x, j) => j === i ? { ...x, materiaPrimaId: e.target.value } : x))}><option value="">Selecione</option>{ativos.map((m) => <option key={m.id} value={m.id}>{m.nome} ({m.unidade})</option>)}</Selecao></Campo><Campo rotulo={i === 0 ? "Quantidade" : undefined}><Entrada required type="number" min="1" step="1" disabled={ocupado} value={linha.quantidade} onChange={(e) => setLinhas(linhas.map((x, j) => j === i ? { ...x, quantidade: Number(e.target.value) } : x))} /></Campo><Botao variante="fantasma" tamanho="sm" aria-label="Remover material" disabled={ocupado} onClick={() => setLinhas(linhas.filter((_, j) => j !== i))} icone={<Trash2 className="h-4 w-4" />} /></div>)}
             <div className="flex flex-wrap justify-between gap-2"><Botao variante="secundaria" tamanho="sm" icone={<Plus className="h-3.5 w-3.5" />} onClick={() => setLinhas([...linhas, { materiaPrimaId: "", quantidade: 1 }])}>Adicionar material</Botao><div className="flex gap-2"><Botao variante="secundaria" tamanho="sm" onClick={() => setEditando(false)}>Cancelar</Botao><Botao tamanho="sm" carregando={salvar.isPending} icone={<Check className="h-3.5 w-3.5" />} onClick={() => { if (linhas.every((x) => x.materiaPrimaId && x.quantidade > 0) && new Set(linhas.map((x) => x.materiaPrimaId)).size === linhas.length) salvar.mutate(); else setErro("Escolha materiais sem repetir e informe quantidades maiores que zero."); }}>Salvar consumo</Botao></div></div>
           </div> : registros.length === 0 ? <p className="text-sm text-texto-fraco">Nenhum consumo registrado.</p> : <div className="space-y-2">
-            {registros.map((x) => <div key={x.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-borda pb-2 text-sm last:border-0 last:pb-0"><span className="font-medium">{x.materiaPrimaNome}</span><span className="numero text-texto-suave">{fmt(x.quantidade)} {x.unidade}{x.ativa && <span className="ml-2 text-xs">Reservado: {fmt(x.quantidadeReservada)} · Pendente: {fmt(x.quantidadePendente)}</span>}</span><span className={`rounded-full px-2 py-1 text-xs ${x.consumida ? "bg-blue-50 text-blue-700" : x.ativa ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-600"}`}>{x.situacao === "Consumida" ? "Baixada do estoque" : x.ativa ? "Reservada" : "Reserva liberada"}</span></div>)}
+            <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_6.5rem] gap-2 border-b border-borda pb-1 text-[11px] font-medium uppercase tracking-wide text-texto-fraco">
+              <span>Matéria-prima</span><span className="text-right">Quantidade</span><span className="text-right">Situação</span>
+            </div>
+            {registros.map((x) => <div key={x.id} className="grid grid-cols-[minmax(0,1fr)_5.5rem_6.5rem] items-center gap-2 border-b border-borda pb-2 text-sm last:border-0 last:pb-0">
+              <span className="min-w-0 break-words font-medium">{x.materiaPrimaNome}</span>
+              <span className="numero text-right text-texto-suave">{fmt(x.quantidade)} {x.unidade}{x.ativa && <span className="block text-xs">Res. {fmt(x.quantidadeReservada)} · Pend. {fmt(x.quantidadePendente)}</span>}</span>
+              <span className={`justify-self-end rounded-full px-2 py-1 text-xs text-center ${x.consumida ? "bg-blue-50 text-blue-700" : x.ativa ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-600"}`}>{x.situacao === "Consumida" ? "Baixada" : x.ativa ? "Reservada" : "Liberada"}</span>
+            </div>)}
           </div>}
           {editavel && !editando && registros.some((x) => x.ativa) && <p className="mt-3 text-xs text-texto-fraco">Ao iniciar a produção, as quantidades reservadas serão baixadas do estoque físico.</p>}
         </>}

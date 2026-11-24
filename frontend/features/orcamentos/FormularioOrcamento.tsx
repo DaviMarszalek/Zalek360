@@ -8,7 +8,7 @@ import { Aviso, AreaTexto, Botao, Campo, Cartao, Entrada, EstadoVazio, Selecao }
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente } from "@/features/comum";
 import { anexosService, clientesService, orcamentosService } from "@/services";
-import { useDebounce, useOpcoesOrcamento, useProdutos, useResponsaveis, useUsuarioAtual } from "@/hooks";
+import { useDebounce, useOpcoesOrcamento, useProdutos, useUsuarioAtual } from "@/hooks";
 import { erroCampo, erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { data, documento, hojeIso, moeda, numeroDocumento, paraNumero, paraTextoDecimal, somarDias, tamanhoArquivo } from "@/utils/formatos";
@@ -88,12 +88,10 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
   const { data: usuario } = useUsuarioAtual();
   const produtos = useProdutos();
   const opcoes = useOpcoesOrcamento();
-  const responsaveis = useResponsaveis();
   const clienteParam = params.get("clienteId");
   const clienteInicial = useQuery({ queryKey: ["cliente", clienteParam], queryFn: () => clientesService.obter(clienteParam!), enabled: !edicao && !!clienteParam });
 
   const [cliente, setCliente] = useState<ClienteCard | null>(orcamento?.cliente ?? null);
-  const [responsavelId, setResponsavelId] = useState(orcamento?.responsavelId ?? "");
   const [validade, setValidade] = useState(orcamento?.validade ?? somarDias(hoje, 15));
   const [prazo, setPrazo] = useState(String(orcamento?.prazoEstimadoDiasUteis ?? 15));
   const [condicao, setCondicao] = useState(orcamento?.condicaoPagamento ?? "");
@@ -110,14 +108,11 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
   const [erro, setErro] = useState<ErroApi | null>(null);
   const topo = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (!responsavelId && usuario) setResponsavelId(usuario.id); }, [usuario, responsavelId]);
   useEffect(() => {
     const c = clienteInicial.data;
     if (c && !cliente) setCliente({ id: c.id, nome: c.nomeExibicao, tipoPessoa: c.tipoPessoa, documento: c.documento, contatoNome: c.contatoNome, contatoCargo: c.contatoCargo,
       telefone: c.telefone, whatsApp: c.whatsApp, email: c.email, cidade: c.endereco.cidade ? `${c.endereco.cidade}/${c.endereco.uf ?? ""}` : null });
   }, [clienteInicial.data, cliente]);
-  useEffect(() => { if (!condicao && opcoes.data) setCondicao(opcoes.data.condicoesPagamento[0] ?? ""); }, [opcoes.data, condicao]);
-
   const linhas = useMemo(() => itens.map((i) => ({ quantidade: paraNumero(i.quantidade), valorUnitario: paraNumero(i.valorUnitario), valorPersonalizacaoUnitario: paraNumero(i.valorPersonalizacao) })), [itens]);
   const chaveCalculo = useDebounce(JSON.stringify([linhas, paraNumero(desconto)]), 300);
   const calculo = useQuery({ queryKey: ["orcamento", "calculo", chaveCalculo], queryFn: () => orcamentosService.calcular(linhas, paraNumero(desconto)), placeholderData: (p) => p });
@@ -156,8 +151,8 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
   const salvar = useMutation({
     mutationFn: () => {
       const corpo: OrcamentoRequisicao = {
-        clienteId: cliente?.id ?? null, responsavelId: responsavelId || null, validade: validade || null, prazoEstimadoDiasUteis: paraNumero(prazo),
-        condicaoPagamento: condicao, observacoesComerciais: observacoes, desconto: paraNumero(desconto) ?? 0, versao: orcamento?.versao,
+        clienteId: cliente?.id ?? null, responsavelId: edicao ? orcamento!.responsavelId : usuario?.id ?? null, validade: validade || null, prazoEstimadoDiasUteis: paraNumero(prazo),
+        condicaoPagamento: condicao || null, observacoesComerciais: observacoes, desconto: paraNumero(desconto) ?? 0, versao: orcamento?.versao,
         itens: itens.map((i) => ({ id: i.id ?? null, produtoId: i.produtoId || null, descricao: i.descricao, quantidade: paraNumero(i.quantidade),
           valorUnitario: paraNumero(i.valorUnitario), valorPersonalizacaoUnitario: paraNumero(i.valorPersonalizacao) ?? 0,
           tipoPersonalizacao: i.tipoPersonalizacao, corPeca: i.corPeca, coresArte: i.coresArte, medidas: i.medidas, localAplicacao: i.localAplicacao,
@@ -179,6 +174,9 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
   const previsao = paraNumero(prazo);
   const c = calculo.data;
 
+  if (usuario && usuario.perfil !== "Administrador")
+    return <Aviso tipo="erro" titulo="Acesso somente para consulta">A criação e a edição de orçamentos são exclusivas do perfil Administrador.</Aviso>;
+
   return (
     <div ref={topo} className="grid gap-6 xl:grid-cols-[1fr_340px]">
       <div className="min-w-0 space-y-5">
@@ -193,19 +191,19 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
 
         <Cartao titulo="Dados do orçamento">
           <div className="grid gap-4 md:grid-cols-3">
-            <Campo rotulo="Responsável" obrigatorio erro={e("responsavelId")}>
-              <Selecao value={responsavelId} onChange={(ev) => setResponsavelId(ev.target.value)} invalido={!!e("responsavelId")}>
-                <option value="">Selecione</option>{responsaveis.data?.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-              </Selecao>
+            <Campo rotulo="Responsável" erro={e("responsavelId")}>
+              <p className="flex h-9 items-center rounded-md border border-borda bg-slate-50 px-3 text-sm text-texto">
+                {edicao ? orcamento!.responsavel : usuario?.nome ?? "Carregando usuário..."}
+              </p>
             </Campo>
             <Campo rotulo="Data do orçamento"><Entrada className="numero" value={data(orcamento?.dataOrcamento ?? hoje)} disabled /></Campo>
             <Campo rotulo="Validade" obrigatorio erro={e("validade")}><Entrada type="date" className="numero" value={validade} min={orcamento?.dataOrcamento ?? hoje} onChange={(ev) => setValidade(ev.target.value)} invalido={!!e("validade")} /></Campo>
             <Campo rotulo="Prazo estimado (dias úteis)" obrigatorio erro={e("prazoEstimadoDiasUteis")} ajuda={previsao ? `Contados a partir da aprovação` : undefined}>
               <Entrada className="numero" inputMode="numeric" value={prazo} onChange={(ev) => setPrazo(ev.target.value.replace(/\D/g, "").slice(0, 3))} invalido={!!e("prazoEstimadoDiasUteis")} />
             </Campo>
-            <Campo rotulo="Condição de pagamento" obrigatorio erro={e("condicaoPagamento")} className="md:col-span-2">
+            <Campo rotulo="Condição de pagamento" erro={e("condicaoPagamento")} className="md:col-span-2">
               <Selecao value={condicao} onChange={(ev) => setCondicao(ev.target.value)} invalido={!!e("condicaoPagamento")}>
-                <option value="">Selecione</option>
+                <option value="">A combinar</option>
                 {[...new Set([...(opcoes.data?.condicoesPagamento ?? []), ...(condicao ? [condicao] : [])])].map((o) => <option key={o}>{o}</option>)}
               </Selecao>
             </Campo>

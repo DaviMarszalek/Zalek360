@@ -7,12 +7,25 @@ import { AlertTriangle, Building2, CheckCircle2, Loader2, User } from "lucide-re
 import { Aviso, Botao, Campo, Cartao, Entrada, AreaTexto, Selecao } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { cepService, clientesService } from "@/services";
+import { useUsuarioAtual } from "@/hooks";
 import { erroCampo, erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { documento as fmtDocumento, mascaraCep, mascaraDocumento, mascaraTelefone, numeroDocumento, somenteDigitos, telefone } from "@/utils/formatos";
 import type { ClienteDetalhe, ClienteExistente, ClienteRequisicao, ErroApi, TipoPessoa, VerificacaoDocumento } from "@/types/api";
 
 const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+type AbaFormulario = "identificacao" | "contato" | "endereco" | "observacoes";
+const abaPorCampo: Record<string, AbaFormulario> = {
+  tipoPessoa: "identificacao", documento: "identificacao", nomeRazaoSocial: "identificacao", nomeFantasia: "identificacao", inscricaoEstadual: "identificacao",
+  contato: "contato", contatoNome: "contato", contatoCargo: "contato", telefone: "contato", whatsApp: "contato", email: "contato",
+  cep: "endereco", logradouro: "endereco", numero: "endereco", complemento: "endereco", bairro: "endereco", cidade: "endereco", uf: "endereco",
+  observacaoInicial: "observacoes",
+};
+const ordemAbas: AbaFormulario[] = ["identificacao", "contato", "endereco", "observacoes"];
+const abaDoCampo = (campo: string) => abaPorCampo[campo];
+function primeiraAbaComErro(erros: Record<string, string[]>): AbaFormulario | undefined {
+  return ordemAbas.find((aba) => Object.entries(erros).some(([campo, mensagens]) => abaDoCampo(campo) === aba && mensagens.length > 0));
+}
 
 function inicial(c?: ClienteDetalhe, nome?: string | null, doc?: string | null): ClienteRequisicao {
   if (c) return {
@@ -46,6 +59,7 @@ function CartaoDuplicado({ existente }: { existente: ClienteExistente }) {
 }
 
 export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
+  const { data: usuario } = useUsuarioAtual();
   const router = useRouter();
   const params = useSearchParams();
   const qc = useQueryClient();
@@ -62,7 +76,11 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
 
   const set = <K extends keyof ClienteRequisicao>(campo: K, valor: ClienteRequisicao[K]) => {
     setF((v) => ({ ...v, [campo]: valor }));
-    if (erro?.errors[campo as string]) setErro({ ...erro, errors: Object.fromEntries(Object.entries(erro.errors).filter(([k]) => k !== campo)) });
+    const camposContato = ["telefone", "whatsApp", "email"];
+    if (erro?.errors[campo as string] || (camposContato.includes(campo as string) && erro?.errors.contato)) {
+      setErro({ ...erro, errors: Object.fromEntries(Object.entries(erro.errors).filter(([k]) =>
+        k !== campo && !(k === "contato" && camposContato.includes(campo as string)))) });
+    }
   };
 
   // UC01 — preenchimento automático de endereço pelo CEP (ViaCEP). A chave da consulta inclui os dígitos do CEP,
@@ -111,6 +129,8 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
     onError: (e) => {
       const api = erroDaApi(e);
       setErro(api);
+      const primeiraAba = primeiraAbaComErro(api.errors);
+      if (primeiraAba) setAba(primeiraAba);
       const existente = (api.details as { clienteExistente?: ClienteExistente } | undefined)?.clienteExistente;
       if (existente) setVerificacao({ valido: true, disponivel: false, mensagem: api.message, clienteExistente: existente });
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -119,11 +139,25 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
 
   const erroDoc = erroCampo(erro, "documento") ?? (verificacao && !verificacao.valido ? verificacao.mensagem ?? undefined : undefined);
   const e = (c: string) => erroCampo(erro, c);
-  const qtdErros = erro ? Object.keys(erro.errors).length : 0;
+  const qtdErros = erro ? Object.values(erro.errors).reduce((total, mensagens) => total + mensagens.length, 0) : 0;
+  const abaPrimeiroErro = erro ? primeiraAbaComErro(erro.errors) : undefined;
+  const mensagemPrimeiroErro = abaPrimeiroErro
+    ? Object.entries(erro?.errors ?? {}).find(([campo, mensagens]) => abaDoCampo(campo) === abaPrimeiroErro && mensagens.length > 0)?.[1][0]
+    : undefined;
+  const rotuloAba: Record<AbaFormulario, string> = { identificacao: "Identificação", contato: "Contato", endereco: "Endereço", observacoes: "Observações" };
+  const contarErrosNaAba = (abaAlvo: AbaFormulario) => Object.entries(erro?.errors ?? {})
+    .filter(([campo]) => abaDoCampo(campo) === abaAlvo)
+    .reduce((total, [, mensagens]) => total + mensagens.length, 0);
+
+  if (usuario && usuario.perfil !== "Administrador")
+    return <Aviso tipo="erro" titulo="Acesso somente para consulta">O cadastro e a edição de clientes são exclusivos do perfil Administrador.</Aviso>;
 
   return (
     <form onSubmit={(ev) => { ev.preventDefault(); setCriarOrcamento(false); salvar.mutate(); }} noValidate className="mx-auto w-full max-w-4xl space-y-5">
-      {erro && qtdErros > 0 && !(verificacao?.clienteExistente) && <Aviso tipo="erro" titulo="Corrija os campos destacados para salvar o cliente.">{qtdErros} {qtdErros === 1 ? "campo precisa" : "campos precisam"} de atenção.</Aviso>}
+      {erro && qtdErros > 0 && !(verificacao?.clienteExistente) && <Aviso tipo="erro"
+        titulo={abaPrimeiroErro && mensagemPrimeiroErro ? `${rotuloAba[abaPrimeiroErro]}: ${mensagemPrimeiroErro}` : "Corrija os campos destacados para salvar o cliente."}>
+        {qtdErros} {qtdErros === 1 ? "campo precisa" : "campos precisam"} de atenção.
+      </Aviso>}
       {erro && qtdErros === 0 && <Aviso tipo="erro">{erro.message}</Aviso>}
 
       <div className="rounded-lg border border-borda bg-white p-1.5" role="tablist" aria-label="Seções do cadastro">
@@ -132,13 +166,16 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
           ["contato", "Contato"],
           ["endereco", "Endereço"],
           ...(!edicao ? [["observacoes", "Observações"]] : []),
-        ] as [typeof aba, string][]).map(([id, rotulo]) => (
+        ] as [AbaFormulario, string][]).map(([id, rotulo]) => {
+          const errosDaAba = contarErrosNaAba(id);
+          return (
           <button key={id} type="button" role="tab" aria-selected={aba === id}
             onClick={() => setAba(id)}
             className={cn("rounded-md px-4 py-2.5 text-sm font-medium transition-colors", aba === id ? "bg-primaria text-white" : "text-texto-suave hover:bg-slate-50")}>
-            {rotulo}
+            {rotulo}{errosDaAba > 0 && <span aria-label={`${errosDaAba} erros na aba ${rotulo}`} title={`${errosDaAba} erros`}
+              className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-semibold text-white">{errosDaAba}</span>}
           </button>
-        ))}
+        );})}
       </div>
 
       {aba === "identificacao" && <Cartao titulo="Identificação">

@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/toast";
 import { erroDaApi } from "@/lib/api";
 import { orcamentosService } from "@/services";
 
-export function useExportarOrcamento(id: string, clienteId: string) {
+export function useExportarOrcamento(id: string, clienteId: string, registrar = true) {
   const [carregando, setCarregando] = useState(false);
   const toast = useToast();
   const qc = useQueryClient();
@@ -15,7 +15,7 @@ export function useExportarOrcamento(id: string, clienteId: string) {
     if (aba) aba.opener = null;
     setCarregando(true);
     try {
-      const { arquivo, nome } = await orcamentosService.exportarPdf(id, inline);
+      const { arquivo, nome } = await orcamentosService.exportarPdf(id, inline, registrar);
       const url = URL.createObjectURL(arquivo);
       if (aba) aba.location.replace(url);
       else {
@@ -24,9 +24,11 @@ export function useExportarOrcamento(id: string, clienteId: string) {
         document.body.appendChild(link); link.click(); link.remove();
       }
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      void qc.invalidateQueries({ queryKey: ["orcamento", id] });
-      void qc.invalidateQueries({ queryKey: ["cliente", clienteId] });
-      toast("sucesso", "PDF exportado com sucesso.");
+      if (registrar) {
+        void qc.invalidateQueries({ queryKey: ["orcamento", id] });
+        void qc.invalidateQueries({ queryKey: ["cliente", clienteId] });
+      }
+      toast("sucesso", registrar ? "PDF exportado com sucesso." : "PDF preparado com sucesso.");
     } catch (erro) {
       aba?.close();
       toast("erro", erroDaApi(erro).message);

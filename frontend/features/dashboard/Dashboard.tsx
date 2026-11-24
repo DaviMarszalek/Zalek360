@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CheckCircle2, Clock, Eye, FileText, Package, Plus, UserPlus } from "lucide-react";
-import { AcoesLinha, BadgeOrcamento, Botao, CabecalhoPagina, Cartao, ErroCarregamento, Esqueleto, EstadoVazio } from "@/components/ui";
+import { AcoesLinha, BadgeOrcamento, Botao, CabecalhoPagina, Carregando, Cartao, ErroCarregamento, Esqueleto, EstadoVazio } from "@/components/ui";
 import { dashboardService } from "@/services";
 import { useUsuarioAtual } from "@/hooks";
 import { data, moeda, numeroDocumento, relativo } from "@/utils/formatos";
@@ -27,16 +28,25 @@ function Indicador({ titulo, valor, detalhe, icone, href }: { titulo: string; va
 export function Dashboard() {
   const router = useRouter();
   const { data: usuario } = useUsuarioAtual();
-  const q = useQuery({ queryKey: ["dashboard"], queryFn: dashboardService.obter, refetchInterval: 60_000 });
+  const ehAdministrador = usuario?.perfil === "Administrador";
+  const q = useQuery({ queryKey: ["dashboard"], queryFn: dashboardService.obter, refetchInterval: 60_000, enabled: ehAdministrador });
   const d = q.data;
   const hoje = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
+
+  useEffect(() => {
+    if (usuario && !ehAdministrador) router.replace("/estoque");
+  }, [ehAdministrador, router, usuario]);
+
+  if (usuario && !ehAdministrador) return <Carregando texto="Abrindo estoque..." />;
 
   return (
     <>
       <CabecalhoPagina titulo={`${saudacao()}${usuario ? `, ${usuario.nome.split(" ")[0]}` : ""}`} subtitulo={<span className="capitalize">{hoje}</span>}
         acoes={<>
-          <Link href="/clientes/novo"><Botao variante="secundaria" icone={<UserPlus className="h-4 w-4" />}>Novo cliente</Botao></Link>
-          <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>
+          {usuario?.perfil === "Administrador" && <>
+            <Link href="/clientes/novo"><Botao variante="secundaria" icone={<UserPlus className="h-4 w-4" />}>Novo cliente</Botao></Link>
+            <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>
+          </>}
         </>} />
       {q.isError && <ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} />}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

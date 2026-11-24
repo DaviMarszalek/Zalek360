@@ -20,6 +20,22 @@ Esta etapa foi exclusivamente de revisão. Não foram alterados código ou banco
 - Playwright: instalado como dependência de desenvolvimento; Edge do sistema usado via `channel: "msedge"`.
 - Playwright de login: 2/2 (Administrador e Gestor) contra o Compose isolado.
 
+## Atualização — Fase 1 (em execução)
+
+Implementação ainda não commitada na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R1, R4.8 e parte de R8; os demais itens da matriz permanecem como na revisão inicial.
+
+- Administrador: operações comerciais, de catálogo e estoque permitidas pela R1; Gestor: catálogo/composição/estoque com operação e módulos comerciais em consulta.
+- A criação de orçamento define o responsável pelo usuário autenticado. Na edição, preserva o responsável original. Condição de pagamento aceita nulo; detalhes e PDF exibem “A combinar”.
+- Formulário de cliente indica a aba inválida, a quantidade de erros e navega até a primeira aba com falha.
+- Materiais de pedido e estoque alinham as quantidades em colunas numéricas à direita.
+- Backend: 102/102 testes aprovados com PostgreSQL descartável configurado; 0 falhas e 0 ignorados.
+- Vitest: 5/5 em três execuções sequenciais; `npm run typecheck` aprovado; `npm run build` aprovado.
+- Causa dos timeouts Vitest: `userEvent.type` simulava tecla por tecla em campos que recalculam/re-renderizam o formulário. Os testes de estado passaram a disparar `change` diretamente; o timeout não foi aumentado.
+- Playwright Edge no ambiente isolado: 3/3, incluindo login/menu por perfil e validação por aba.
+- `docker compose -p zalek360-revisao --env-file .env.revisao up --build -d --wait`: concluído; os serviços ficaram saudáveis.
+- Migration `CondicaoPagamentoOpcional`: comparador executado com 0 divergências (18 tabelas, 211 colunas, 66 constraints e 65 índices).
+- Ainda não verificados: cenário Homem-Aranha completo, validação visual em 360 px/1280 px e navegação/retorno de foco em todos os modais.
+
 ## Limitações da execução ponta a ponta
 
 O cenário Homem-Aranha completo permanece pendente para a fase prevista. Na auditoria inicial, a tentativa manual com `curl.exe` não preservou as aspas JSON no PowerShell; o 500 observado não era evidência de falha de credenciais. O login com JSON válido foi confirmado e o teste de navegador passou para os dois perfis após as correções da Fase 0.
@@ -30,17 +46,17 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 
 | Requisito | Situação | Evidência | Correção proposta | Tamanho | Risco |
 |---|---|---|---|---|---|
-| R1.1 Administrador acessa clientes | Parcial | Backend: clientes em `Politicas.Consulta`; [ClientesController.cs](../backend/src/Zalek360.Api/Controllers/ClientesController.cs) permite leitura aos dois perfis, mas operações são restritas a Gestor. | Alterar operações administrativas permitidas por R1 e manter consulta compartilhada. Validar o menu do Administrador. | P | Médio |
-| R1.2 Administrador acessa orçamentos | Parcial | [OrcamentosController.cs](../backend/src/Zalek360.Api/Controllers/OrcamentosController.cs) usa `Operacao`, cuja política aceita apenas Gestor. | Autorizar o Administrador nas operações excepcionais e manter rastreamento de usuário. | P/M | Médio |
-| R1.3 Administrador acessa pedidos/vendas e histórico | Parcial | [PedidosController.cs](../backend/src/Zalek360.Api/Controllers/PedidosController.cs) usa consulta compartilhada, mas mudanças de status usam `Operacao`, exclusiva do Gestor. | Permitir operações administrativas excepcionais ao Administrador, quando R1 autorizar, com confirmação e log. | P/M | Médio |
-| R1.4 Administrador acessa dashboard, produtos, matérias-primas e estoque | Parcial | Dashboard e consultas são restritas por autenticação/políticas compartilhadas; operações de estoque estão em `Operacao`, exclusiva do Gestor. | Confirmar que o Administrador pode listar tudo e definir quais operações excepcionais poderá executar. | P | Médio |
-| R1.5 Gestor executa cadastros e estoque | Atende | A política `Operacao` permite Gestor em clientes, orçamentos, pedidos, produtos e estoque. | Preservar. | P | Baixo |
-| R1.6 Gestor pode consultar pedidos, mas não operar | Não atende | [PedidosController.cs](../backend/src/Zalek360.Api/Controllers/PedidosController.cs) concede ao Gestor tanto consulta quanto status. | Separar consulta administrativa/operacional: Gestor consulta pedidos e não altera status; Administrador pode operação excepcional. Isto depende da leitura final da R1 e da decisão de fluxo simples. | P/M | Alto |
-| R1.7 Administrador pode operar exceções rastreadas | Não atende | Nenhum fluxo administrativo excepcional de negócio está implementado além da criação de Gestor. | Implementar apenas ações excepcionais necessárias, confirmar mudança antes de executar e registrar ator/motivo. | M | Alto |
-| R1.8 Atendente e Operador retirados da interface | Parcial | O tipo ainda contém esses perfis em [api.ts](../frontend/types/api.ts) e no enum/backend. A interface não mostra opções de menu específicas desses perfis, mas o menu não é filtrado por perfil. | Manter compatibilidade no código/banco; remover menu/actions por perfil desnecessários e não criar novos usuários desses perfis. | P | Médio |
-| R1.9 Menu por perfil | Não atende | [AppShell.tsx](../frontend/components/layout/AppShell.tsx) monta o mesmo menu para todos os usuários autenticados. | Gestor: Estoque/Produtos e consulta de pedidos; sem clientes/orçamentos/admin. Administrador: todos os módulos e administração. | M | Médio |
+| R1.1 Administrador acessa clientes | Atende | API de leitura/operação e menu; [ClientesController.cs](../backend/src/Zalek360.Api/Controllers/ClientesController.cs). Matriz de autorização aprovada. | Preservar. | P | Baixo |
+| R1.2 Administrador acessa orçamentos | Atende | [OrcamentosController.cs](../backend/src/Zalek360.Api/Controllers/OrcamentosController.cs); operações de edição/apresentação/decisão limitadas ao Administrador. Teste API confirma responsável autenticado. | Preservar. | P | Baixo |
+| R1.3 Administrador acessa pedidos/vendas e histórico | Atende | [PedidosController.cs](../backend/src/Zalek360.Api/Controllers/PedidosController.cs) e endpoints de consulta/histórico; alteração de status somente Administrador. | Preservar. | P | Baixo |
+| R1.4 Administrador acessa dashboard, produtos, matérias-primas e estoque | Atende | Consultas e operações de estoque/catálogo acessíveis; dashboard somente Administrador. Matriz API cobre 200/403. | Preservar. | P | Baixo |
+| R1.5 Gestor executa cadastros e estoque | Atende | Gestor opera catálogo, ficha técnica/composição, matérias-primas e compras; [EstoqueController.cs](../backend/src/Zalek360.Api/Controllers/EstoqueController.cs). | Preservar. | P | Baixo |
+| R1.6 Gestor pode consultar pedidos, mas não operar | Atende | Consultas de clientes/orçamentos/pedidos retornam 200; operações comerciais/status e edição de materiais do pedido retornam 403. | Preservar. | P | Baixo |
+| R1.7 Administrador pode operar conforme R1 | Atende | Política `Operacao` permite Gestor e Administrador; operações restritas por perfil usam `Administracao`. Testes de autorização cobrem ambos. | Preservar e manter auditoria das ações existentes. | P | Baixo |
+| R1.8 Atendente e Operador retirados da interface | Atende | Menus e ações são filtrados por perfil; perfis legados continuam no enum e banco para compatibilidade. | Preservar dados e código legado. | P | Baixo |
+| R1.9 Menu por perfil | Atende | [AppShell.tsx](../frontend/components/layout/AppShell.tsx) mostra Dashboard ao Administrador e rotula Clientes/Orçamentos/Pedidos como consulta para Gestor; Playwright verifica ambos. | Preservar. | P | Baixo |
 | R1.10 Credenciais de demonstração Gestor | Atende em banco novo; legado preservado | Seed atualizado para `gestao@zalekpersonalizados.com.br`; E2E de Gestor aprovado em banco descartável novo. Bases antigas mantêm `gestor@zalekpersonalizados.com.br`, pois não são reseedadas. | Preservar compatibilidade e não renomear contas existentes automaticamente. | P | Baixo |
-| R1.11 Credenciais de demonstração Administrador | Parcial | O seed usa `admin@zalekpersonalizados.com.br`; a senha configurada é `Zalek@2026`. | Confirmar criação idempotente e indicar claramente no ambiente. | P | Médio |
+| R1.11 Credenciais de demonstração Administrador | Atende | Login de Administrador verificado pelo Playwright Edge no ambiente isolado. | Preservar. | P | Baixo |
 | R1.12 Login válido e corpo inválido | Atende na Fase 0 | Login E2E Edge 2/2; JSON malformado retorna 400 no envelope padrão e tem teste de integração. A primeira tentativa manual usou JSON quebrado pelo `curl.exe` no PowerShell. | Preservar testes de contrato. | P | Baixo |
 | R1.13 Compatibilidade de dados históricos | Atende | Perfis legados continuam no enum e banco; o auth atual os recusa sem apagar IDs/referências. | Preservar compatibilidade; não reclassificar dados sem migração aprovada. | P | Baixo |
 | R2.1 Código único da matéria-prima | Não atende | A entidade e o DTO não possuem código de matéria-prima; a migração/documentação confirma código como fase futura. | Criar campo opcional ou migrar sem quebrar registros; exigir unicidade somente após backfill aprovado. | M | Alto |
@@ -67,7 +83,7 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R4.5 Miniatura no pedido | Parcial | [DetalhePedido.tsx](../frontend/features/pedidos/DetalhePedido.tsx) mostra anexos como links com ícone; não há garantia visual de miniatura. | Exibir miniatura apenas para imagem e manter link seguro para PDF/outros arquivos. | P/M | Médio |
 | R4.6 Disponibilidade das matérias-primas no orçamento | Não atende | O cálculo do orçamento não consulta posição disponível; não há indicação disponível/falta X. | Consultar posição pelo backend no preview/cálculo e usar erro/aviso informativo sem bloquear. | M | Alto |
 | R4.7 Cálculo automático | Atende | O orçamento usa cálculo posterior no backend e mostra totais no resumo. | Preservar cálculo no backend; não duplicar regra no frontend. | P | Médio |
-| R4.8 PDF | Atende | Endpoints de pré-visualização/exportação e testes de PDF existem. | Preservar e validar anexos/miniaturas no documento. | P | Médio |
+| R4.8 PDF | Atende | Gestor consulta pelo GET de pré-visualização (sem histórico); Administrador usa POST auditado. Teste de integração valida ambos. | Preservar. | P | Baixo |
 | R4.9 Contato e decisão existentes | Atende | Fluxo mantém elaboração, apresentação, aguardando retorno, decisão e aprovação. | Preservar; padronizar comunicação em português. | P | Médio |
 | R5.1 Aprovação gera pedido | Atende | `RegistrarDecisao` aprova em transação e gera pedido. | Preservar. | P | Alto |
 | R5.2 Reserva limitada ao disponível | Atende | A reserva usa mínimo físico menos reservado e cria pendência pela diferença. | Preservar concorrência PostgreSQL. | P | Alto |
@@ -90,28 +106,28 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R7.7 Pedidos em andamento | Atende | Conta Aberto, Em produção e Pronto no dashboard. | Preservar; adicionar filtro linkado a cada status se necessário. | P | Baixo |
 | R7.8 Alertas de estoque no dashboard | Não atende | Não há alerta de estoque mínimo no dashboard. | Reusar lista/contagem calculada pelo backend. | M | Médio |
 | R8.1 Textos portugueses e consistência | Parcial | Maioria em português, mas ainda há “colaboradores”, perfis legados e termos técnicos como “Aguardando retorno”. | Padronizar Gestor/Administrador e revisar termos operacionais. | P/M | Médio |
-| R8.2 Estados de carregamento | Parcial | Muitas consultas têm loading/erro/empty. Login não exibiu o corpo correto em 500 no teste HTTP. | Padronizar envelopes e estados; corrigir login primeiro. | M | Alto |
+| R8.2 Estados de carregamento | Parcial | Carregamentos e erros do formulário inicial foram verificados; não houve revisão visual completa das demais telas. | Continuar revisão de estados de todas as telas nas fases restantes. | M | Médio |
 | R8.3 Estados vazios | Atende | Telas principais possuem estados vazios ou mensagens. | Preservar e revisar 360 px. | P | Baixo |
-| R8.4 Estados de erro | Parcial | Há tratamento em muitos componentes, mas a API não serializa corretamente o erro de binding do login. | Corrigir normalização de erros e teste. | P/M | Alto |
+| R8.4 Estados de erro | Parcial | JSON malformado retorna 400 no envelope padrão e formulário de cliente navega à primeira aba inválida; faltam verificações de todas as consultas e ações. | Continuar revisão geral. | P/M | Médio |
 | R8.5 Ações com ícones/AcoesLinha | Atende | Componente `AcoesLinha` está presente e usado em várias listas; algumas ações ainda são botões. | Completar só nas listas relevantes, preservando clique de linha e teclado. | P/M | Baixo |
-| R8.6 Responsividade 360 px | Não verificável | Não foi possível executar navegador/Playwright. A tabela de estoque usa `min-width` dentro de overflow horizontal; pode haver contenção em mobile. | Validar visualmente Playwright 360 px em fase posterior. | M | Alto |
-| R8.7 Responsividade 1280 px | Não verificável | Layout tem breakpoints lg/xl e max-width 1280; sem execução visual. | Validar 1280 px em Playwright. | P/M | Médio |
-| R8.8 Navegação por teclado/modais | Parcial | Há modais Radix e alguns handlers de teclado em tabelas. O comportamento completo não foi exercitado no navegador. | Testar foco inicial, Escape, foco preso e retorno do foco em Playwright/Testing Library. | M | Médio |
+| R8.6 Responsividade 360 px | Não verificável | Playwright funcional executado, mas sem validação visual no viewport 360 px; estoque contém tabela com rolagem horizontal. | Validar visualmente Playwright 360 px em fase posterior. | M | Alto |
+| R8.7 Responsividade 1280 px | Não verificável | E2E funcional executado, mas o layout não foi inspecionado visualmente em 1280 px. | Validar 1280 px em Playwright. | P/M | Médio |
+| R8.8 Navegação por teclado/modais | Parcial | Menus e fluxo de erro por abas exercitados no Edge; navegação por teclado de todos os modais não foi verificada. | Testar foco inicial, Escape, foco preso e retorno do foco em Playwright/Testing Library. | M | Médio |
 
 ## Evidências técnicas adicionais
 
-- A autorização centralizada está em [ConfiguracaoServicos.cs](../backend/src/Zalek360.Api/Configuracao/ConfiguracaoServicos.cs): consulta aceita Gestor e Administrador; operação aceita apenas Gestor.
-- O problema do commit de controle de acesso permanece no backend: o Administrador não pode operar orçamentos, pedidos, clientes, estoque ou produtos, mesmo que R1 o qualifique para consulta completa e operações excepcionais. [DemaisControllers.cs](../backend/src/Zalek360.Api/Controllers/DemaisControllers.cs), [OrcamentosController.cs](../backend/src/Zalek360.Api/Controllers/OrcamentosController.cs), [PedidosController.cs](../backend/src/Zalek360.Api/Controllers/PedidosController.cs) e [EstoqueController.cs](../backend/src/Zalek360.Api/Controllers/EstoqueController.cs) confirmam o comportamento.
-- O menu não usa perfil em [AppShell.tsx](../frontend/components/layout/AppShell.tsx).
-- O Gestor é o único perfil listado como responsável ativo em [CatalogoQueries.cs](../backend/src/Zalek360.Infrastructure/Queries/CatalogoQueries.cs). Isso impede operações de orçamentos pelo Administrador se também forem usadas como responsáveis.
-- O seed contém três Atendentes e não possui a conta `gestao@zalekpersonalizados.com.br` em [DbSeeder.cs](../backend/src/Zalek360.Infrastructure/Persistence/Seed/DbSeeder.cs).
+- As políticas de autorização estão em [ConfiguracaoServicos.cs](../backend/src/Zalek360.Api/Configuracao/ConfiguracaoServicos.cs): consulta aceita Gestor/Administrador; operação de catálogo e estoque aceita ambos e administração/comercial restrita aceita somente Administrador.
+- [AppShell.tsx](../frontend/components/layout/AppShell.tsx) filtra o menu por perfil. Atendente e Operador permanecem nos enums e dados históricos, mas não recebem acesso aos módulos.
+- O responsável do orçamento é obtido por `IUsuarioAtual`; a API ignora o `ResponsavelId` recebido e preserva o responsável persistido ao editar.
+- A coluna `condicao_pagamento` em orçamentos e pedidos agora permite nulo; a migration nova não transforma os valores existentes.
+- O seed de banco novo contém `gestao@zalekpersonalizados.com.br`; bancos já preenchidos mantêm suas contas anteriores.
 - Quantidades inteiras já estão presentes em migration/modelo; o cadastro fixa unidade `un`.
 - O catálogo permite criar produto em estoque, mas não duplicar e não mostra preço sugerido.
 - Não existe chamada de produto novo no formulário de orçamento.
 - A disponibilidade das matérias-primas não é apresentada no cálculo do orçamento.
 - O dashboard usa orçamentos aprovados no mês e não pedidos entregues em quantidade/valor.
 - Não há “Repor estoque” no dashboard nem filtro “Abaixo do mínimo” no estoque.
-- Existem testes Vitest para o item do orçamento, mas duas falharam por timeout. Os testes não provam correção visual ou ausência de falha real.
+- Os testes Vitest anteriores de item foram estabilizados na Fase 0 e a suíte atual passou 5/5; isso não substitui a revisão visual em tamanhos móveis.
 
 ## Bugs encontrados
 
@@ -127,22 +143,21 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
    - JSON montado com `ConvertTo-Json` autenticou Administrador com HTTP 200.
    - Playwright Edge confirmou login dos dois perfis com banco novo.
 
-### Alto
+### Alto — resolvidos na Fase 1
 
-2. **Administrador não pode operar conforme R1**
-   - API centraliza operações em `Politicas.Operacao`, que aceita somente Gestor.
-   - Impacto: R1 não é atendido em orçamentos, pedidos, produtos, estoque e operações excepcionais.
+2. **Administrador não podia operar conforme R1**
+   - As políticas agora permitem operações comerciais/de catálogo/estoque conforme R1; mutações comerciais e status de pedido ficam restritos ao Administrador.
+   - Validado pela matriz de autorização da API.
 
-3. **Gestor não está limitado a pedidos em consulta**
-   - O Gestor recebe `Operacao` em clientes, orçamentos e atualização de status de pedido.
-   - Impacto: contraria a divisão funcional solicitada.
+3. **Gestor não estava limitado à consulta em módulos comerciais**
+   - Agora consulta clientes, orçamentos e pedidos; não cria/edita registros comerciais, não altera status nem reservas de pedido.
+   - Opera catálogo, composição, matérias-primas e compras.
 
-4. **Menu não muda por perfil**
-   - Mesmo menu para Gestor e Administrador.
-   - Impacto: atalhos administrativos/clientes/orçamentos podem ficar visíveis ao Gestor.
+4. **Menu não mudava por perfil**
+   - Corrigido e verificado por Playwright Edge.
 
-5. **Produto novo não pode ser criado no orçamento**
-   - Fluxo exige sair da tela e perder contexto.
+5. **Responsável selecionável e condição de pagamento obrigatória**
+   - O responsável agora é definido pela API e mantido na edição; condição vazia é aceita e exibida como “A combinar”.
 
 ### Médio
 
@@ -151,9 +166,8 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 9. **Disponibilidade da ficha não aparece no orçamento**
 10. **Dashboard não possui vendas entregues nem reposição**
 11. **Estoque não possui filtro dedicado abaixo do mínimo**
-12. **Timeouts Vitest sob carga concorrente**
-   - Dois testes atingiram 5 segundos enquanto build e testes rodavam em paralelo.
-   - Sem carga concorrente, a suíte passou três vezes consecutivas 4/4; timeout não foi aumentado.
+12. **Revisão de responsividade e teclado incompleta**
+   - A cobertura E2E atual não verifica todas as rotas a 360/1280 px nem todos os modais.
 
 ## Fase 0 — resultado da execução
 
@@ -166,8 +180,8 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 - O volume foi recriado somente no projeto descartável `zalek360-revisao`; nenhum banco principal foi acessado.
 - Seed de banco novo usa `gestao@zalekpersonalizados.com.br`; bancos já populados mantêm o usuário `gestor@zalekpersonalizados.com.br`.
 - O Vitest foi limitado a `features/**/*.test.{ts,tsx}` para não tentar executar especificações Playwright sem contexto de navegador.
-- `npm audit` reportou 1 vulnerabilidade moderada preexistente em `next` (16.4.3), com correção disponível. A atualização não foi incluída na Fase 0 por estar fora do escopo de bloqueantes e precisa ser tratada em fase/dependência própria.
-- Ainda não verificados: cenário Homem-Aranha, responsividade visual, permissões finais R1, SMTP e fluxos operacionais de estoque ponta a ponta.
+- Naquele momento, `npm audit` reportava 1 vulnerabilidade moderada em `next` 16.4.3; ela foi tratada separadamente no PR #2 com a atualização para 16.4.5.
+- Pendências ao encerrar a Fase 0: cenário Homem-Aranha, responsividade visual, permissões finais R1, SMTP e fluxos operacionais de estoque ponta a ponta. R1 foi tratado nesta Fase 1; as demais pendências permanecem.
 
 ## Riscos de regressão
 
@@ -182,28 +196,17 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 
 ## Decisões necessárias
 
-1. **Preço sugerido no produto**
-   - Proposta: campo opcional no produto, preenchido no novo item do orçamento e sempre editável.
-   - Precisa de aprovação antes da implementação.
+1. **Código único de matéria-prima**
+   - Definir se será gerado automaticamente ou informado manualmente; será necessário planejar o backfill dos itens existentes.
 
-2. **Limites exatos do Gestor em pedidos**
-   - R1 diz que pedidos são apenas consulta. Confirmar se o Gestor pode consultar materiais/pendências e histórico, mas não alterar status.
+2. **Categoria de matéria-prima**
+   - Definir se é obrigatória. As opções serão gerenciadas pelo Administrador conforme a regra geral.
 
-3. **Operações excepcionais do Administrador**
-   - Definir quais operações poderão ser feitas pelo Administrador além de consultar tudo.
-   - Administrar contas é já permitido; o restante não deve vir de permissões ampliadas sem confirmação.
+3. **Preço de venda e custo do produto**
+   - A inclusão do preço de venda e do custo, e seu uso para preencher o orçamento, já estão aprovados nas Fases 2 e 3 do plano.
 
-4. **Categoria de matéria-prima**
-   - Campo obrigatório ou opcional?
-   - Não existe hoje no modelo.
-
-5. **Código de matéria-prima**
-   - Gerar automaticamente ou exigir cadastro manual único?
-   - Impacta backfill de dados existentes.
-
-6. **Ordem de Serviço**
-   - Confirmar a substituição definitiva por fluxo simples.
-   - Não remover código legado/OS enquanto não houver aprovação explícita.
+4. **Fluxo simples de pedidos**
+   - Decisão já tomada: o fluxo manual Aberto → Em produção → Pronto → Entregue substitui a OS por etapas. Não remover código legado de OS sem perguntar.
 
 7. **Miniaturas de referência**
    - Confirmar se imagens devem ter miniatura real no orçamento e pedido; PDF deve continuar como link seguro.

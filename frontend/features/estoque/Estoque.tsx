@@ -104,19 +104,19 @@ export function Estoque() {
       {materias.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(materias.error).message} aoTentar={() => materias.refetch()} /></div>
         : materias.isLoading ? <div className="p-8 text-center text-sm text-texto-fraco">Carregando estoque…</div>
           : itens.length === 0 ? <EstadoVazio icone={<ClipboardList className="h-5 w-5" />} titulo={busca ? "Nenhum item encontrado" : "Nenhuma matéria-prima cadastrada"} descricao="Cadastre os materiais utilizados nas encomendas para acompanhar o que há disponível e o que precisa ser reposto." acao={<Botao icone={<Plus className="h-4 w-4" />} onClick={() => abrirMaterial()}>Cadastrar matéria-prima</Botao>} />
-            : <div className="overflow-x-auto"><table className="tabela w-full min-w-[960px] text-sm"><thead><tr><th>Matéria-prima</th><th>Saldo físico</th><th>Reservado</th><th>Livre p/ pedidos</th><th>Estoque mínimo</th><th>A receber</th><th>Falta comprar</th><th>Status</th><th className="w-36 text-right">Ações</th></tr></thead><tbody>
+            : <div className="overflow-x-auto"><table className="tabela w-full min-w-[960px] text-sm"><thead><tr><th>Matéria-prima</th><th className="text-right">Saldo físico</th><th className="text-right">Reservado</th><th className="text-right">Livre p/ pedidos</th><th className="text-right">Estoque mínimo</th><th className="text-right">A receber</th><th className="text-right">Falta comprar</th><th>Status</th><th className="w-36 text-right">Ações</th></tr></thead><tbody>
               {itens.map((m) => {
                 const livre = m.saldoDisponivel;
                 const falta = m.faltaComprar;
                 const baixo = m.noMinimo;
                 return <tr key={m.id} className={`group ${!m.ativo ? "opacity-60" : ""}`}>
                   <td><span className="font-medium text-texto">{m.nome}</span><span className="ml-2 text-xs text-texto-fraco">({m.unidade})</span></td>
-                  <td className="numero font-medium">{numero(m.quantidadeDisponivel)} <span className="text-xs font-normal text-texto-fraco">{m.unidade}</span></td>
-                  <td className="numero text-texto-suave">{numero(m.quantidadeReservada)} {m.unidade}{m.quantidadePendente > 0 && <p className="text-xs text-amber-700">Pendente: {numero(m.quantidadePendente)} {m.unidade}</p>}</td>
-                  <td className={`numero font-medium ${livre < 0 ? "text-red-700" : "text-texto"}`}>{numero(livre)} {m.unidade}</td>
-                  <td className="numero text-texto-suave">{numero(m.estoqueMinimo)} {m.unidade}</td>
-                  <td className="numero text-texto-suave">{numero(m.quantidadeAReceber)} {m.unidade}</td>
-                  <td className={`numero font-medium ${falta > 0 ? "text-red-700" : "text-texto-suave"}`}>{numero(falta)} {m.unidade}</td>
+                  <td className="numero text-right font-medium whitespace-nowrap">{numero(m.quantidadeDisponivel)} <span className="text-xs font-normal text-texto-fraco">{m.unidade}</span></td>
+                  <td className="numero text-right text-texto-suave whitespace-nowrap">{numero(m.quantidadeReservada)} {m.unidade}{m.quantidadePendente > 0 && <p className="text-xs text-amber-700">Pendente: {numero(m.quantidadePendente)} {m.unidade}</p>}</td>
+                  <td className={`numero text-right font-medium whitespace-nowrap ${livre < 0 ? "text-red-700" : "text-texto"}`}>{numero(livre)} {m.unidade}</td>
+                  <td className="numero text-right text-texto-suave whitespace-nowrap">{numero(m.estoqueMinimo)} {m.unidade}</td>
+                  <td className="numero text-right text-texto-suave whitespace-nowrap">{numero(m.quantidadeAReceber)} {m.unidade}</td>
+                  <td className={`numero text-right font-medium whitespace-nowrap ${falta > 0 ? "text-red-700" : "text-texto-suave"}`}>{numero(falta)} {m.unidade}</td>
                   <td><span className={`rounded-full px-2 py-1 text-xs ${!m.ativo ? "bg-slate-100 text-slate-600" : baixo ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-700"}`}>{!m.ativo ? "Inativa" : baixo && m.quantidadeAReceber > 0 ? "Reposição a caminho" : baixo ? "Atenção" : "Adequado"}</span></td>
                   <td><AcoesLinha acoes={[
                     { rotulo: `Ver movimentações de ${m.nome}`, icone: <History className="h-4 w-4" />, aoAcionar: () => setHistoricoMaterial(m) },
@@ -151,8 +151,8 @@ export function Estoque() {
         {compras.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(compras.error).message} aoTentar={() => compras.refetch()} /></div>
           : compras.isLoading ? <div className="p-6 text-center text-sm text-texto-fraco">Carregando compras…</div>
             : comprasAbertas.length === 0 ? <EstadoVazio icone={<Truck className="h-5 w-5" />} titulo="Nenhuma compra a caminho" descricao="Planeje uma reposição para acompanhar quantidades e previsão de chegada." acao={<Botao variante="secundaria" onClick={() => abrirCompra()}>Planejar compra</Botao>} />
-              : <div className="overflow-x-auto"><table className="tabela w-full min-w-[760px] text-sm"><thead><tr><th>Matéria-prima</th><th>Quantidade</th><th>Fornecedor</th><th>Previsão</th><th>Situação</th><th className="text-right">Ações</th></tr></thead><tbody>
-                {comprasAbertas.map((c) => <tr key={c.id} className="group"><td className="font-medium">{c.materiaPrimaNome}</td><td className="numero">{numero(c.quantidade)} {c.unidade}</td><td className="text-texto-suave">{c.fornecedor || "—"}</td><td className="numero text-texto-suave"><span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{dataPt(c.dataPrevista)}</span></td><td><span className={`rounded-full px-2 py-1 text-xs ${c.situacao === "Pedido" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-700"}`}>{c.situacaoDescricao}</span></td><td><AcoesLinha acoes={c.situacoesPermitidas.map((opcao) => ({
+              : <div className="overflow-x-auto"><table className="tabela w-full min-w-[760px] text-sm"><thead><tr><th>Matéria-prima</th><th className="text-right">Quantidade</th><th>Fornecedor</th><th>Previsão</th><th>Situação</th><th className="text-right">Ações</th></tr></thead><tbody>
+                {comprasAbertas.map((c) => <tr key={c.id} className="group"><td className="font-medium">{c.materiaPrimaNome}</td><td className="numero text-right whitespace-nowrap">{numero(c.quantidade)} {c.unidade}</td><td className="text-texto-suave">{c.fornecedor || "—"}</td><td className="numero text-texto-suave"><span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{dataPt(c.dataPrevista)}</span></td><td><span className={`rounded-full px-2 py-1 text-xs ${c.situacao === "Pedido" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-700"}`}>{c.situacaoDescricao}</span></td><td><AcoesLinha acoes={c.situacoesPermitidas.map((opcao) => ({
                   rotulo: opcao.valor === "Cancelada" ? `Cancelar compra de ${c.materiaPrimaNome}` : opcao.valor === "Recebida" ? `Marcar compra de ${c.materiaPrimaNome} como recebida` : `Marcar compra de ${c.materiaPrimaNome} como pedido`,
                   icone: opcao.valor === "Cancelada" ? <XCircle className="h-4 w-4" /> : opcao.valor === "Recebida" ? <PackageCheck className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />,
                   aoAcionar: () => opcao.valor === "Cancelada" ? setCompraCancelar(c) : mudarCompra.mutate({ id: c.id, situacao: opcao.valor }),

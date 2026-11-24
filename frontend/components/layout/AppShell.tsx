@@ -16,6 +16,7 @@ const menu = [
   { href: "/pedidos", rotulo: "Pedidos", icone: Package },
   { href: "/estoque", rotulo: "Estoque", icone: ClipboardList },
 ];
+const menuDoGestor = menu.filter((item) => item.href !== "/dashboard");
 
 export function Marca({ clara = true }: { clara?: boolean }) {
   return (
@@ -51,14 +52,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button className="lg:hidden" onClick={() => setMenuAberto(false)} aria-label="Fechar menu"><X className="h-5 w-5" /></button>
       </div>
       <nav className="mt-2 flex-1 space-y-0.5 px-3" aria-label="Menu principal">
-        {menu.map(({ href, rotulo, icone: Icone }) => {
+        {(usuario?.perfil === "Gestor" ? menuDoGestor : menu).map(({ href, rotulo, icone: Icone }) => {
           const ativo = caminho === href || caminho.startsWith(href + "/");
+          const somenteConsulta = usuario?.perfil === "Gestor" && ["Clientes", "Orçamentos", "Pedidos"].includes(rotulo);
           return (
             <Link key={href} href={href} onClick={() => setMenuAberto(false)}
               className={cn("relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 ativo ? "bg-lateral-ativo text-white" : "hover:bg-lateral-ativo/60 hover:text-white")}>
               {ativo && <span className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-[3px] rounded-r bg-primaria" />}
               <Icone className="h-4 w-4" />{rotulo}
+              {somenteConsulta && <span className="ml-auto rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-normal">Consulta</span>}
             </Link>
           );
         })}

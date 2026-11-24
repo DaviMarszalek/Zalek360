@@ -7,7 +7,7 @@ import { Eye, FileText, Pencil, Plus, Search } from "lucide-react";
 import { AcoesLinha, Abas, BadgeOrcamento, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Paginacao, Selecao } from "@/components/ui";
 import { FiltroPeriodo, intervaloDoPeriodo, Periodo } from "@/features/comum";
 import { orcamentosService } from "@/services";
-import { useDebounce, useResponsaveis } from "@/hooks";
+import { useDebounce, useResponsaveis, useUsuarioAtual } from "@/hooks";
 import { erroDaApi } from "@/lib/api";
 import { rotuloSituacaoOrcamento, situacoesOrcamento } from "@/lib/status";
 import { data, moeda, numeroDocumento } from "@/utils/formatos";
@@ -23,6 +23,8 @@ export function ListaOrcamentos() {
   const [pagina, setPagina] = useState(1);
   const termo = useDebounce(busca.trim());
   const responsaveis = useResponsaveis();
+  const { data: usuario } = useUsuarioAtual();
+  const podeEditar = usuario?.perfil === "Administrador";
   const q = useQuery({
     queryKey: ["orcamentos", status, periodo, termo, responsavelId, pagina],
     queryFn: () => orcamentosService.listar({ status, busca: termo, responsavelId, pagina, ...intervaloDoPeriodo(periodo) }),
@@ -35,7 +37,7 @@ export function ListaOrcamentos() {
   return (
     <>
       <CabecalhoPagina titulo="Orçamentos" subtitulo="Propostas comerciais — do rascunho à decisão do cliente."
-        acoes={<Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>} />
+        acoes={podeEditar && <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>} />
       <Cartao semPadding>
         <div className="px-4 pt-2">
           <Abas<SituacaoOrcamento | ""> ativa={status} aoMudar={(s) => { setStatus(s); reiniciar(); }}
@@ -55,9 +57,9 @@ export function ListaOrcamentos() {
         {q.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div>
           : !q.data ? <div className="space-y-2 p-4">{Array.from({ length: 6 }).map((_, i) => <Esqueleto key={i} className="h-11" />)}</div>
             : q.data.itens.length === 0 ? <EstadoVazio icone={<FileText className="h-5 w-5" />} titulo="Nenhum orçamento encontrado"
-              descricao={filtrando ? "Ajuste os filtros ou amplie o período." : "Crie o primeiro orçamento para um cliente cadastrado."}
+              descricao={filtrando ? "Ajuste os filtros ou amplie o período." : podeEditar ? "Crie o primeiro orçamento para um cliente cadastrado." : "Os orçamentos cadastrados serão exibidos aqui."}
               acao={filtrando ? <Botao variante="secundaria" onClick={() => { setBusca(""); setResponsavelId(""); setPeriodo("todos"); setStatus(""); }}>Limpar filtros</Botao>
-                : <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>} />
+                : podeEditar && <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>} />
               : <>
                 <div className="overflow-x-auto"><table className="tabela w-full min-w-[860px] table-fixed text-sm">
                   <thead><tr><th className="w-[14%]">Orçamento</th><th className="w-[23%]">Cliente</th><th className="w-[20%]">Datas</th><th className="w-[20%] text-center">Valor</th><th className="w-[15%]">Status</th><th className="w-20 text-right">Ações</th></tr></thead>
@@ -74,7 +76,7 @@ export function ListaOrcamentos() {
                       <td className="overflow-hidden"><BadgeOrcamento situacao={o.situacao} /></td>
                       <td><AcoesLinha acoes={[
                         { rotulo: `Ver orçamento ${numeroDocumento(o.numero)}`, icone: <Eye className="h-4 w-4" />, aoAcionar: () => router.push(`/orcamentos/${o.id}`) },
-                        ...(["EmElaboracao", "AguardandoRetorno"].includes(o.situacao) ? [{
+                        ...(podeEditar && ["EmElaboracao", "AguardandoRetorno"].includes(o.situacao) ? [{
                           rotulo: `Editar orçamento ${numeroDocumento(o.numero)}`,
                           icone: <Pencil className="h-4 w-4" />,
                           aoAcionar: () => router.push(`/orcamentos/${o.id}/editar`),
