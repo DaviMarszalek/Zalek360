@@ -41,7 +41,7 @@
 - `main`/`origin/main`: `9fc55ff`, merge do PR #3 aprovado pelo usuário em 24/11/2026.
 - PRs #1 (Fase 0), #2 (Next.js), #3 (Fase 1/R1 definitiva) e #4 (regras/contexto): **MESCLADOS**.
 - A Fase 1 teve 105 testes backend aprovados/0 ignorados, Vitest 5/5, Edge 4/4 e typecheck/build/Compose aprovados.
-- Fase 2 — branch `revisao/fase-2-catalogo`, criada do `main` atualizado. Plano aprovado pelo usuário; a entrega aguarda revisão e OK explícito para merge em PR próprio.
+- Fase 2 — [PR #5 aberto](https://github.com/DaviMarszalek/Zalek360/pull/5), branch `revisao/fase-2-catalogo`, criada do `main` atualizado. Plano aprovado pelo usuário; a entrega aguarda revisão e OK explícito para merge em PR próprio.
 - Implementado nesta fase: tela Produtos com pesquisa, cadastro/edição, composição, preço/custo opcionais, duplicação, inativação/reativação e exclusão definitiva por Administrador apenas quando nunca usado; Configurações para categorias, tipos de personalização, condições de pagamento e motivos de decisão.
 - Migration `20261124220121_CatalogoProdutosEOpcoes` gerada via EF sobre o snapshot existente. Preço/custo dos produtos antigos permanecem nulos; categorias legadas são copiadas para opções sem alterar produtos/históricos. A semeadura das opções ocorre na migration, inclusive em bancos já existentes.
 - Comparador executado no ambiente de revisão: **0 divergências**, 19 tabelas, 221 colunas, 67 constraints, 67 índices e 2 sequências. Os bancos temporários foram removidos sem apagar volumes.
@@ -100,6 +100,6 @@ Criar branch nova da fase seguinte a partir do `main` atualizado somente depois 
 1. Ler `AGENTS.md` e este arquivo.
 2. Conferir `git status` e a branch antes de trocar de contexto. Retomar `revisao/fase-2-catalogo` enquanto seu PR estiver aberto; atualizar `origin` e integrar `origin/main` por merge, preservando alterações locais.
 3. Abrir Docker Desktop e confirmar “Engine running”. Não tocar no projeto principal.
-4. Conferir o estado do PR da Fase 2 no GitHub. Não mesclar nenhum PR sem OK do usuário.
+4. Conferir o estado do PR #5 (Fase 2) no GitHub. Não mesclar nenhum PR sem OK do usuário.
 5. Usar o ambiente de revisão com `docker compose -p zalek360-revisao --env-file .env.revisao ...`; nunca exibir ou adicionar o `.env.revisao`.
 6. Aguardar aprovação para mesclar a Fase 2 e para iniciar a Fase 3, em branch nova do `main` atualizado e com plano curto aprovado.
