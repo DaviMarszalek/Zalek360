@@ -207,7 +207,17 @@ Gestor e Administrador operam o catálogo. Somente Administrador pode excluir de
 
 API do catálogo: `GET /api/produtos/catalogo?busca=...&incluirInativos=true`, `GET/PUT /api/produtos/{id}`, `POST /api/produtos`, `POST /api/produtos/{id}/duplicar`, `PATCH /api/produtos/{id}/status` e `DELETE /api/produtos/{id}?versao=...` (Administrador). Edição/status/exclusão verificam versão. `GET /api/catalogo/opcoes` oferece opções ativas à operação; `GET/POST /api/configuracoes/opcoes` e `PUT /api/configuracoes/opcoes/{id}` são administrativos.
 
-Preço automático/margem no orçamento e criação de produto dentro do orçamento ficam na Fase 3. O custo permanece interno, fora do PDF e de mensagens ao cliente.
+### Orçamento — Fase 3
+
+Ao selecionar um produto, o orçamento aplica seu preço de venda. É possível alterar o valor; um aviso mostra a diferença e **Restaurar preço cadastrado** reaplica a sugestão. Produto sem preço exige valor manual. Abrir uma edição preserva os preços registrados.
+
+**Novo produto neste item** abre o mesmo formulário de catálogo, incluindo custo e composição. Ao salvar, seleciona o produto sem perder cliente, outros itens, desconto, personalização ou anexos; descrição e preço já preenchidos no item são mantidos.
+
+A **Análise interna** mostra custo e margem para Gestor e Administrador. Margem estimada = total com personalização, após desconto, menos custo dos produtos; percentual sobre o total da venda. Não inclui despesas adicionais. Custo ausente não vira zero: a margem fica não calculada. O custo conhecido é registrado no item ao incluir/trocar o produto; mudanças posteriores no catálogo não reescrevem esse histórico. Orçamentos antigos continuam sem custo informado.
+
+Cada item mostra a necessidade de matérias-primas, o saldo disponível e a falta, distribuindo saldo na ordem dos itens e considerando reservas do próprio pedido. É uma consulta da posição atual, sem reservar materiais ou bloquear orçamento por falta. As referências de imagem têm miniaturas no formulário, no detalhe e no pedido, com acesso autenticado; outros formatos mantêm links.
+
+Análise interna usa `POST /api/orcamentos/analise-interna` (prévia) e `GET /api/orcamentos/{id}/analise-interna` (registrado), ambos sob `Operacao`. Custo e margem não integram o DTO da proposta nem o PDF ou mensagens ao cliente. O envio da proposta permanece na Fase 4.
 
 ## 6. Testes
 
@@ -215,7 +225,7 @@ Preço automático/margem no orçamento e criação de produto dentro do orçame
 cd backend && ./scripts/testar.sh      # equivalente a: dotnet test Zalek360.sln
 ```
 
-Na validação da Fase 2, **117 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **5/5** e Edge **8/8**. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
+Na validação da Fase 3, **124 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **8/8** e Edge **10/10**. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
 
 - **27 de domínio:** cliente, CPF/CNPJ, cálculo, ciclo do orçamento, expiração e pedido.
 - **14 de casos de uso**, com repositórios em memória:
@@ -268,7 +278,7 @@ Depois, siga o roteiro da seção 3. Os stubs verificam tipos e assinaturas, mas
 
 As cinco migrations publicadas foram preservadas. A linha atual acrescenta 20261112120000_AlinharEsquemaComModelo (manual aprovada) e 20261113031917_EstabilizarReservasMateriais (gerada por EF e revisada com backfill). O ZalekDbContextModelSnapshot foi adotado sem recriar a migration inicial.
 
-Na Fase 2 de catálogo, o banco tem 19 tabelas de negócio, 221 colunas e duas sequências. A migration `20261124220121_CatalogoProdutosEOpcoes`, gerada por EF com o snapshot existente, adiciona preço/custo opcionais, versão do produto e opções gerenciáveis; os produtos antigos permanecem com valores não informados e suas categorias são incorporadas sem reescrever o histórico. A API aplica migrations e verifica a presença das colunas; o comparador verifica também tipos, defaults, PKs, FKs, índices e checks.
+Após a Fase 3, o banco tem 19 tabelas de negócio, 222 colunas e duas sequências. A migration `20261124231443_CustoInternoNoItemOrcamento`, gerada via EF, adiciona somente `itens_orcamento.custo_unitario_interno` opcional, sem preencher custos antigos. Na Fase 2 de catálogo, havia 221 colunas. A migration `20261124220121_CatalogoProdutosEOpcoes`, gerada por EF com o snapshot existente, adiciona preço/custo opcionais, versão do produto e opções gerenciáveis; os produtos antigos permanecem com valores não informados e suas categorias são incorporadas sem reescrever o histórico. A API aplica migrations e verifica a presença das colunas; o comparador verifica também tipos, defaults, PKs, FKs, índices e checks.
 
 Antes de qualquer migration futura:
 
