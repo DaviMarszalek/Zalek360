@@ -47,7 +47,7 @@
   - `checkpoint/pre-evolucao-zalek360-20261116`: local apenas, `9fbdd09`, ancestral do `main`; sem mudanças exclusivas.
   - `chore/next-seguranca`: local em `1856cf7`; referência remota removida após PR #2; commit está no `main`.
   - `revisao/funcional`: local em `2a71090`; referência remota removida após PR #1; commit está no `main`.
-  - Branch de contexto `docs/contexto-agentes`: criada nesta tarefa a partir de `main`; commit/PR desta memória: a confirmar até publicar.
+  - Branch de contexto `docs/contexto-agentes`: criada a partir de `main` em `4f1f095`; commit inicial `e15e85e`; PR #4 aberto para `main`: https://github.com/DaviMarszalek/Zalek360/pull/4.
 - Commits anteriores de referência: Fase 2.0 `f846219` e `4584a96`; ações acessíveis nas listas `49f2767`; PDF `ec6c8a5`/`f71306a`; preenchimento de endereço por CEP `c1cd34d`.
 - O relatório da revisão funcional está em `docs/09-revisao-funcional.md`; a versão com resultados da Fase 1 está na branch do PR #3. A cópia em `main` só será atualizada quando o PR #3 for mesclado.
 
