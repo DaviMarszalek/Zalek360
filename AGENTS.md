@@ -26,14 +26,14 @@
   ```
 
   Portas de revisão: frontend 3100, API 5100 e PostgreSQL 55432. Confirme que o Docker Desktop está aberto e com o Engine running.
-- `.env.revisao` contém configuração local e nunca deve ser commitado, exibido ou copiado para logs. Use `.env.revisao.example` como modelo quando disponível. O `.gitignore` de `main` pode ainda não conter a regra até o PR #3 ser mesclado; confira `git status` e nunca adicione esse arquivo.
+- `.env.revisao` contém configuração local e nunca deve ser commitado, exibido ou copiado para logs. Use `.env.revisao.example` como modelo quando disponível. O arquivo já está ignorado em `main` após o merge do PR #3; confira `git status` e nunca adicione esse arquivo.
 - Não execute `docker compose down -v` sem autorização explícita. Não compartilhe volumes, redes ou bancos entre o ambiente principal e o de revisão.
 
 ## Banco e migrations
 
 - Migrations novas somente via `dotnet ef migrations add`, usando o `ModelSnapshot` existente.
 - Nunca edite migrations aplicadas.
-- Confira toda migration com `backend/tools/comparar-esquema`.
+- Confira toda migration com `backend/tools/comparar-esquema/comparar-revisao.ps1`, usando o PostgreSQL e a rede do ambiente de revisão; o script remove somente seus bancos temporários, sem parar serviços ou remover volumes.
 - Preserve dados existentes; não faça conversões ou backfills destrutivos sem aprovação e plano de dados.
 
 ## Testes e builds por entrega
