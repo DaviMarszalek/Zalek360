@@ -24,7 +24,7 @@ export function ListaOrcamentos() {
   const termo = useDebounce(busca.trim());
   const responsaveis = useResponsaveis();
   const { data: usuario } = useUsuarioAtual();
-  const podeEditar = usuario?.perfil === "Administrador";
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const q = useQuery({
     queryKey: ["orcamentos", status, periodo, termo, responsavelId, pagina],
     queryFn: () => orcamentosService.listar({ status, busca: termo, responsavelId, pagina, ...intervaloDoPeriodo(periodo) }),

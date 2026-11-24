@@ -16,7 +16,7 @@ export function MateriaisDoPedido({ pedido }: { pedido: PedidoDetalhe }) {
   const qc = useQueryClient();
   const toast = useToast();
   const { data: usuario } = useUsuarioAtual();
-  const podeAplicarFicha = usuario?.perfil === "Administrador";
+  const podeAplicarFicha = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const [editando, setEditando] = useState(false);
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [erro, setErro] = useState("");

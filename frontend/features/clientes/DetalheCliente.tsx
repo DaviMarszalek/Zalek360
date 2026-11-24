@@ -21,7 +21,7 @@ export function DetalheCliente() {
   const params = useSearchParams();
   const router = useRouter();
   const { data: usuario } = useUsuarioAtual();
-  const podeEditar = usuario?.perfil === "Administrador";
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const aba = (params.get("aba") as Aba) ?? "visao-geral";
   const q = useQuery({ queryKey: ["cliente", id], queryFn: () => clientesService.obter(id) });
 

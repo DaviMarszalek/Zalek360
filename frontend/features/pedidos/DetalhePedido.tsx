@@ -111,7 +111,7 @@ function ModalStatus({ p, alvo, aoFechar }: { p: PedidoDetalhe; alvo: SituacaoPe
 export function DetalhePedido() {
   const { id } = useParams<{ id: string }>();
   const { data: usuario } = useUsuarioAtual();
-  const podeEditar = usuario?.perfil === "Administrador";
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const q = useQuery({ queryKey: ["pedido", id], queryFn: () => pedidosService.obter(id) });
   const historico = useQuery({ queryKey: ["pedido", id, "historico"], queryFn: () => pedidosService.historico(id), enabled: !!q.data });
   const [alvo, setAlvo] = useState<SituacaoPedido | null>(null);

@@ -174,8 +174,8 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
   const previsao = paraNumero(prazo);
   const c = calculo.data;
 
-  if (usuario && usuario.perfil !== "Administrador")
-    return <Aviso tipo="erro" titulo="Acesso somente para consulta">A criação e a edição de orçamentos são exclusivas do perfil Administrador.</Aviso>;
+  if (usuario && usuario.perfil !== "Administrador" && usuario.perfil !== "Gestor")
+    return <Aviso tipo="erro" titulo="Acesso somente para consulta">A criação e a edição de orçamentos não estão disponíveis para este perfil.</Aviso>;
 
   return (
     <div ref={topo} className="grid gap-6 xl:grid-cols-[1fr_340px]">

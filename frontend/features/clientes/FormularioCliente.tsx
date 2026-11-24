@@ -149,8 +149,8 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
     .filter(([campo]) => abaDoCampo(campo) === abaAlvo)
     .reduce((total, [, mensagens]) => total + mensagens.length, 0);
 
-  if (usuario && usuario.perfil !== "Administrador")
-    return <Aviso tipo="erro" titulo="Acesso somente para consulta">O cadastro e a edição de clientes são exclusivos do perfil Administrador.</Aviso>;
+  if (usuario && usuario.perfil !== "Administrador" && usuario.perfil !== "Gestor")
+    return <Aviso tipo="erro" titulo="Acesso somente para consulta">O cadastro e a edição de clientes não estão disponíveis para este perfil.</Aviso>;
 
   return (
     <form onSubmit={(ev) => { ev.preventDefault(); setCriarOrcamento(false); salvar.mutate(); }} noValidate className="mx-auto w-full max-w-4xl space-y-5">

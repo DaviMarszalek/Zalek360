@@ -20,7 +20,7 @@ export function ListaClientes() {
   const [pagina, setPagina] = useState(1);
   const termo = useDebounce(busca.trim());
   const { data: usuario } = useUsuarioAtual();
-  const podeEditar = usuario?.perfil === "Administrador";
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
 
   const q = useQuery({
     queryKey: ["clientes", termo, tipo, cidade, pagina],

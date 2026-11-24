@@ -223,7 +223,7 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
 export function DetalheOrcamento() {
   const { id } = useParams<{ id: string }>();
   const { data: usuario } = useUsuarioAtual();
-  const podeEditar = usuario?.perfil === "Administrador";
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const q = useQuery({ queryKey: ["orcamento", id], queryFn: () => orcamentosService.obter(id) });
   const [aba, setAba] = useState<"" | "alteracoes" | "contatos">("");
   const historico = useQuery({ queryKey: ["orcamento", id, "historico", aba], queryFn: () => orcamentosService.historico(id, aba || undefined), enabled: !!q.data });
