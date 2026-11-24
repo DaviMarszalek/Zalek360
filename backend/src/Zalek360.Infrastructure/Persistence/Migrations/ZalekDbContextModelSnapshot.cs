@@ -902,6 +902,315 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                     b.ToTable("observacoes_cliente", (string)null);
                 });
 
+            modelBuilder.Entity("Zalek360.Domain.Entities.OpcaoCatalogo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("nome");
+
+                    b.Property<string>("NomeNormalizado")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("nome_normalizado");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("integer")
+                        .HasColumnName("ordem");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("tipo");
+
+                    b.Property<int>("Versao")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("versao");
+
+                    b.HasKey("Id")
+                        .HasName("pk_opcoes_catalogo");
+
+                    b.HasIndex("Tipo", "NomeNormalizado")
+                        .IsUnique()
+                        .HasDatabaseName("ux_opcoes_catalogo_tipo_nome_normalizado");
+
+                    b.ToTable("opcoes_catalogo", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000001"),
+                            Ativo = true,
+                            Nome = "Serigrafia (frente)",
+                            NomeNormalizado = "SERIGRAFIA (FRENTE)",
+                            Ordem = 0,
+                            Tipo = "TipoPersonalizacao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000002"),
+                            Ativo = true,
+                            Nome = "Serigrafia (frente e costas)",
+                            NomeNormalizado = "SERIGRAFIA (FRENTE E COSTAS)",
+                            Ordem = 1,
+                            Tipo = "TipoPersonalizacao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000003"),
+                            Ativo = true,
+                            Nome = "Serigrafia (1 lado)",
+                            NomeNormalizado = "SERIGRAFIA (1 LADO)",
+                            Ordem = 2,
+                            Tipo = "TipoPersonalizacao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000004"),
+                            Ativo = true,
+                            Nome = "Bordado",
+                            NomeNormalizado = "BORDADO",
+                            Ordem = 3,
+                            Tipo = "TipoPersonalizacao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000005"),
+                            Ativo = true,
+                            Nome = "Sublimação",
+                            NomeNormalizado = "SUBLIMAÇÃO",
+                            Ordem = 4,
+                            Tipo = "TipoPersonalizacao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000006"),
+                            Ativo = true,
+                            Nome = "Gravação a laser",
+                            NomeNormalizado = "GRAVAÇÃO A LASER",
+                            Ordem = 5,
+                            Tipo = "TipoPersonalizacao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000007"),
+                            Ativo = true,
+                            Nome = "DTF",
+                            NomeNormalizado = "DTF",
+                            Ordem = 6,
+                            Tipo = "TipoPersonalizacao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000008"),
+                            Ativo = true,
+                            Nome = "Transfer",
+                            NomeNormalizado = "TRANSFER",
+                            Ordem = 7,
+                            Tipo = "TipoPersonalizacao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000009"),
+                            Ativo = true,
+                            Nome = "50% na aprovação + 50% na entrega (PIX)",
+                            NomeNormalizado = "50% NA APROVAÇÃO + 50% NA ENTREGA (PIX)",
+                            Ordem = 0,
+                            Tipo = "CondicaoPagamento",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000010"),
+                            Ativo = true,
+                            Nome = "50% na aprovação + 50% na entrega (boleto)",
+                            NomeNormalizado = "50% NA APROVAÇÃO + 50% NA ENTREGA (BOLETO)",
+                            Ordem = 1,
+                            Tipo = "CondicaoPagamento",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000011"),
+                            Ativo = true,
+                            Nome = "100% na aprovação (PIX)",
+                            NomeNormalizado = "100% NA APROVAÇÃO (PIX)",
+                            Ordem = 2,
+                            Tipo = "CondicaoPagamento",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000012"),
+                            Ativo = true,
+                            Nome = "À vista (PIX)",
+                            NomeNormalizado = "À VISTA (PIX)",
+                            Ordem = 3,
+                            Tipo = "CondicaoPagamento",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000013"),
+                            Ativo = true,
+                            Nome = "30 dias (boleto)",
+                            NomeNormalizado = "30 DIAS (BOLETO)",
+                            Ordem = 4,
+                            Tipo = "CondicaoPagamento",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000014"),
+                            Ativo = true,
+                            Nome = "30/60 dias (boleto)",
+                            NomeNormalizado = "30/60 DIAS (BOLETO)",
+                            Ordem = 5,
+                            Tipo = "CondicaoPagamento",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000015"),
+                            Ativo = true,
+                            Nome = "Preço",
+                            NomeNormalizado = "PREÇO",
+                            Ordem = 0,
+                            Tipo = "MotivoDecisao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000016"),
+                            Ativo = true,
+                            Nome = "Prazo de entrega",
+                            NomeNormalizado = "PRAZO DE ENTREGA",
+                            Ordem = 1,
+                            Tipo = "MotivoDecisao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000017"),
+                            Ativo = true,
+                            Nome = "Escolheu outro fornecedor",
+                            NomeNormalizado = "ESCOLHEU OUTRO FORNECEDOR",
+                            Ordem = 2,
+                            Tipo = "MotivoDecisao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000018"),
+                            Ativo = true,
+                            Nome = "Desistiu da compra",
+                            NomeNormalizado = "DESISTIU DA COMPRA",
+                            Ordem = 3,
+                            Tipo = "MotivoDecisao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000019"),
+                            Ativo = true,
+                            Nome = "Mudança no evento",
+                            NomeNormalizado = "MUDANÇA NO EVENTO",
+                            Ordem = 4,
+                            Tipo = "MotivoDecisao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000020"),
+                            Ativo = true,
+                            Nome = "Outro",
+                            NomeNormalizado = "OUTRO",
+                            Ordem = 5,
+                            Tipo = "MotivoDecisao",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000021"),
+                            Ativo = true,
+                            Nome = "Camiseta",
+                            NomeNormalizado = "CAMISETA",
+                            Ordem = 0,
+                            Tipo = "CategoriaProduto",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000022"),
+                            Ativo = true,
+                            Nome = "Caneca",
+                            NomeNormalizado = "CANECA",
+                            Ordem = 1,
+                            Tipo = "CategoriaProduto",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000023"),
+                            Ativo = true,
+                            Nome = "Copo térmico",
+                            NomeNormalizado = "COPO TÉRMICO",
+                            Ordem = 2,
+                            Tipo = "CategoriaProduto",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000024"),
+                            Ativo = true,
+                            Nome = "Squeeze",
+                            NomeNormalizado = "SQUEEZE",
+                            Ordem = 3,
+                            Tipo = "CategoriaProduto",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000025"),
+                            Ativo = true,
+                            Nome = "Ecobag",
+                            NomeNormalizado = "ECOBAG",
+                            Ordem = 4,
+                            Tipo = "CategoriaProduto",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("c0000000-0000-0000-0000-000000000026"),
+                            Ativo = true,
+                            Nome = "Boné",
+                            NomeNormalizado = "BONÉ",
+                            Ordem = 5,
+                            Tipo = "CategoriaProduto",
+                            Versao = 1
+                        });
+                });
+
             modelBuilder.Entity("Zalek360.Domain.Entities.Orcamento", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1226,6 +1535,11 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("categoria");
 
+                    b.Property<decimal?>("Custo")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("custo");
+
                     b.Property<string>("DescricaoBase")
                         .HasColumnType("text")
                         .HasColumnName("descricao_base");
@@ -1235,6 +1549,18 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nome");
+
+                    b.Property<decimal?>("PrecoVenda")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("preco_venda");
+
+                    b.Property<int>("Versao")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("versao");
 
                     b.HasKey("Id")
                         .HasName("pk_produtos");

@@ -27,8 +27,11 @@ public sealed record UsuarioDto(Guid Id, string Nome, string Email, PerfilUsuari
 public sealed record UsuarioAcessoDto(Guid Id, string Nome, string Email, PerfilUsuario Perfil, string Iniciais, bool Ativo, DateTime CriadoEm);
 public sealed record CriarGestorRequest(string? Nome, string? Email, string? Senha);
 
-public sealed record ProdutoDto(Guid Id, string Nome, string Categoria, string? DescricaoBase);
-public sealed record ProdutoRequest(string? Nome, string? Categoria, string? DescricaoBase);
+public sealed record ProdutoDto(Guid Id, string Nome, string Categoria, string? DescricaoBase,
+    decimal? PrecoVenda = null, decimal? Custo = null, bool Ativo = true, bool Usado = false, int Versao = 1,
+    IReadOnlyList<FichaTecnicaLinhaDto>? Materiais = null);
+public sealed record ProdutoRequest(string? Nome, string? Categoria, string? DescricaoBase,
+    decimal? PrecoVenda = null, decimal? Custo = null, IReadOnlyList<FichaTecnicaLinhaRequest>? Materiais = null, int? Versao = null);
 
 public sealed record AnexoDto(Guid Id, string Nome, string Extensao, string ContentType, long TamanhoBytes, bool EhImagem);
 

@@ -20,6 +20,7 @@ public sealed class ZalekDbContext : DbContext, IUnitOfWork
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<ObservacaoCliente> ObservacoesCliente => Set<ObservacaoCliente>();
     public DbSet<Produto> Produtos => Set<Produto>();
+    public DbSet<OpcaoCatalogo> OpcoesCatalogo => Set<OpcaoCatalogo>();
     public DbSet<MateriaPrima> MateriasPrimas => Set<MateriaPrima>();
     public DbSet<CompraMateriaPrima> ComprasMateriasPrimas => Set<CompraMateriaPrima>();
     public DbSet<FichaTecnicaMaterial> FichasTecnicasMateriasPrimas => Set<FichaTecnicaMaterial>();

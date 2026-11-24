@@ -9,6 +9,17 @@ public class Produto : Entidade
     public string Categoria { get; private set; } = string.Empty;
     public string? DescricaoBase { get; private set; }
     public bool Ativo { get; private set; }
+    public decimal? PrecoVenda { get; private set; }
+    public decimal? Custo { get; private set; }
+    public int Versao { get; private set; } = 1;
+
+    public void Atualizar(string nome, string categoria, string? descricao, decimal? precoVenda, decimal? custo)
+    {
+        Nome = nome.Trim(); Categoria = categoria.Trim(); DescricaoBase = TextoOpcional.Limpar(descricao);
+        PrecoVenda = precoVenda; Custo = custo; Versao++;
+    }
+
+    public void DefinirAtivo(bool ativo) { Ativo = ativo; Versao++; }
 
     private Produto() { }
 
