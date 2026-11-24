@@ -17,7 +17,7 @@ internal sealed class CatalogoQueries : ICatalogoQueries
         await _db.Produtos.AsNoTracking()
             .Where(p => p.Ativo)
             .OrderBy(p => p.Nome)
-            .Select(p => new ProdutoDto(p.Id, p.Nome, p.Categoria, p.DescricaoBase))
+            .Select(p => new ProdutoDto(p.Id, p.Nome, p.Categoria, p.DescricaoBase, p.PrecoVenda, p.Custo, p.Ativo, false, p.Versao, null))
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<UsuarioDto>> ListarResponsaveisAsync(CancellationToken ct)

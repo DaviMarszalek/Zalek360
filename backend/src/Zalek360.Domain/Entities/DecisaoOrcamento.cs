@@ -10,9 +10,6 @@ namespace Zalek360.Domain.Entities;
 /// </summary>
 public class DecisaoOrcamento : Entidade
 {
-    public static readonly string[] MotivosSugeridos =
-        { "Preço", "Prazo de entrega", "Escolheu outro fornecedor", "Desistiu da compra", "Mudança no evento", "Outro" };
-
     public Guid OrcamentoId { get; private set; }
     public ResultadoDecisao Resultado { get; private set; }
     public MeioContato? MeioContato { get; private set; }

@@ -73,7 +73,7 @@ Nunca use o nome do projeto `zalek360` para testes ou limpeza: ele identifica o 
 ### Perfis e orçamentos
 
 - **Administrador:** tudo o que o Gestor faz, mais os exclusivos: configurações (opções gerenciáveis, modelos de mensagem, dados da empresa e e-mail), usuários (criar, desativar e redefinir senha) e exclusão definitiva de produto nunca usado. Funcionalidades ainda não disponíveis seguem as fases de `docs/10-contexto-e-proximos-passos.md`.
-- **Gestor:** operação diária completa: dashboard, cadastrar/editar clientes, criar/editar/exportar/apresentar orçamentos, registrar contato e decisão, alterar status/cancelar pedidos com motivo, materiais do pedido, produtos/composição, matérias-primas, compras, entradas e ajustes de estoque com motivo. Cadastro avançado de produtos e ajustes ainda pendentes seguem as fases previstas.
+- **Gestor:** operação diária completa: dashboard, cadastrar/editar clientes, criar/editar/exportar/apresentar orçamentos, registrar contato e decisão, alterar status/cancelar pedidos com motivo, materiais do pedido, produtos/composição, matérias-primas, compras, entradas e ajustes de estoque com motivo. A tela Produtos inclui cadastro/edição, valores, composição, duplicação e inativação. Ajustes detalhados de estoque permanecem nas fases previstas.
 - **Uso recomendado:** entrar como Gestor no dia a dia e como Administrador somente para configurar.
 - **Custo e margem:** visíveis na tela para Gestor e Administrador, nunca no PDF ou em mensagens ao cliente. Ocultar do Gestor é uma opção futura, somente se o usuário pedir quando houver funcionário.
 - **Atendente** e **Operador** permanecem apenas por compatibilidade com dados históricos e não aparecem na interface.
@@ -197,13 +197,26 @@ Documentação interativa em `/swagger`. Para autenticar lá, chame `POST /api/a
 
 Não existe exclusão de orçamentos, pedidos ou clientes (RN10): apenas cancelamento, com o histórico preservado.
 
+### Catálogo de produtos e opções — Fase 2
+
+Abra **Produtos** para pesquisar, cadastrar, editar, duplicar, inativar ou reativar um produto. O formulário reúne descrição, categoria, preço de venda, custo e matérias-primas por unidade. Preço e custo são opcionais; vazios nos produtos antigos significam não informados. Editar o catálogo não altera valores de orçamentos/pedidos existentes.
+
+Gestor e Administrador operam o catálogo. Somente Administrador pode excluir definitivamente um produto nunca usado; produtos usados só podem ser inativados. As cópias incluem valores/composição e exigem novo nome, sem vínculos históricos.
+
+**Configurações**, exclusiva do Administrador, gerencia categorias de produtos, tipos de personalização, condições de pagamento e motivos de decisão. Desativar uma opção impede novas seleções e preserva os textos históricos. Categorias existentes são incorporadas pela migration; as opções anteriores são semeadas uma vez no banco. Nenhuma lista de negócio fica fixa no frontend.
+
+API do catálogo: `GET /api/produtos/catalogo?busca=...&incluirInativos=true`, `GET/PUT /api/produtos/{id}`, `POST /api/produtos`, `POST /api/produtos/{id}/duplicar`, `PATCH /api/produtos/{id}/status` e `DELETE /api/produtos/{id}?versao=...` (Administrador). Edição/status/exclusão verificam versão. `GET /api/catalogo/opcoes` oferece opções ativas à operação; `GET/POST /api/configuracoes/opcoes` e `PUT /api/configuracoes/opcoes/{id}` são administrativos.
+
+Preço automático/margem no orçamento e criação de produto dentro do orçamento ficam na Fase 3. O custo permanece interno, fora do PDF e de mensagens ao cliente.
+
 ## 6. Testes
 
 ```bash
 cd backend && ./scripts/testar.sh      # equivalente a: dotnet test Zalek360.sln
 ```
 
-Na entrega inicial eram 44 testes xUnit (a cobertura original abaixo foi preservada). A suíte atual tem **88 testes**: os 65 anteriores, 4 de convenção de nomes e 19 cenários de estoque, incluindo concorrência/backfill em PostgreSQL real. Execute sempre `dotnet test Zalek360.sln` com os pacotes reais. Configure ZALEK_TEST_POSTGRES para um banco descartável com permissão de criar bancos; sem ela, os dois testes PostgreSQL são explicitamente ignorados. Veja [docs/08-mvp2.md](docs/08-mvp2.md).
+Na validação da Fase 2, **117 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **5/5** e Edge **8/8**. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
+
 - **27 de domínio:** cliente, CPF/CNPJ, cálculo, ciclo do orçamento, expiração e pedido.
 - **14 de casos de uso**, com repositórios em memória:
   - duplicidade de documento;
@@ -255,15 +268,15 @@ Depois, siga o roteiro da seção 3. Os stubs verificam tipos e assinaturas, mas
 
 As cinco migrations publicadas foram preservadas. A linha atual acrescenta 20261112120000_AlinharEsquemaComModelo (manual aprovada) e 20261113031917_EstabilizarReservasMateriais (gerada por EF e revisada com backfill). O ZalekDbContextModelSnapshot foi adotado sem recriar a migration inicial.
 
-O banco tem 18 tabelas de negócio, 211 colunas e duas sequências. A API aplica migrations e verifica a presença das colunas; o comparador verifica também tipos, defaults, PKs, FKs, índices e checks.
+Na Fase 2 de catálogo, o banco tem 19 tabelas de negócio, 221 colunas e duas sequências. A migration `20261124220121_CatalogoProdutosEOpcoes`, gerada por EF com o snapshot existente, adiciona preço/custo opcionais, versão do produto e opções gerenciáveis; os produtos antigos permanecem com valores não informados e suas categorias são incorporadas sem reescrever o histórico. A API aplica migrations e verifica a presença das colunas; o comparador verifica também tipos, defaults, PKs, FKs, índices e checks.
 
 Antes de qualquer migration futura:
 
 ~~~powershell
-powershell -ExecutionPolicy Bypass -File backend/tools/comparar-esquema/comparar.ps1
+powershell -ExecutionPolicy Bypass -File backend/tools/comparar-esquema/comparar-revisao.ps1
 ~~~
 
-O script usa Docker isolado, consulta os catálogos em READ ONLY e remove os recursos temporários. Colunas são comparadas como conjunto; a ordem física é ignorada por decisão aprovada. Não regenerar migrations publicadas nem usar recriar-migration-inicial.sh nesta linha de evolução.
+O script usa somente o PostgreSQL do projeto `zalek360-revisao`, cria dois bancos temporários para migrations/modelo, consulta os catálogos em READ ONLY e remove apenas esses bancos. Não para serviços nem remove volumes. Colunas são comparadas como conjunto; a ordem física é ignorada por decisão aprovada. Não regenerar migrations publicadas nem usar recriar-migration-inicial.sh nesta linha de evolução.
 
 
 ## 9. Documentação

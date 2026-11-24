@@ -33,7 +33,7 @@ public sealed class ControleAcessoApiTests
 
         Assert.Equal(HttpStatusCode.OK, (await administrador.GetAsync("/api/produtos")).StatusCode);
         Assert.Equal(HttpStatusCode.Created, (await administrador.PostAsJsonAsync("/api/produtos",
-            new ProdutoRequest("Produto do Administrador", "Teste", null))).StatusCode);
+            new ProdutoRequest("Produto do Administrador", "Camiseta", null))).StatusCode);
 
         var criado = await administrador.PostAsJsonAsync("/api/usuarios",
             new CriarGestorRequest("Novo Gestor", "novo.gestor@example.com", "SenhaForte-2026!"));
@@ -67,7 +67,7 @@ public sealed class ControleAcessoApiTests
         Assert.DoesNotContain(responsaveis, u => u.Perfil is not (PerfilUsuario.Gestor or PerfilUsuario.Administrador));
 
         Assert.Equal(HttpStatusCode.Created, (await gestor.PostAsJsonAsync("/api/produtos",
-            new ProdutoRequest("Produto do Gestor", "Teste", null))).StatusCode);
+            new ProdutoRequest("Produto do Gestor", "Camiseta", null))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await gestor.GetAsync("/api/usuarios")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await gestor.PostAsJsonAsync("/api/usuarios",
             new CriarGestorRequest("Gestor indevido", "indevido@example.com", "SenhaForte-2026!"))).StatusCode);

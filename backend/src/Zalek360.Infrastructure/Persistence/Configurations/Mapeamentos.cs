@@ -38,6 +38,9 @@ internal sealed class ProdutoMap : IEntityTypeConfiguration<Produto>
         b.Property(x => x.Nome).HasMaxLength(100).IsRequired();
         b.Property(x => x.Categoria).HasMaxLength(50).IsRequired();
         b.Property(x => x.DescricaoBase);
+        b.Property(x => x.PrecoVenda).HasPrecision(12, 2);
+        b.Property(x => x.Custo).HasPrecision(12, 2);
+        b.Property(x => x.Versao).IsConcurrencyToken().HasDefaultValue(1);
         b.HasIndex(x => x.Nome).IsUnique();
     }
 }

@@ -1,5 +1,20 @@
 # Comparação de esquema antes de migrations
 
+## Validação atual no ambiente de revisão
+
+Com `zalek360-revisao` ativo, execute pela raiz:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File backend/tools/comparar-esquema/comparar-revisao.ps1
+```
+
+Este comando usa exclusivamente a rede e o PostgreSQL da revisão. Cria bancos com prefixos `schema_test_a_` e `schema_test_b_`, aplica migrations em um e o SQL do modelo no outro, e usa o mesmo `catalogo.sql`/`comparar.mjs` abaixo. Remove somente os bancos temporários; serviços e volumes permanecem intactos. Credenciais são passadas pelo arquivo local ao SDK, sem impressão dos valores. JSONs/SQL/evidências ficam no diretório temporário informado ao final.
+
+## Comparador anterior (referência histórica)
+
+O comando abaixo usa um projeto separado e limpeza de volumes. A validação atual do Zalek360 deve usar `comparar-revisao.ps1`, conforme `AGENTS.md`.
+
+
 Requer Docker/Compose, PowerShell 5.1+ e Node.js 18+. Não precisa de SDK .NET no host.
 
 Na raiz do repositório:

@@ -92,18 +92,3 @@ public sealed record DecisaoResultadoDto(OrcamentoDetalheDto Orcamento, PedidoVi
 public sealed record OpcoesOrcamentoDto(
     IReadOnlyList<string> ExtensoesPermitidas, long TamanhoMaximoBytes,
     IReadOnlyList<string> TiposPersonalizacao, IReadOnlyList<string> CondicoesPagamento);
-
-public static class OpcoesOrcamento
-{
-    public static readonly string[] TiposPersonalizacao =
-    {
-        "Serigrafia (frente)", "Serigrafia (frente e costas)", "Serigrafia (1 lado)", "Bordado",
-        "Sublimação", "Gravação a laser", "DTF", "Transfer"
-    };
-
-    public static readonly string[] CondicoesPagamento =
-    {
-        "50% na aprovação + 50% na entrega (PIX)", "50% na aprovação + 50% na entrega (boleto)",
-        "100% na aprovação (PIX)", "À vista (PIX)", "30 dias (boleto)", "30/60 dias (boleto)"
-    };
-}

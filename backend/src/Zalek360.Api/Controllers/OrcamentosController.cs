@@ -18,12 +18,14 @@ public sealed class OrcamentosController : ControllerBase
     private readonly OrcamentoService _servico;
     private readonly IOrcamentoQueries _consultas;
     private readonly OrcamentoDocumentoService _documentos;
+    private readonly ConfiguracaoCatalogoService _configuracoes;
 
-    public OrcamentosController(OrcamentoService servico, IOrcamentoQueries consultas, OrcamentoDocumentoService documentos)
+    public OrcamentosController(OrcamentoService servico, IOrcamentoQueries consultas, OrcamentoDocumentoService documentos, ConfiguracaoCatalogoService configuracoes)
     {
         _servico = servico;
         _consultas = consultas;
         _documentos = documentos;
+        _configuracoes = configuracoes;
     }
 
     /// <summary>Lista com filtros e contagem por status (abas).</summary>
@@ -115,5 +117,5 @@ public sealed class OrcamentosController : ControllerBase
 
     /// <summary>Motivos sugeridos para recusa/cancelamento.</summary>
     [HttpGet("motivos-decisao")]
-    public IReadOnlyList<string> MotivosDecisao() => DecisaoOrcamento.MotivosSugeridos;
+    public Task<IReadOnlyList<string>> MotivosDecisao(CancellationToken ct) => _configuracoes.NomesAsync(TipoOpcaoCatalogo.MotivoDecisao, ct);
 }

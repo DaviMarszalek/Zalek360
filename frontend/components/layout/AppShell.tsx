@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Package, Users, X } from "lucide-react";
+import { ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Package, Settings, Tags, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUsuarioAtual } from "@/hooks";
 import { authService } from "@/services";
@@ -14,8 +14,10 @@ const menu = [
   { href: "/clientes", rotulo: "Clientes", icone: Users },
   { href: "/orcamentos", rotulo: "Orçamentos", icone: FileText },
   { href: "/pedidos", rotulo: "Pedidos", icone: Package },
+  { href: "/produtos", rotulo: "Produtos", icone: Tags },
   { href: "/estoque", rotulo: "Estoque", icone: ClipboardList },
 ];
+const configuracoes = { href: "/configuracoes", rotulo: "Configurações", icone: Settings };
 
 export function Marca({ clara = true }: { clara?: boolean }) {
   return (
@@ -51,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button className="lg:hidden" onClick={() => setMenuAberto(false)} aria-label="Fechar menu"><X className="h-5 w-5" /></button>
       </div>
       <nav className="mt-2 flex-1 space-y-0.5 px-3" aria-label="Menu principal">
-        {menu.map(({ href, rotulo, icone: Icone }) => {
+        {[...menu, ...(usuario?.perfil === "Administrador" ? [configuracoes] : [])].map(({ href, rotulo, icone: Icone }) => {
           const ativo = caminho === href || caminho.startsWith(href + "/");
           return (
             <Link key={href} href={href} onClick={() => setMenuAberto(false)}
