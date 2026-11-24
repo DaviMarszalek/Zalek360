@@ -11,7 +11,7 @@ namespace Zalek360.Api.Controllers;
 /// <summary>UC01 — Cadastrar Cliente · UC05 — Consultar Histórico do Cliente.</summary>
 [ApiController]
 [Route("api/clientes")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class ClientesController : ControllerBase
 {
     private readonly ClienteService _servico;
@@ -42,7 +42,7 @@ public sealed class ClientesController : ControllerBase
 
     /// <summary>Cadastra cliente PF/PJ. CPF/CNPJ duplicado retorna 409 com o cliente existente em details.</summary>
     [HttpPost]
-    [Authorize(Policy = Politicas.Administracao)]
+    [Authorize(Policy = Politicas.Operacao)]
     [ProducesResponseType(typeof(ClienteDetalheDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ClienteDetalheDto>> Criar([FromBody] ClienteRequest request, CancellationToken ct)
     {
@@ -55,7 +55,7 @@ public sealed class ClientesController : ControllerBase
 
     /// <summary>Atualiza o cadastro (envie "versao" para controle de concorrência).</summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = Politicas.Administracao)]
+    [Authorize(Policy = Politicas.Operacao)]
     public Task<ClienteDetalheDto> Atualizar(Guid id, [FromBody] ClienteRequest request, CancellationToken ct) =>
         _servico.AtualizarAsync(id, request, ct);
 
@@ -86,7 +86,7 @@ public sealed class ClientesController : ControllerBase
         _consultas.ListarObservacoesAsync(id, ct);
 
     [HttpPost("{id:guid}/observacoes")]
-    [Authorize(Policy = Politicas.Administracao)]
+    [Authorize(Policy = Politicas.Operacao)]
     [ProducesResponseType(typeof(ObservacaoClienteDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ObservacaoClienteDto>> AdicionarObservacao(Guid id, [FromBody] ObservacaoRequest request, CancellationToken ct)
     {

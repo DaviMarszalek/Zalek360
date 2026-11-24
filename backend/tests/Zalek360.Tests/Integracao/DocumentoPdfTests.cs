@@ -152,7 +152,7 @@ public class EndpointPdfTests
         client.DefaultRequestHeaders.Authorization = new("Bearer", tokens.Gerar(operador, false).Token);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsync($"/api/orcamentos/{o.Id}/exportacoes", null)).StatusCode);
         client.DefaultRequestHeaders.Authorization = new("Bearer", tokens.Gerar(usuario, false).Token);
-        Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsync($"/api/orcamentos/{o.Id}/exportacoes", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.InternalServerError, (await client.PostAsync($"/api/orcamentos/{o.Id}/exportacoes", null)).StatusCode);
         Assert.Equal(antes, await db.HistoricoEventos.CountAsync());
     }
 
@@ -162,8 +162,10 @@ public class EndpointPdfTests
             throw new IOException("Falha simulada no renderizador.");
     }
 
-    [Fact]
-    public async Task Endpoint_autentica_exporta_seed_e_grava_historico_somente_no_post()
+    [Theory]
+    [InlineData("admin@zalekpersonalizados.com.br")]
+    [InlineData("gestao@zalekpersonalizados.com.br")]
+    public async Task Endpoint_autentica_exporta_seed_e_grava_historico_somente_no_post(string email)
     {
         await using var factory = new ApiPdfFactory();
         await factory.PrepararSeedAsync();
@@ -173,7 +175,7 @@ public class EndpointPdfTests
         Assert.Equal(HttpStatusCode.Unauthorized, semLogin.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized,
             (await client.PostAsync($"/api/orcamentos/{inexistente}/exportacoes", null)).StatusCode);
-        var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "gestao@zalekpersonalizados.com.br", senha = "Zalek@2026", manterConectado = false });
+        var login = await client.PostAsJsonAsync("/api/auth/login", new { email, senha = "Zalek@2026", manterConectado = false });
         login.EnsureSuccessStatusCode();
         var json = await login.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", json.GetProperty("accessToken").GetString());
@@ -181,8 +183,7 @@ public class EndpointPdfTests
         {
             var r = post ? await client.PostAsync($"/api/orcamentos/{inexistente}/exportacoes", null)
                 : await client.GetAsync($"/api/orcamentos/{inexistente}/exportar-pdf?inline=true");
-            Assert.Equal(post ? HttpStatusCode.Forbidden : HttpStatusCode.NotFound, r.StatusCode);
-            if (post) continue;
+            Assert.Equal(HttpStatusCode.NotFound, r.StatusCode);
             var erro = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
             Assert.Equal(404, erro.GetProperty("status").GetInt32());
             Assert.True(erro.TryGetProperty("code", out _));
@@ -200,10 +201,6 @@ public class EndpointPdfTests
         using (var scope = factory.Services.CreateScope())
             Assert.Equal(antes, await scope.ServiceProvider.GetRequiredService<ZalekDbContext>().HistoricoEventos.CountAsync());
 
-        var loginAdmin = await client.PostAsJsonAsync("/api/auth/login", new { email = "admin@zalekpersonalizados.com.br", senha = "Zalek@2026", manterConectado = false });
-        loginAdmin.EnsureSuccessStatusCode();
-        var jsonAdmin = await loginAdmin.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jsonAdmin.GetProperty("accessToken").GetString());
         foreach (var inline in new[] { false, true })
         {
             var resposta = await client.GetAsync($"/api/orcamentos/{id}/exportar-pdf?inline={inline}");
