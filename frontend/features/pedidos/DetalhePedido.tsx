@@ -8,6 +8,7 @@ import { AreaTexto, Aviso, BadgePedido, Botao, CabecalhoPagina, Campo, Cartao, C
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, LinhaDoTempo, Voltar } from "@/features/comum";
 import { MateriaisDoPedido } from "@/features/pedidos/MateriaisDoPedido";
+import { useUsuarioAtual } from "@/hooks";
 import { anexosService, pedidosService } from "@/services";
 import { erroCampo, erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -109,6 +110,8 @@ function ModalStatus({ p, alvo, aoFechar }: { p: PedidoDetalhe; alvo: SituacaoPe
 
 export function DetalhePedido() {
   const { id } = useParams<{ id: string }>();
+  const { data: usuario } = useUsuarioAtual();
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const q = useQuery({ queryKey: ["pedido", id], queryFn: () => pedidosService.obter(id) });
   const historico = useQuery({ queryKey: ["pedido", id, "historico"], queryFn: () => pedidosService.historico(id), enabled: !!q.data });
   const [alvo, setAlvo] = useState<SituacaoPedido | null>(null);
@@ -124,8 +127,8 @@ export function DetalhePedido() {
         titulo={<span className="flex flex-wrap items-center gap-3">Pedido <span className="numero">{numeroDocumento(p.numero)}</span><BadgePedido situacao={p.situacao} /></span>}
         subtitulo={<>{p.cliente.nome} · Criado em <span className="numero">{data(dataIsoDeInstante(p.criadoEm))}</span> às <span className="numero">{hora(p.criadoEm)}</span> · Prazo de entrega: <span className="numero">{data(p.prazoEntrega)}</span> · Responsável: {p.responsavel}</>}
         acoes={<>
-          {p.podeCancelar && <Botao variante="secundaria" className="text-red-700" icone={<Ban className="h-4 w-4" />} onClick={() => setAlvo("Cancelado")}>Cancelar pedido</Botao>}
-          {p.proximaSituacao && <Botao icone={<ArrowRight className="h-4 w-4" />} onClick={() => setAlvo(p.proximaSituacao)}>Atualizar status</Botao>}
+          {podeEditar && p.podeCancelar && <Botao variante="secundaria" className="text-red-700" icone={<Ban className="h-4 w-4" />} onClick={() => setAlvo("Cancelado")}>Cancelar pedido</Botao>}
+          {podeEditar && p.proximaSituacao && <Botao icone={<ArrowRight className="h-4 w-4" />} onClick={() => setAlvo(p.proximaSituacao)}>Atualizar status</Botao>}
         </>} />
 
       <div className="mb-5 space-y-4"><FaixaOrigem p={p} /><Etapas p={p} /><AvisoSituacao p={p} /></div>
@@ -191,7 +194,7 @@ export function DetalhePedido() {
               <Info2 rotulo="Validade do orçamento"><span className="numero">{data(p.origem.validadeOrcamento)}</span></Info2>
               <Info2 rotulo="Responsável">{p.responsavel}</Info2>
               <Info2 rotulo="Prazo estimado" className="col-span-2">{p.prazoEstimadoDiasUteis} dias úteis após a aprovação · entrega prevista <span className="numero">{data(p.prazoEntrega)}</span></Info2>
-              <Info2 rotulo="Condição de pagamento" className="col-span-2">{p.condicaoPagamento}</Info2>
+              <Info2 rotulo="Condição de pagamento" className="col-span-2">{p.condicaoPagamento || "A combinar"}</Info2>
               {p.observacoesComerciais && <Info2 rotulo="Observações comerciais" className="col-span-2"><span className="whitespace-pre-line">{p.observacoesComerciais}</span></Info2>}
             </dl>
           </Cartao>
@@ -199,7 +202,7 @@ export function DetalhePedido() {
         </aside>
       </div>
 
-      <ModalStatus key={`${p.versao}-${alvo}`} p={p} alvo={alvo} aoFechar={() => setAlvo(null)} />
+      {podeEditar && <ModalStatus key={`${p.versao}-${alvo}`} p={p} alvo={alvo} aoFechar={() => setAlvo(null)} />}
     </>
   );
 }

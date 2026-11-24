@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Ban, CheckCircle2, Download, ExternalLink, FileImage, FileText, Gavel, MessageSquarePlus, Package, Pencil, Plus, Send } from "lucide-react";
 import { useExportarOrcamento } from "@/hooks/useExportarOrcamento";
+import { useUsuarioAtual } from "@/hooks";
 import { Abas, AreaTexto, Aviso, BadgeOrcamento, Botao, CabecalhoPagina, Campo, Cartao, Carregando, Entrada, ErroCarregamento, Info2, Modal, Selecao } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, IconeMeio, LinhaDoTempo, Voltar } from "@/features/comum";
@@ -221,6 +222,8 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
 
 export function DetalheOrcamento() {
   const { id } = useParams<{ id: string }>();
+  const { data: usuario } = useUsuarioAtual();
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const q = useQuery({ queryKey: ["orcamento", id], queryFn: () => orcamentosService.obter(id) });
   const [aba, setAba] = useState<"" | "alteracoes" | "contatos">("");
   const historico = useQuery({ queryKey: ["orcamento", id, "historico", aba], queryFn: () => orcamentosService.historico(id, aba || undefined), enabled: !!q.data });
@@ -228,7 +231,7 @@ export function DetalheOrcamento() {
   const [pedidoGerado, setPedidoGerado] = useState<PedidoVinculado | null>(null);
   const [materiaisGerados, setMateriaisGerados] = useState<MateriaisPedido | null>(null);
   const aoAprovado = (p: PedidoVinculado, materiais: MateriaisPedido | null) => { setPedidoGerado(p); setMateriaisGerados(materiais); };
-  const pdf = useExportarOrcamento(id, q.data?.cliente.id ?? "");
+  const pdf = useExportarOrcamento(id, q.data?.cliente.id ?? "", podeEditar);
 
   if (q.isError) return <ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} />;
   if (!q.data) return <Carregando />;
@@ -243,13 +246,15 @@ export function DetalheOrcamento() {
         acoes={<>
           <Botao variante="secundaria" carregando={pdf.carregando} icone={<Download className="h-4 w-4" />} onClick={() => void pdf.exportar()}>Exportar PDF</Botao>
           <Botao variante="secundaria" disabled={pdf.carregando} icone={<ExternalLink className="h-4 w-4" />} onClick={() => void pdf.exportar(true)}>Abrir em nova aba</Botao>
-          {aberto && <Link href={`/orcamentos/${o.id}/editar`}><Botao variante="secundaria" icone={<Pencil className="h-4 w-4" />}>Editar</Botao></Link>}
-          {aberto && <Botao variante="secundaria" icone={<MessageSquarePlus className="h-4 w-4" />} onClick={() => setModal("contato")}>Registrar contato</Botao>}
-          {o.situacao === "EmElaboracao" && <Botao variante="fantasma" className="text-red-700" onClick={() => setModal("cancelar")}>Cancelar orçamento</Botao>}
-          {o.situacao === "EmElaboracao" && <Botao icone={<Send className="h-4 w-4" />} onClick={() => setModal("apresentar")}>Apresentar ao cliente</Botao>}
-          {o.situacao === "AguardandoRetorno" && <Botao icone={<Gavel className="h-4 w-4" />} onClick={() => setModal("decisao")}>Registrar decisão</Botao>}
+          {podeEditar && <>
+            {aberto && <Link href={`/orcamentos/${o.id}/editar`}><Botao variante="secundaria" icone={<Pencil className="h-4 w-4" />}>Editar</Botao></Link>}
+            {aberto && <Botao variante="secundaria" icone={<MessageSquarePlus className="h-4 w-4" />} onClick={() => setModal("contato")}>Registrar contato</Botao>}
+            {o.situacao === "EmElaboracao" && <Botao variante="fantasma" className="text-red-700" onClick={() => setModal("cancelar")}>Cancelar orçamento</Botao>}
+            {o.situacao === "EmElaboracao" && <Botao icone={<Send className="h-4 w-4" />} onClick={() => setModal("apresentar")}>Apresentar ao cliente</Botao>}
+            {o.situacao === "AguardandoRetorno" && <Botao icone={<Gavel className="h-4 w-4" />} onClick={() => setModal("decisao")}>Registrar decisão</Botao>}
+          </>}
           {o.pedido && <Link href={`/pedidos/${o.pedido.id}`}><Botao icone={<Package className="h-4 w-4" />}>Ver pedido {numeroDocumento(o.pedido.numero)}</Botao></Link>}
-          {["Recusado", "Expirado", "Cancelado"].includes(o.situacao) && <Link href={`/orcamentos/novo?clienteId=${o.cliente.id}`}><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento para o cliente</Botao></Link>}
+          {podeEditar && ["Recusado", "Expirado", "Cancelado"].includes(o.situacao) && <Link href={`/orcamentos/novo?clienteId=${o.cliente.id}`}><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento para o cliente</Botao></Link>}
         </>} />
 
       <div className="mb-5 space-y-4"><Etapas o={o} /><Faixa o={o} /></div>
@@ -293,7 +298,7 @@ export function DetalheOrcamento() {
               <Info2 rotulo="Validade"><span className="numero">{data(o.validade)}</span></Info2>
               <Info2 rotulo="Prazo estimado">{o.prazoEstimadoDiasUteis} dias úteis</Info2>
               <Info2 rotulo={o.pedido ? "Entrega prevista" : "Previsão se aprovado hoje"}><span className="numero">{data(o.previsaoEntrega)}</span></Info2>
-              <Info2 rotulo="Condição de pagamento" className="col-span-2">{o.condicaoPagamento}</Info2>
+              <Info2 rotulo="Condição de pagamento" className="col-span-2">{o.condicaoPagamento || "A combinar"}</Info2>
               {o.observacoesComerciais && <Info2 rotulo="Observações comerciais" className="col-span-2"><span className="whitespace-pre-line">{o.observacoesComerciais}</span></Info2>}
             </dl>
           </Cartao>
@@ -309,10 +314,12 @@ export function DetalheOrcamento() {
         </aside>
       </div>
 
-      <ModalContato o={o} aberto={modal === "contato"} aoFechar={() => setModal(null)} />
-      <ModalApresentar o={o} aberto={modal === "apresentar"} aoFechar={() => setModal(null)} />
-      <ModalDecisao key={`d-${o.versao}`} o={o} aberto={modal === "decisao"} aoFechar={() => setModal(null)} aoAprovado={aoAprovado} />
-      <ModalDecisao key={`c-${o.versao}`} o={o} aberto={modal === "cancelar"} aoFechar={() => setModal(null)} somenteCancelar aoAprovado={aoAprovado} />
+      {podeEditar && <>
+        <ModalContato o={o} aberto={modal === "contato"} aoFechar={() => setModal(null)} />
+        <ModalApresentar o={o} aberto={modal === "apresentar"} aoFechar={() => setModal(null)} />
+        <ModalDecisao key={`d-${o.versao}`} o={o} aberto={modal === "decisao"} aoFechar={() => setModal(null)} aoAprovado={aoAprovado} />
+        <ModalDecisao key={`c-${o.versao}`} o={o} aberto={modal === "cancelar"} aoFechar={() => setModal(null)} somenteCancelar aoAprovado={aoAprovado} />
+      </>}
 
       <Modal aberto={!!pedidoGerado} aoFechar={() => setPedidoGerado(null)} titulo="Pedido gerado com sucesso"
         rodape={<><Botao variante="secundaria" onClick={() => setPedidoGerado(null)}>Voltar ao orçamento</Botao>{pedidoGerado && <Link href={`/pedidos/${pedidoGerado.id}`}><Botao icone={<Package className="h-4 w-4" />}>Ver pedido {numeroDocumento(pedidoGerado.numero)}</Botao></Link>}</>}>

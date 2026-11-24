@@ -8,7 +8,7 @@ namespace Zalek360.Api.Controllers;
 
 [ApiController]
 [Route("api/estoque")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class EstoqueController : ControllerBase
 {
     private readonly EstoqueService _service;
@@ -54,7 +54,7 @@ public sealed record AtivoRequest(bool Ativo);
 
 [ApiController]
 [Route("api/pedidos/{pedidoId:guid}/materiais")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class MateriaisPedidoController : ControllerBase
 {
     private readonly EstoqueService _service;

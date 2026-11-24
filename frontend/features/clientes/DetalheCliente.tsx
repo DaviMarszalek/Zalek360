@@ -8,6 +8,7 @@ import { AcoesLinha, Abas, AreaTexto, BadgeOrcamento, BadgePedido, Botao, Cabeca
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, FiltroPeriodo, intervaloDoPeriodo, LinhaDoTempo, Periodo, Voltar } from "@/features/comum";
 import { clientesService } from "@/services";
+import { useUsuarioAtual } from "@/hooks";
 import { erroDaApi } from "@/lib/api";
 import { rotuloSituacaoOrcamento, rotuloSituacaoPedido, rotuloTipoPessoa, situacoesOrcamento, situacoesPedido } from "@/lib/status";
 import { data, dataDeInstante, dataHora, documento, moeda, numeroDocumento } from "@/utils/formatos";
@@ -19,6 +20,8 @@ export function DetalheCliente() {
   const { id } = useParams<{ id: string }>();
   const params = useSearchParams();
   const router = useRouter();
+  const { data: usuario } = useUsuarioAtual();
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
   const aba = (params.get("aba") as Aba) ?? "visao-geral";
   const q = useQuery({ queryKey: ["cliente", id], queryFn: () => clientesService.obter(id) });
 
@@ -32,7 +35,7 @@ export function DetalheCliente() {
       <CabecalhoPagina voltar={<Voltar href="/clientes">Clientes</Voltar>}
         titulo={<span className="flex flex-wrap items-center gap-2">{c.nomeExibicao}<Etiqueta>{rotuloTipoPessoa[c.tipoPessoa]}</Etiqueta></span>}
         subtitulo={<span className="numero">{documento(c.documento)}{c.inscricaoEstadual && <span> · IE {c.inscricaoEstadual}</span>}{c.nomeFantasia && c.nomeFantasia !== c.nomeRazaoSocial && <span className="font-sans"> · {c.nomeRazaoSocial}</span>}</span>}
-        acoes={<>
+        acoes={podeEditar && <>
           <Link href={`/clientes/${id}/editar`}><Botao variante="secundaria" icone={<Pencil className="h-4 w-4" />}>Editar</Botao></Link>
           <Link href={`/orcamentos/novo?clienteId=${id}`}><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>
         </>} />
@@ -53,9 +56,9 @@ export function DetalheCliente() {
             { id: "pedidos", rotulo: "Pedidos", contagem: c.totalPedidos }, { id: "observacoes", rotulo: "Observações" }, { id: "historico", rotulo: "Histórico" }]} />
           <div className="mt-5">
             {aba === "visao-geral" && <VisaoGeral id={id} />}
-            {aba === "orcamentos" && <AbaOrcamentos cliente={c} />}
+            {aba === "orcamentos" && <AbaOrcamentos cliente={c} podeCriar={podeEditar} />}
             {aba === "pedidos" && <AbaPedidos id={id} />}
-            {aba === "observacoes" && <AbaObservacoes id={id} />}
+            {aba === "observacoes" && <AbaObservacoes id={id} podeEditar={podeEditar} />}
             {aba === "historico" && <AbaHistorico id={id} />}
           </div>
         </div>
@@ -96,7 +99,7 @@ function VisaoGeral({ id }: { id: string }) {
   );
 }
 
-function AbaOrcamentos({ cliente }: { cliente: ClienteDetalhe }) {
+function AbaOrcamentos({ cliente, podeCriar }: { cliente: ClienteDetalhe; podeCriar: boolean }) {
   const router = useRouter();
   const [periodo, setPeriodo] = useState<Periodo>("todos");
   const [status, setStatus] = useState<SituacaoOrcamento | "">("");
@@ -111,8 +114,8 @@ function AbaOrcamentos({ cliente }: { cliente: ClienteDetalhe }) {
       </div>
       {q.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div>
         : !q.data ? <Carregando /> : q.data.totalSemFiltro === 0
-          ? <EstadoVazio icone={<FileText className="h-5 w-5" />} titulo="Este cliente ainda não possui orçamentos" descricao="Crie o primeiro orçamento para registrar produtos, personalização e valores."
-              acao={<Link href={`/orcamentos/novo?clienteId=${cliente.id}`}><Botao icone={<Plus className="h-4 w-4" />}>Criar orçamento</Botao></Link>} />
+          ? <EstadoVazio icone={<FileText className="h-5 w-5" />} titulo="Este cliente ainda não possui orçamentos" descricao={podeCriar ? "Crie o primeiro orçamento para registrar produtos, personalização e valores." : "Os orçamentos do cliente serão exibidos aqui."}
+              acao={podeCriar && <Link href={`/orcamentos/novo?clienteId=${cliente.id}`}><Botao icone={<Plus className="h-4 w-4" />}>Criar orçamento</Botao></Link>} />
           : q.data.itens.length === 0 ? <EstadoVazio titulo="Nenhum orçamento com esses filtros" acao={<Botao variante="secundaria" onClick={() => { setPeriodo("todos"); setStatus(""); }}>Limpar filtros</Botao>} />
             : <div className="overflow-x-auto"><table className="tabela w-full min-w-[640px] text-sm">
               <thead><tr><th>Número</th><th>Data</th><th>Validade</th><th>Itens</th><th className="text-right">Valor</th><th>Status</th><th className="w-16 text-right">Ações</th></tr></thead>
@@ -167,7 +170,7 @@ function AbaPedidos({ id }: { id: string }) {
   );
 }
 
-function AbaObservacoes({ id }: { id: string }) {
+function AbaObservacoes({ id, podeEditar }: { id: string; podeEditar: boolean }) {
   const qc = useQueryClient();
   const toast = useToast();
   const [texto, setTexto] = useState("");
@@ -179,11 +182,11 @@ function AbaObservacoes({ id }: { id: string }) {
   });
   return (
     <div className="space-y-4">
-      <Cartao titulo="Nova observação interna">
+      {podeEditar && <Cartao titulo="Nova observação interna">
         <AreaTexto value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={2000} placeholder="Ex.: prefere receber a prova da arte pelo WhatsApp." />
         <div className="mt-3 flex justify-end"><Botao disabled={!texto.trim()} carregando={adicionar.isPending} onClick={() => adicionar.mutate()}>Adicionar observação</Botao></div>
-      </Cartao>
-      {!q.data ? <Carregando /> : q.data.length === 0
+      </Cartao>}
+      {q.isError ? <ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /> : !q.data ? <Carregando /> : q.data.length === 0
         ? <Cartao><EstadoVazio icone={<StickyNote className="h-5 w-5" />} titulo="Nenhuma observação registrada" descricao="Registre preferências e cuidados combinados com o cliente." /></Cartao>
         : <Cartao semPadding><ul className="divide-y divide-borda">{[...q.data].reverse().map((o) => (
           <li key={o.id} className="flex gap-3 px-5 py-4">

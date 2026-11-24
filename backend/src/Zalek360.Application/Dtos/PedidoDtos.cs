@@ -22,7 +22,7 @@ public sealed record PedidoDetalheDto(
     DateTime CriadoEm,
     DateOnly PrazoEntrega,
     int PrazoEstimadoDiasUteis,
-    string CondicaoPagamento,
+    string? CondicaoPagamento,
     string? ObservacoesComerciais,
     string? ObservacaoDecisao,
     Guid ResponsavelId,

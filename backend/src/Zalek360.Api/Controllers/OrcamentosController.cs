@@ -12,7 +12,7 @@ namespace Zalek360.Api.Controllers;
 /// <summary>UC02 — Criar Orçamento · UC03 — Registrar Decisão · UC04 — Converter em Pedido.</summary>
 [ApiController]
 [Route("api/orcamentos")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class OrcamentosController : ControllerBase
 {
     private readonly OrcamentoService _servico;

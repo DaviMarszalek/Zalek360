@@ -11,7 +11,7 @@ namespace Zalek360.Api.Controllers;
 /// <summary>Pedidos — sempre originados de orçamentos aprovados (RN8/RN9).</summary>
 [ApiController]
 [Route("api/pedidos")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class PedidosController : ControllerBase
 {
     private readonly PedidoService _servico;
@@ -31,6 +31,7 @@ public sealed class PedidosController : ControllerBase
 
     /// <summary>Criação manual NÃO é permitida: sempre retorna 422 PEDIDO_CRIACAO_DIRETA_NAO_PERMITIDA.</summary>
     [HttpPost]
+    [Authorize(Policy = Politicas.Operacao)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     public IActionResult CriarDiretamente()
     {

@@ -11,7 +11,7 @@ namespace Zalek360.Api.Controllers;
 /// <summary>Artes e referências anexadas aos itens (PDF, PNG, JPG, AI, CDR — até 20 MB).</summary>
 [ApiController]
 [Route("api/anexos")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class AnexosController : ControllerBase
 {
     private readonly AnexoService _servico;
@@ -62,7 +62,7 @@ public sealed class AnexosController : ControllerBase
 
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class DashboardController : ControllerBase
 {
     private readonly IDashboardQueries _consultas;
@@ -74,7 +74,7 @@ public sealed class DashboardController : ControllerBase
 
 [ApiController]
 [Route("api/produtos")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class ProdutosController : ControllerBase
 {
     private readonly ICatalogoQueries _consultas;
@@ -97,7 +97,7 @@ public sealed class ProdutosController : ControllerBase
 
 [ApiController]
 [Route("api/usuarios")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class UsuariosController : ControllerBase
 {
     private readonly ICatalogoQueries _consultas;

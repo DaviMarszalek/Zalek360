@@ -11,7 +11,7 @@ namespace Zalek360.Api.Controllers;
 /// <summary>UC01 — Cadastrar Cliente · UC05 — Consultar Histórico do Cliente.</summary>
 [ApiController]
 [Route("api/clientes")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Operacao)]
 public sealed class ClientesController : ControllerBase
 {
     private readonly ClienteService _servico;

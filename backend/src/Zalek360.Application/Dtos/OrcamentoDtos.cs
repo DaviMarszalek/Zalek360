@@ -64,7 +64,7 @@ public sealed record OrcamentoDetalheDto(
     DateOnly Validade,
     int PrazoEstimadoDiasUteis,
     DateOnly PrevisaoEntrega,
-    string CondicaoPagamento,
+    string? CondicaoPagamento,
     string? ObservacoesComerciais,
     Guid ResponsavelId,
     string Responsavel,

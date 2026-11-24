@@ -119,7 +119,7 @@ public static class ConfiguracaoServicos
             o.AddPolicy(Politicas.Consulta, p => p.RequireAuthenticatedUser()
                 .RequireRole(nameof(PerfilUsuario.Gestor), nameof(PerfilUsuario.Administrador)));
             o.AddPolicy(Politicas.Operacao, p => p.RequireAuthenticatedUser()
-                .RequireRole(nameof(PerfilUsuario.Gestor)));
+                .RequireRole(nameof(PerfilUsuario.Gestor), nameof(PerfilUsuario.Administrador)));
             o.AddPolicy(Politicas.Administracao, p => p.RequireAuthenticatedUser()
                 .RequireRole(nameof(PerfilUsuario.Administrador)));
         });

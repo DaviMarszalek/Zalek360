@@ -39,6 +39,14 @@ public class OrcamentoDocumentoTests
     }
 
     [Fact]
+    public void Condicao_de_pagamento_ausente_e_exibida_como_a_combinar()
+    {
+        var d = Montar(Orcamento() with { CondicaoPagamento = null });
+
+        Assert.Equal("A combinar", d.CondicaoPagamento);
+    }
+
+    [Fact]
     public void Previsoes_usam_calendario_comum_e_hoje_no_fuso_de_negocio()
     {
         // Sábado em UTC, mas sexta-feira 25/09 em São Paulo: um dia útil termina na segunda.

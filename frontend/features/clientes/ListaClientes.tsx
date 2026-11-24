@@ -6,7 +6,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, Pencil, Plus, Search, SearchX, Users } from "lucide-react";
 import { AcoesLinha, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Etiqueta, Paginacao, Selecao } from "@/components/ui";
 import { clientesService } from "@/services";
-import { useDebounce } from "@/hooks";
+import { useDebounce, useUsuarioAtual } from "@/hooks";
 import { erroDaApi } from "@/lib/api";
 import { data, documento, numeroDocumento, somenteDigitos, telefone } from "@/utils/formatos";
 import type { TipoPessoa } from "@/types/api";
@@ -19,6 +19,8 @@ export function ListaClientes() {
   const [cidade, setCidade] = useState("");
   const [pagina, setPagina] = useState(1);
   const termo = useDebounce(busca.trim());
+  const { data: usuario } = useUsuarioAtual();
+  const podeEditar = usuario?.perfil === "Administrador" || usuario?.perfil === "Gestor";
 
   const q = useQuery({
     queryKey: ["clientes", termo, tipo, cidade, pagina],
@@ -32,7 +34,7 @@ export function ListaClientes() {
   return (
     <>
       <CabecalhoPagina titulo="Clientes" subtitulo="Pessoas físicas e jurídicas atendidas pela Zalek Personalizados."
-        acoes={<Link href="/clientes/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo cliente</Botao></Link>} />
+        acoes={podeEditar && <Link href="/clientes/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo cliente</Botao></Link>} />
       <Cartao semPadding>
         <div className="flex flex-wrap gap-3 border-b border-borda p-4">
           <div className="relative min-w-[260px] flex-1">
@@ -54,9 +56,9 @@ export function ListaClientes() {
             : q.data.itens.length === 0 ? (filtrando
               ? <EstadoVazio icone={<SearchX className="h-5 w-5" />} titulo={termo ? `Nenhum cliente encontrado para “${termo}”` : "Nenhum cliente com esses filtros"}
                   descricao="Confira a grafia ou pesquise pelo CPF/CNPJ. Se for um cliente novo, cadastre-o antes de criar o orçamento."
-                  acao={<Botao icone={<Plus className="h-4 w-4" />} onClick={() => router.push(hrefNovo)}>Cadastrar novo cliente</Botao>} />
+                  acao={podeEditar && <Botao icone={<Plus className="h-4 w-4" />} onClick={() => router.push(hrefNovo)}>Cadastrar novo cliente</Botao>} />
               : <EstadoVazio icone={<Users className="h-5 w-5" />} titulo="Nenhum cliente cadastrado" descricao="Cadastre o primeiro cliente para começar a criar orçamentos."
-                  acao={<Link href="/clientes/novo"><Botao icone={<Plus className="h-4 w-4" />}>Cadastrar cliente</Botao></Link>} />)
+                  acao={podeEditar && <Link href="/clientes/novo"><Botao icone={<Plus className="h-4 w-4" />}>Cadastrar cliente</Botao></Link>} />)
               : <>
                 <div className="overflow-x-auto"><table className="tabela w-full min-w-[820px] text-sm">
                   <thead><tr><th>Cliente</th><th>CPF/CNPJ</th><th>Contato</th><th>Cidade</th><th>Último orçamento</th><th className="w-24 text-right">Ações</th></tr></thead>
@@ -74,7 +76,7 @@ export function ListaClientes() {
                       <td>{c.ultimoOrcamento ? <><span className="numero text-texto">{numeroDocumento(c.ultimoOrcamento.numero)}</span><span className="numero ml-2 text-xs text-texto-fraco">{data(c.ultimoOrcamento.data)}</span></> : <span className="text-texto-fraco">Sem orçamentos</span>}</td>
                       <td><AcoesLinha acoes={[
                         { rotulo: `Ver cliente ${c.nome}`, icone: <Eye className="h-4 w-4" />, aoAcionar: () => router.push(`/clientes/${c.id}`) },
-                        { rotulo: `Editar cliente ${c.nome}`, icone: <Pencil className="h-4 w-4" />, aoAcionar: () => router.push(`/clientes/${c.id}/editar`) },
+                        ...(podeEditar ? [{ rotulo: `Editar cliente ${c.nome}`, icone: <Pencil className="h-4 w-4" />, aoAcionar: () => router.push(`/clientes/${c.id}/editar`) }] : []),
                       ]} /></td>
                     </tr>))}</tbody></table></div>
                 <Paginacao pagina={q.data.pagina} totalPaginas={q.data.totalPaginas} total={q.data.total} exibindo={q.data.itens.length} nome={["cliente", "clientes"]} aoMudar={setPagina} />

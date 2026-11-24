@@ -61,11 +61,12 @@ export const clientesService = {
 };
 
 export const orcamentosService = {
-  exportarPdf: async (id: string, inline = false) => {
+  exportarPdf: async (id: string, inline = false, registrar = true) => {
     try {
-      const r = await api.post<Blob>(`/orcamentos/${id}/exportacoes`, null, {
-        params: { inline }, responseType: "blob", headers: { Accept: "application/pdf" },
-      });
+      const url = `/orcamentos/${id}/${registrar ? "exportacoes" : "exportar-pdf"}`;
+      const r = registrar
+        ? await api.post<Blob>(url, null, { params: { inline }, responseType: "blob", headers: { Accept: "application/pdf" } })
+        : await api.get<Blob>(url, { params: { inline }, responseType: "blob", headers: { Accept: "application/pdf" } });
       const disposicao = String(r.headers["content-disposition"] ?? "");
       const utf8 = disposicao.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
       const simples = disposicao.match(/filename="([^"]+)"|filename=([^;]+)/i);

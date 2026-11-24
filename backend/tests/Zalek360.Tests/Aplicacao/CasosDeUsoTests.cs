@@ -68,6 +68,39 @@ public class OrcamentoServiceTests
     }
 
     [Fact]
+    public async Task Responsavel_e_definido_pelo_usuario_atual_e_condicao_vazia_gera_pedido_sem_condicao()
+    {
+        var c = new Cenario();
+        var request = Cenario.Requisicao(c.Metalurgica.Id, c.Polo.Id, Cenario.ItemReq(c.Polo.Id)) with
+        {
+            ResponsavelId = Guid.NewGuid(),
+            CondicaoPagamento = null
+        };
+        var service = c.Orcamentos();
+        var criado = await service.CriarAsync(request, CancellationToken.None);
+
+        Assert.Equal(c.Usuario.Id, criado.ResponsavelId);
+        Assert.Null(criado.CondicaoPagamento);
+
+        var editado = await service.AtualizarAsync(criado.Id, request with
+        {
+            ResponsavelId = Guid.NewGuid(),
+            Versao = criado.Versao
+        }, CancellationToken.None);
+        Assert.Equal(c.Usuario.Id, editado.ResponsavelId);
+        Assert.Null(editado.CondicaoPagamento);
+
+        var aguardando = await service.MarcarAguardandoRetornoAsync(editado.Id,
+            new AguardandoRetornoRequest(MeioContato.WhatsApp, editado.Versao), CancellationToken.None);
+        var resultado = await service.RegistrarDecisaoAsync(aguardando.Id,
+            new DecisaoRequest(ResultadoDecisao.Aprovado, MeioContato.WhatsApp, new DateTimeOffset(Dados.Agora),
+                null, null, aguardando.Versao), CancellationToken.None);
+
+        Assert.NotNull(resultado.PedidoGerado);
+        Assert.Null(c.Banco.Pedidos.Single().CondicaoPagamento);
+    }
+
+    [Fact]
     public async Task Orcamento_sem_itens_retorna_erro_de_validacao_e_nao_consome_numero()
     {
         var c = new Cenario();

@@ -58,11 +58,13 @@ public sealed class ApiPdfFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection _conexao = new("DataSource=:memory:");
     private readonly IGeradorDocumentoOrcamento? _gerador;
+    private readonly INumeradorDocumentos? _numerador;
     public RelogioFixo Relogio { get; } = new() { Agora = DateTime.UtcNow };
 
-    public ApiPdfFactory(IGeradorDocumentoOrcamento? gerador = null)
+    public ApiPdfFactory(IGeradorDocumentoOrcamento? gerador = null, INumeradorDocumentos? numerador = null)
     {
         _gerador = gerador;
+        _numerador = numerador;
         _conexao.Open();
     }
 
@@ -86,6 +88,11 @@ public sealed class ApiPdfFactory : WebApplicationFactory<Program>
             {
                 services.RemoveAll<IGeradorDocumentoOrcamento>();
                 services.AddSingleton(_gerador);
+            }
+            if (_numerador is not null)
+            {
+                services.RemoveAll<INumeradorDocumentos>();
+                services.AddSingleton(_numerador);
             }
         });
     }
@@ -129,7 +136,7 @@ public class EndpointPdfTests
     }
 
     [Fact]
-    public async Task Falha_na_geracao_nao_registra_exportacao_e_perfil_operador_nao_tem_acesso()
+    public async Task Falha_na_geracao_nao_registra_exportacao_e_perfis_sem_operacao_nao_podem_exportar()
     {
         await using var factory = new ApiPdfFactory(new GeradorComFalha());
         await factory.PrepararSeedAsync();
@@ -155,8 +162,10 @@ public class EndpointPdfTests
             throw new IOException("Falha simulada no renderizador.");
     }
 
-    [Fact]
-    public async Task Endpoint_autentica_exporta_seed_e_grava_historico_somente_no_post()
+    [Theory]
+    [InlineData("admin@zalekpersonalizados.com.br")]
+    [InlineData("gestao@zalekpersonalizados.com.br")]
+    public async Task Endpoint_autentica_exporta_seed_e_grava_historico_somente_no_post(string email)
     {
         await using var factory = new ApiPdfFactory();
         await factory.PrepararSeedAsync();
@@ -166,7 +175,7 @@ public class EndpointPdfTests
         Assert.Equal(HttpStatusCode.Unauthorized, semLogin.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized,
             (await client.PostAsync($"/api/orcamentos/{inexistente}/exportacoes", null)).StatusCode);
-        var login = await client.PostAsJsonAsync("/api/auth/login", new { email = "gestao@zalekpersonalizados.com.br", senha = "Zalek@2026", manterConectado = false });
+        var login = await client.PostAsJsonAsync("/api/auth/login", new { email, senha = "Zalek@2026", manterConectado = false });
         login.EnsureSuccessStatusCode();
         var json = await login.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", json.GetProperty("accessToken").GetString());
@@ -188,6 +197,10 @@ public class EndpointPdfTests
             id = o.Id; clienteId = o.ClienteId; versao = o.Versao;
             antes = await db.HistoricoEventos.CountAsync();
         }
+        await ConferirPdf(await client.GetAsync($"/api/orcamentos/{id}/exportar-pdf"), false);
+        using (var scope = factory.Services.CreateScope())
+            Assert.Equal(antes, await scope.ServiceProvider.GetRequiredService<ZalekDbContext>().HistoricoEventos.CountAsync());
+
         foreach (var inline in new[] { false, true })
         {
             var resposta = await client.GetAsync($"/api/orcamentos/{id}/exportar-pdf?inline={inline}");

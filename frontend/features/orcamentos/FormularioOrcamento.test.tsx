@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FormularioOrcamento } from "./FormularioOrcamento";
@@ -24,7 +24,7 @@ vi.mock("@/hooks", () => ({
   useProdutos: () => ({ data: mocks.produtos }),
   useOpcoesOrcamento: () => ({ data: { condicoesPagamento: ["À vista"], tiposPersonalizacao: ["Serigrafia"], tamanhoMaximoBytes: 20 * 1024 * 1024, extensoesPermitidas: [".png"] } }),
   useResponsaveis: () => ({ data: [{ id: "u1", nome: "Responsável" }] }),
-  useUsuarioAtual: () => ({ data: { id: "u1" } }),
+  useUsuarioAtual: () => ({ data: { id: "u1", perfil: "Administrador", nome: "Responsável" } }),
 }));
 
 vi.mock("@/services", () => ({
@@ -99,41 +99,39 @@ function orcamentoExistente(itens: ItemDetalhe[]): OrcamentoDetalhe {
 }
 
 describe("itens do orçamento", () => {
-  it("substitui a descrição ao trocar o produto, inclusive após edição manual", async () => {
-    const user = userEvent.setup();
+  it("substitui a descrição ao trocar o produto, inclusive após edição manual", () => {
     renderFormulario();
-    await adicionarItem(user);
-    await selecionarProduto(user, 1, "p1");
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar item" }));
+    fireEvent.change(controle(1, "Produto"), { target: { value: "p1" } });
     const descricao = controle(1, "Descrição");
     expect(valor(descricao)).toBe("Descrição do produto A");
 
-    await user.clear(descricao);
-    await user.type(descricao, "Descrição escrita manualmente");
-    await selecionarProduto(user, 1, "p2");
+    fireEvent.change(descricao, { target: { value: "Descrição escrita manualmente" } });
+    fireEvent.change(controle(1, "Produto"), { target: { value: "p2" } });
     expect(valor(descricao)).toBe("");
   });
 
   it("cria itens vazios e mantém campos e anexos ligados ao item após trocar e remover itens", async () => {
     const user = userEvent.setup();
     renderFormulario();
-    await adicionarItem(user);
-    await selecionarProduto(user, 1, "p1");
-    await user.type(controle(1, "Cor da peça"), "Azul");
-    await user.type(controle(1, "Medidas"), "5 cm");
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar item" }));
+    fireEvent.change(controle(1, "Produto"), { target: { value: "p1" } });
+    fireEvent.change(controle(1, "Cor da peça"), { target: { value: "Azul" } });
+    fireEvent.change(controle(1, "Medidas"), { target: { value: "5 cm" } });
     const arquivo = new File(["arte"], "arte.png", { type: "image/png" });
     await user.upload(linhaItem(1).container.querySelector('input[type="file"]')!, arquivo);
     expect(await screen.findByText("arte.png")).not.toBeNull();
 
-    await adicionarItem(user);
-    await selecionarProduto(user, 2, "p2");
-    await user.type(controle(2, "Cor da peça"), "Verde");
-    await user.type(controle(2, "Medidas"), "8 cm");
-    await adicionarItem(user);
-    await selecionarProduto(user, 3, "p3");
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar item" }));
+    fireEvent.change(controle(2, "Produto"), { target: { value: "p2" } });
+    fireEvent.change(controle(2, "Cor da peça"), { target: { value: "Verde" } });
+    fireEvent.change(controle(2, "Medidas"), { target: { value: "8 cm" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar item" }));
+    fireEvent.change(controle(3, "Produto"), { target: { value: "p3" } });
 
-    await selecionarProduto(user, 2, "p3");
+    fireEvent.change(controle(2, "Produto"), { target: { value: "p3" } });
     expect(valor(controle(2, "Descrição"))).toBe("Descrição do produto C");
-    await user.click(linhaItem(1).getByRole("button", { name: "Remover" }));
+    fireEvent.click(linhaItem(1).getByRole("button", { name: "Remover" }));
 
     expect(valor(controle(1, "Produto"))).toBe("p3");
     expect(valor(controle(1, "Cor da peça"))).toBe("Verde");
@@ -161,6 +159,17 @@ describe("itens do orçamento", () => {
     expect(valor(controle(1, "Produto"))).toBe("p3");
     expect(valor(controle(1, "Descrição"))).toBe("Descrição 2");
     expect(valor(controle(1, "Cor da peça"))).toBe("Preta");
+  });
+
+  it("mostra o responsável original como texto e deixa a condição de pagamento vazia", () => {
+    const orcamento = orcamentoExistente([itemExistente("i1", "p1", "Produto A", "Descrição", "Azul")]);
+    orcamento.condicaoPagamento = null;
+    renderFormulario(orcamento);
+
+    const responsavel = screen.getAllByText("Responsável", { exact: true })[0];
+    expect(responsavel.parentElement?.querySelector("select")).toBeNull();
+    const campoCondicao = screen.getByText("Condição de pagamento", { exact: true }).parentElement?.querySelector("select");
+    expect((campoCondicao as HTMLSelectElement).value).toBe("");
   });
 
   it("ao editar um orçamento, a troca do produto substitui a descrição e preserva a personalização e os anexos", async () => {
