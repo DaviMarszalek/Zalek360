@@ -2,7 +2,7 @@
 
 Sistema comercial **interno** da Zalek Personalizados. Cobre o cadastro de clientes, a elaboração de orçamentos com itens e personalização, o acompanhamento do retorno do cliente e a geração automática do pedido quando o orçamento é aprovado.
 
-O cliente **não acessa o sistema**: WhatsApp, ligação, e-mail ou conversa presencial acontecem fora dele. O atendente registra no Zalek360 os contatos e a decisão comunicada pelo cliente.
+O cliente **não acessa o sistema**: WhatsApp, ligação, e-mail ou conversa presencial acontecem fora dele. O Gestor ou Administrador registra no Zalek360 os contatos e a decisão comunicada pelo cliente.
 
 | Serviço | Endereço |
 |---|---|
@@ -40,7 +40,7 @@ Quando o log mostrar `Now listening on: http://[::]:8080`, abra http://localhost
 
 ### Ambiente isolado de revisão e testes
 
-O ambiente de revisão nunca compartilha containers, portas, banco ou volumes com o projeto principal. Use sempre o projeto Compose `zalek360-revisao` e o arquivo local ignorado `.env.revisao`; não execute `down -v` sem especificar esse projeto.
+O ambiente de revisão nunca compartilha containers, portas, banco ou volumes com o projeto principal. Use sempre o projeto Compose `zalek360-revisao` e o arquivo local ignorado `.env.revisao`; não execute `down -v` sem autorização explícita, mesmo nesse projeto.
 
 Na primeira utilização, copie o exemplo e defina uma senha exclusiva para o banco descartável:
 
@@ -54,7 +54,7 @@ Suba o ambiente com:
 docker compose -p zalek360-revisao --env-file .env.revisao up --build -d --wait
 ```
 
-O ambiente usa frontend `http://localhost:3100`, API `http://localhost:5100` e PostgreSQL `localhost:55432`. O banco de teste chama-se `zalek360_revisao`; seus dados ficam nos volumes próprios do projeto. Para remover somente o ambiente descartável e seus dados:
+O ambiente usa frontend `http://localhost:3100`, API `http://localhost:5100` e PostgreSQL `localhost:55432`. O banco de teste chama-se `zalek360_revisao`; seus dados ficam nos volumes próprios do projeto. Somente com autorização explícita, para remover o ambiente descartável e seus dados:
 
 ```powershell
 docker compose -p zalek360-revisao --env-file .env.revisao down -v
@@ -72,8 +72,10 @@ Nunca use o nome do projeto `zalek360` para testes ou limpeza: ele identifica o 
 
 ### Perfis e orçamentos
 
-- **Administrador:** acesso a todos os módulos e operações administrativas/comerciais.
-- **Gestor:** gerencia produtos e composição, matérias-primas e estoque; consulta clientes, orçamentos e pedidos sem alterá-los.
+- **Administrador:** tudo o que o Gestor faz, mais os exclusivos: configurações (opções gerenciáveis, modelos de mensagem, dados da empresa e e-mail), usuários (criar, desativar e redefinir senha) e exclusão definitiva de produto nunca usado. Funcionalidades ainda não disponíveis seguem as fases de `docs/10-contexto-e-proximos-passos.md`.
+- **Gestor:** operação diária completa: dashboard, cadastrar/editar clientes, criar/editar/exportar/apresentar orçamentos, registrar contato e decisão, alterar status/cancelar pedidos com motivo, materiais do pedido, produtos/composição, matérias-primas, compras, entradas e ajustes de estoque com motivo. Cadastro avançado de produtos e ajustes ainda pendentes seguem as fases previstas.
+- **Uso recomendado:** entrar como Gestor no dia a dia e como Administrador somente para configurar.
+- **Custo e margem:** visíveis na tela para Gestor e Administrador, nunca no PDF ou em mensagens ao cliente. Ocultar do Gestor é uma opção futura, somente se o usuário pedir quando houver funcionário.
 - **Atendente** e **Operador** permanecem apenas por compatibilidade com dados históricos e não aparecem na interface.
 - Contas de demonstração em banco novo: `admin@zalekpersonalizados.com.br` e `gestao@zalekpersonalizados.com.br`, senha `Zalek@2026`. Bancos já populados mantêm a conta legada `gestor@zalekpersonalizados.com.br`; o seed não renomeia nem substitui usuários existentes.
 - O responsável de um orçamento é sempre o usuário autenticado. A condição de pagamento é opcional; quando não informada, é apresentada como **A combinar**.

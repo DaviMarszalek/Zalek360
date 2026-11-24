@@ -50,15 +50,19 @@
 O SDK .NET não está instalado no Windows. Rode os testes em container .NET 8, pela raiz do repositório, com o ambiente de revisão ativo. O comando passa as credenciais localmente ao container sem escrever seus valores no comando/documentação:
 
 ```powershell
-docker run --rm `
+@'
+export ZALEK_TEST_POSTGRES="Host=db;Port=5432;Database=postgres;Username=$POSTGRES_USER;Password=$POSTGRES_PASSWORD"
+dotnet test Zalek360.sln --nologo
+'@ | docker run --rm -i `
   --network zalek360-revisao_default `
   --env-file .env.revisao `
   --mount "type=bind,source=$($PWD.Path)\backend,target=/src" `
   --mount type=volume,source=zalek360-nuget-cache,target=/root/.nuget/packages `
   -w /src `
-  mcr.microsoft.com/dotnet/sdk:8.0 `
-  sh -lc 'export ZALEK_TEST_POSTGRES="Host=db;Port=5432;Database=postgres;Username=$POSTGRES_USER;Password=$POSTGRES_PASSWORD"; dotnet test Zalek360.sln --nologo'
+  mcr.microsoft.com/dotnet/sdk:8.0 sh -c "sed 's/\r$//' | sh"
 ```
+
+O here-string literal passado pela entrada padrão preserva as aspas no PowerShell 5.1; o `sed` remove o CR das quebras de linha do Windows. As variáveis são expandidas somente dentro do container, sem imprimir as credenciais.
 
 O teste PostgreSQL cria e remove bancos de teste com prefixo próprio dentro do ambiente descartável. Sem `ZALEK_TEST_POSTGRES`, os testes PostgreSQL são ignorados; não aceite uma validação com ignorados.
 
@@ -69,6 +73,14 @@ O teste PostgreSQL cria e remove bancos de teste com prefixo próprio dentro do 
 - Siga os padrões existentes: nomes em português, UI em `frontend/components/ui`, serviços em `frontend/services`, hooks com TanStack Query e nenhum valor de negócio fixo no frontend.
 - Usuários de demonstração em banco novo: `admin@zalekpersonalizados.com.br` (Administrador) e `gestao@zalekpersonalizados.com.br` (Gestor), senha `Zalek@2026`. Bancos antigos podem ainda ter `gestor@zalekpersonalizados.com.br`. Perfis Atendente e Operador são mantidos por compatibilidade, mas não devem aparecer na interface nem autenticar.
 - Nunca inclua segredos, senhas reais, conteúdo de `.env` ou `.env.revisao` em commits, documentação, mensagens ou relatórios. A senha de demonstração acima é a exceção aprovada pelo usuário.
+
+## Perfis — R1 definitiva (24/11/2026)
+
+- Gestor executa toda a operação diária: dashboard, clientes, orçamentos (criar, editar, exportar, apresentar, contato e decisão), pedidos (status, cancelamento com motivo e materiais), produtos (cadastro, edição, composição, duplicação e inativação), matérias-primas, compras, entradas e ajustes de estoque com motivo.
+- Administrador faz tudo o que o Gestor faz e, exclusivamente, configurações (opções gerenciáveis, modelos de mensagem, dados da empresa e e-mail), usuários (criar, desativar e redefinir senha) e exclusão definitiva de produto nunca usado.
+- Usar Gestor no dia a dia e Administrador somente para configurar. Atendente e Operador permanecem no código/dados, fora da interface e da autenticação.
+- Custo e margem são visíveis na tela para Gestor e Administrador; nunca devem sair no PDF ou nas mensagens ao cliente. Esconder do Gestor só será considerado se o usuário pedir quando houver funcionário.
+- API: `Operacao` para todo o fluxo diário e `Administracao` para os exclusivos do Administrador. Esta divisão define permissões; funcionalidades futuras continuam nas fases aprovadas em `docs/10-contexto-e-proximos-passos.md`.
 
 ## Documentação e escopo
 
