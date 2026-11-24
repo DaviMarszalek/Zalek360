@@ -23,7 +23,7 @@ internal sealed class CatalogoQueries : ICatalogoQueries
     public async Task<IReadOnlyList<UsuarioDto>> ListarResponsaveisAsync(CancellationToken ct)
     {
         var usuarios = await _db.Usuarios.AsNoTracking()
-            .Where(u => u.Ativo && u.Perfil == PerfilUsuario.Gestor)
+            .Where(u => u.Ativo && (u.Perfil == PerfilUsuario.Gestor || u.Perfil == PerfilUsuario.Administrador))
             .OrderBy(u => u.Nome)
             .ToListAsync(ct);
         return usuarios.Select(AuthService.Mapear).ToList();

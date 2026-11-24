@@ -33,7 +33,7 @@ public class Orcamento : RaizAgregado
     public DateOnly DataOrcamento { get; private set; }
     public DateOnly Validade { get; private set; }
     public int PrazoEstimadoDiasUteis { get; private set; }
-    public string CondicaoPagamento { get; private set; } = string.Empty;
+    public string? CondicaoPagamento { get; private set; }
     public string? ObservacoesComerciais { get; private set; }
     public SituacaoOrcamento Situacao { get; private set; }
     public decimal SubtotalProdutos { get; private set; }
@@ -75,8 +75,7 @@ public class Orcamento : RaizAgregado
         else if (dados.PrazoEstimadoDiasUteis > 365) erros.Adicionar("prazoEstimadoDiasUteis", "O prazo estimado deve ser de no máximo 365 dias úteis.");
 
         var condicao = TextoOpcional.Limpar(dados.CondicaoPagamento);
-        if (condicao is null) erros.Adicionar("condicaoPagamento", "Selecione a condição de pagamento.");
-        else if (condicao.Length > 100) erros.Adicionar("condicaoPagamento", "Use no máximo 100 caracteres.");
+        if (condicao?.Length > 100) erros.Adicionar("condicaoPagamento", "Use no máximo 100 caracteres.");
 
         if ((TextoOpcional.Limpar(dados.ObservacoesComerciais)?.Length ?? 0) > 2000)
             erros.Adicionar("observacoesComerciais", "Use no máximo 2.000 caracteres.");
@@ -388,7 +387,7 @@ public class Orcamento : RaizAgregado
     {
         Validade = dados.Validade!.Value;
         PrazoEstimadoDiasUteis = dados.PrazoEstimadoDiasUteis!.Value;
-        CondicaoPagamento = dados.CondicaoPagamento!.Trim();
+        CondicaoPagamento = TextoOpcional.Limpar(dados.CondicaoPagamento);
         ObservacoesComerciais = TextoOpcional.Limpar(dados.ObservacoesComerciais);
         Desconto = Dinheiro.Arredondar(dados.Desconto);
     }

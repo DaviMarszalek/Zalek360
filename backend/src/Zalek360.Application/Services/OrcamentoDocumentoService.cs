@@ -97,7 +97,7 @@ public sealed class OrcamentoDocumentoService(
             empresa.NomeFantasia, empresa.CaminhoLogo, contatos, rodape, cliente.NomeRazaoSocial, dadosCliente, o.Responsavel,
             selo, o.Situacao == SituacaoOrcamento.EmElaboracao, Formatos.Data(o.Validade), destaque, textosPrazo,
             "O prazo é uma estimativa a partir da aprovação e da liberação da arte; contagem em dias úteis (segunda a sexta), sem considerar feriados; sujeito a confirmação.",
-            o.CondicaoPagamento, o.ObservacoesComerciais, itens, Formatos.Moeda(o.Resumo.SubtotalProdutos),
+            o.CondicaoPagamento ?? "A combinar", o.ObservacoesComerciais, itens, Formatos.Moeda(o.Resumo.SubtotalProdutos),
             Formatos.Moeda(o.Resumo.ValorPersonalizacao), o.Resumo.Desconto > 0 ? Formatos.Moeda(o.Resumo.Desconto) : null,
             Formatos.Moeda(o.Resumo.ValorTotal), new[] {
                 "1) Você confirma a aprovação com nosso atendente.", "2) Geramos o pedido e iniciamos a produção.",

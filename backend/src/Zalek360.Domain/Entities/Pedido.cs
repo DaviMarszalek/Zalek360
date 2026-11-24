@@ -23,7 +23,7 @@ public class Pedido : RaizAgregado
     public DateOnly DataPedido { get; private set; }
     public int PrazoEstimadoDiasUteis { get; private set; }
     public DateOnly PrazoEntrega { get; private set; }
-    public string CondicaoPagamento { get; private set; } = string.Empty;
+    public string? CondicaoPagamento { get; private set; }
     public string? ObservacoesComerciais { get; private set; }
     public string? ObservacaoDecisao { get; private set; }
     public decimal SubtotalProdutos { get; private set; }

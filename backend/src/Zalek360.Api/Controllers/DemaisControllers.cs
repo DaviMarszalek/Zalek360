@@ -20,7 +20,7 @@ public sealed class AnexosController : ControllerBase
 
     /// <summary>Envia um arquivo. O anexo fica pendente até ser vinculado a um item ao salvar o orçamento.</summary>
     [HttpPost]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     [RequestSizeLimit(25L * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 25L * 1024 * 1024)]
     [Consumes("multipart/form-data")]
@@ -51,7 +51,7 @@ public sealed class AnexosController : ControllerBase
 
     /// <summary>Remove um upload ainda não vinculado.</summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Remover(Guid id, CancellationToken ct)
     {
@@ -62,7 +62,7 @@ public sealed class AnexosController : ControllerBase
 
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Policy = Politicas.Consulta)]
+[Authorize(Policy = Politicas.Administracao)]
 public sealed class DashboardController : ControllerBase
 {
     private readonly IDashboardQueries _consultas;

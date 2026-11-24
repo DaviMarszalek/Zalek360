@@ -35,7 +35,7 @@ public sealed class OrcamentosController : ControllerBase
 
     /// <summary>Cria orçamento (status inicial Em Elaboração; totais sempre recalculados no backend).</summary>
     [HttpPost]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     [ProducesResponseType(typeof(OrcamentoDetalheDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<OrcamentoDetalheDto>> Criar([FromBody] OrcamentoRequest request, CancellationToken ct)
     {
@@ -57,7 +57,7 @@ public sealed class OrcamentosController : ControllerBase
 
     /// <summary>Exporta o PDF e registra um evento único no histórico do orçamento e do cliente.</summary>
     [HttpPost("{id:guid}/exportacoes")]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     public Task<FileContentResult> ExportarPdf(Guid id, [FromQuery] bool inline, CancellationToken ct) =>
         DocumentoPdf(id, true, inline, ct);
 
@@ -73,7 +73,7 @@ public sealed class OrcamentosController : ControllerBase
 
     /// <summary>Edita orçamento em Em Elaboração/Aguardando Retorno (RN6). Envie "versao".</summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     public Task<OrcamentoDetalheDto> Atualizar(Guid id, [FromBody] OrcamentoRequest request, CancellationToken ct) =>
         _servico.AtualizarAsync(id, request, ct);
 
@@ -90,7 +90,7 @@ public sealed class OrcamentosController : ControllerBase
 
     /// <summary>Registra contato feito fora do sistema. Não altera o status do orçamento.</summary>
     [HttpPost("{id:guid}/contatos")]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     [ProducesResponseType(typeof(ContatoDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ContatoDto>> RegistrarContato(Guid id, [FromBody] ContatoRequest request, CancellationToken ct)
     {
@@ -100,7 +100,7 @@ public sealed class OrcamentosController : ControllerBase
 
     /// <summary>Marca que a proposta foi apresentada ao cliente (Em Elaboração → Aguardando Retorno).</summary>
     [HttpPost("{id:guid}/aguardando-retorno")]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     public Task<OrcamentoDetalheDto> MarcarAguardandoRetorno(Guid id, [FromBody] AguardandoRetornoRequest request, CancellationToken ct) =>
         _servico.MarcarAguardandoRetornoAsync(id, request, ct);
 
@@ -109,7 +109,7 @@ public sealed class OrcamentosController : ControllerBase
     /// Aprovado gera o pedido automaticamente na mesma transação (UC04); falha em qualquer etapa desfaz tudo.
     /// </summary>
     [HttpPost("{id:guid}/decisao")]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     public Task<DecisaoResultadoDto> RegistrarDecisao(Guid id, [FromBody] DecisaoRequest request, CancellationToken ct) =>
         _servico.RegistrarDecisaoAsync(id, request, ct);
 

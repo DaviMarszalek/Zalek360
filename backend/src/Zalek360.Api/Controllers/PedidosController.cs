@@ -31,6 +31,7 @@ public sealed class PedidosController : ControllerBase
 
     /// <summary>Criação manual NÃO é permitida: sempre retorna 422 PEDIDO_CRIACAO_DIRETA_NAO_PERMITIDA.</summary>
     [HttpPost]
+    [Authorize(Policy = Politicas.Administracao)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     public IActionResult CriarDiretamente()
     {
@@ -46,7 +47,7 @@ public sealed class PedidosController : ControllerBase
 
     /// <summary>Evolui o status (Aberto → Em produção → Pronto → Entregue) ou cancela (motivo obrigatório).</summary>
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     public Task<PedidoDetalheDto> AtualizarStatus(Guid id, [FromBody] AtualizarSituacaoPedidoRequest request, CancellationToken ct) =>
         _servico.AtualizarSituacaoAsync(id, request, ct);
 }

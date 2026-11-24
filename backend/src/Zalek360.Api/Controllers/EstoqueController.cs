@@ -64,11 +64,11 @@ public sealed class MateriaisPedidoController : ControllerBase
     public Task<MateriaisPedidoDto> Listar(Guid pedidoId, CancellationToken ct) => _service.ListarReservasPedidoAsync(pedidoId, ct);
 
     [HttpPost("ficha-tecnica")]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     public Task<MateriaisPedidoDto> AplicarFicha(Guid pedidoId, CancellationToken ct) => _service.AplicarFichaPedidoAsync(pedidoId, ct);
 
     [HttpPut]
-    [Authorize(Policy = Politicas.Operacao)]
+    [Authorize(Policy = Politicas.Administracao)]
     public Task<MateriaisPedidoDto> Atualizar(Guid pedidoId, [FromBody] IReadOnlyList<ReservaPedidoRequest> linhas, CancellationToken ct) =>
         _service.AtualizarReservasPedidoAsync(pedidoId, linhas, ct);
 }

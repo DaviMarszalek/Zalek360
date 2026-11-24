@@ -60,7 +60,7 @@ public sealed class OrcamentoService
     public async Task<OrcamentoDetalheDto> CriarAsync(OrcamentoRequest request, CancellationToken ct)
     {
         var erros = new ColetorErros();
-        await ValidarClienteEResponsavelAsync(request, erros, ct);
+        await ValidarClienteEUsuarioAtualAsync(request, erros, ct);
         var itens = await MontarItensAsync(request.Itens ?? Array.Empty<ItemOrcamentoRequest>(), null, erros, ct);
         var dados = MapearDadosComerciais(request);
         var hoje = _clock.HojeLocal;
@@ -69,7 +69,7 @@ public sealed class OrcamentoService
 
         // Número só é reservado depois da validação para evitar lacunas desnecessárias na sequência.
         var numero = await _numerador.ProximoNumeroOrcamentoAsync(ct);
-        var orcamento = Orcamento.Criar(numero, request.ClienteId!.Value, request.ResponsavelId!.Value, hoje, dados, itens,
+        var orcamento = Orcamento.Criar(numero, request.ClienteId!.Value, _usuario.Id, hoje, dados, itens,
             _clock.AgoraUtc, _usuario.Id);
         _orcamentos.Adicionar(orcamento);
         await _uow.SaveChangesAsync(ct);
@@ -86,14 +86,12 @@ public sealed class OrcamentoService
         var erros = new ColetorErros();
         if (request.ClienteId is { } clienteId && clienteId != orcamento.ClienteId)
             erros.Adicionar("clienteId", "O cliente de um orçamento não pode ser trocado. Crie um novo orçamento para outro cliente.");
-        var responsavelId = request.ResponsavelId ?? orcamento.ResponsavelId;
-        await ValidarResponsavelAsync(responsavelId, erros, ct);
         var itens = await MontarItensAsync(request.Itens ?? Array.Empty<ItemOrcamentoRequest>(), orcamento, erros, ct);
         var dados = MapearDadosComerciais(request);
         erros.Mesclar(Orcamento.Validar(orcamento.DataOrcamento, dados, itens));
         LancarSeInvalido(erros, itens.Count);
 
-        orcamento.Atualizar(responsavelId, dados, itens, _clock.AgoraUtc, _usuario.Id);
+        orcamento.Atualizar(orcamento.ResponsavelId, dados, itens, _clock.AgoraUtc, _usuario.Id);
         await _uow.SaveChangesAsync(ct);
         return await _consultas.ObterDetalheAsync(id, ct);
     }
@@ -172,20 +170,15 @@ public sealed class OrcamentoService
         throw new ValidacaoException(CodigosErro.OrcamentoDadosInvalidos, "Corrija os campos destacados.", erros.ParaDicionario());
     }
 
-    private async Task ValidarClienteEResponsavelAsync(OrcamentoRequest request, ColetorErros erros, CancellationToken ct)
+    private async Task ValidarClienteEUsuarioAtualAsync(OrcamentoRequest request, ColetorErros erros, CancellationToken ct)
     {
         // RN1: todo orçamento pertence a um cliente já cadastrado.
         if (request.ClienteId is null) erros.Adicionar("clienteId", "Selecione um cliente já cadastrado.");
         else if (!await _clientes.ExisteAsync(request.ClienteId.Value, ct)) erros.Adicionar("clienteId", "Cliente não encontrado.");
 
-        if (request.ResponsavelId is null) erros.Adicionar("responsavelId", "Selecione o responsável.");
-        else await ValidarResponsavelAsync(request.ResponsavelId.Value, erros, ct);
-    }
-
-    private async Task ValidarResponsavelAsync(Guid responsavelId, ColetorErros erros, CancellationToken ct)
-    {
-        var responsavel = await _usuarios.ObterPorIdAsync(responsavelId, ct);
-        if (responsavel is null || !responsavel.Ativo) erros.Adicionar("responsavelId", "Responsável não encontrado.");
+        var usuarioAtual = await _usuarios.ObterPorIdAsync(_usuario.Id, ct);
+        if (usuarioAtual is null || !usuarioAtual.Ativo)
+            erros.Adicionar("responsavelId", "O usuário autenticado não está disponível como responsável.");
     }
 
     private async Task<List<DadosItemOrcamento>> MontarItensAsync(

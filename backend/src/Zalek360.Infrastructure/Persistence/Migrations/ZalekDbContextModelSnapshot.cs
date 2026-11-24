@@ -925,7 +925,6 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasColumnName("cliente_id");
 
                     b.Property<string>("CondicaoPagamento")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("condicao_pagamento");
@@ -1048,7 +1047,6 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasColumnName("cliente_id");
 
                     b.Property<string>("CondicaoPagamento")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("condicao_pagamento");

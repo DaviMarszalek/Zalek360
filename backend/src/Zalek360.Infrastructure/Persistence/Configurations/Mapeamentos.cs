@@ -214,7 +214,7 @@ internal sealed class OrcamentoMap : IEntityTypeConfiguration<Orcamento>
         b.Property(x => x.Numero).IsRequired();
         b.Property(x => x.DataOrcamento).HasColumnName("data_criacao");
         b.Property(x => x.PrazoEstimadoDiasUteis).HasColumnName("prazo_estimado");
-        b.Property(x => x.CondicaoPagamento).HasMaxLength(100).IsRequired();
+        b.Property(x => x.CondicaoPagamento).HasMaxLength(100);
         b.Property(x => x.ObservacoesComerciais).HasMaxLength(2000);
         b.Property(x => x.Situacao).HasConversion<string>().HasMaxLength(Tipos.Enum).IsRequired();
         b.Property(x => x.SubtotalProdutos).HasPrecision(Tipos.Precisao, Tipos.Escala);
@@ -325,7 +325,7 @@ internal sealed class PedidoMap : IEntityTypeConfiguration<Pedido>
         b.Property(x => x.ControleMateriais).HasDefaultValue(true).ValueGeneratedNever();
         b.Property(x => x.Situacao).HasConversion<string>().HasMaxLength(Tipos.Enum).IsRequired();
         b.Property(x => x.PrazoEstimadoDiasUteis).HasColumnName("prazo_estimado");
-        b.Property(x => x.CondicaoPagamento).HasMaxLength(100).IsRequired();
+        b.Property(x => x.CondicaoPagamento).HasMaxLength(100);
         b.Property(x => x.ObservacoesComerciais).HasMaxLength(2000);
         b.Property(x => x.ObservacaoDecisao).HasMaxLength(2000);
         b.Property(x => x.MotivoCancelamento).HasMaxLength(500);
