@@ -16,10 +16,11 @@ for (const usuario of usuarios) {
     const menu = page.getByRole("navigation", { name: "Menu principal" });
     await expect(menu).toBeVisible();
 
-    for (const modulo of ["Dashboard", "Clientes", "Orçamentos", "Pedidos", "Estoque"])
+    for (const modulo of ["Dashboard", "Clientes", "Orçamentos", "Pedidos", "Produtos", "Estoque"])
       await expect(menu.getByRole("link", { name: modulo })).toBeVisible();
 
     await expect(menu.locator("text=Consulta")).toHaveCount(0);
+    await expect(menu.getByRole("link", { name: "Configurações" })).toHaveCount(usuario.perfil === "Administrador" ? 1 : 0);
 
     await expect(page.getByRole("button", { name: "Novo cliente" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Novo orçamento" })).toBeVisible();
