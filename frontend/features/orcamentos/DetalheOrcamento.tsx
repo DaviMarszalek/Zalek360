@@ -137,7 +137,7 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
   const [erro, setErro] = useState<ErroApi | null>(null);
   const [confirmar, setConfirmar] = useState(false);
   const [falhaAprovacao, setFalhaAprovacao] = useState<ErroApi | null>(null);
-  const motivos = useQuery({ queryKey: ["motivos-decisao"], queryFn: orcamentosService.motivos, staleTime: Infinity });
+  const motivos = useQuery({ queryKey: ["motivos-decisao"], queryFn: orcamentosService.motivos, staleTime: 30_000 });
 
   const m = useMutation({
     mutationFn: () => orcamentosService.registrarDecisao(o.id, { resultado, meioContato: meio, dataHora: localInputParaIso(quando), motivo, observacao: obs, versao: o.versao }),

@@ -24,8 +24,11 @@ export interface ListaFiltrada<T> { itens: T[]; total: number; totalSemFiltro: n
 export interface Usuario { id: string; nome: string; email: string; perfil: PerfilUsuario; iniciais: string }
 export interface LoginResposta { usuario: Usuario; accessToken: string; expiraEm: string; manterConectado: boolean }
 
-export interface Produto { id: string; nome: string; categoria: string; descricaoBase: string | null }
-export interface ProdutoRequisicao { nome: string; categoria: string; descricaoBase: string }
+export interface Produto { id: string; nome: string; categoria: string; descricaoBase: string | null; precoVenda?: number | null; custo?: number | null; ativo?: boolean; usado?: boolean; versao?: number; materiais?: { materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidadePorUnidade: number }[] }
+export interface ProdutoRequisicao { nome: string; categoria: string; descricaoBase: string; precoVenda?: number | null; custo?: number | null; materiais?: { materiaPrimaId: string; quantidadePorUnidade: number }[]; versao?: number }
+export type TipoOpcaoCatalogo = "TipoPersonalizacao" | "CondicaoPagamento" | "MotivoDecisao" | "CategoriaProduto";
+export interface OpcaoCatalogo { id: string; tipo: TipoOpcaoCatalogo; nome: string; ativo: boolean; ordem: number; versao: number }
+export interface OpcaoCatalogoRequisicao { tipo: TipoOpcaoCatalogo; nome: string; ativo: boolean; ordem: number; versao?: number }
 export interface MateriaPrima { id: string; nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number; quantidadeAReceber: number; quantidadeReservada: number; ativo: boolean; saldoDisponivel: number; quantidadePendente: number; noMinimo: boolean; faltaComprar: number }
 export type SituacaoCompraMateriaPrima = "Planejada" | "Pedido" | "Recebida" | "Cancelada";
 export interface CompraMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; fornecedor: string | null; dataPrevista: string; situacao: SituacaoCompraMateriaPrima; criadaEm: string; aberta: boolean; situacaoDescricao: string; situacoesPermitidas: { valor: SituacaoCompraMateriaPrima; rotulo: string }[] }

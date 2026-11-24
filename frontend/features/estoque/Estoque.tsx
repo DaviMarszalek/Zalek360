@@ -4,20 +4,17 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Archive, CalendarDays, CheckCircle2, ClipboardList, History, PackageCheck, PackagePlus, Pencil, Plus, RotateCcw, Search, Trash2, Truck, XCircle } from "lucide-react";
+import { AlertTriangle, Archive, CalendarDays, CheckCircle2, ClipboardList, History, PackageCheck, PackagePlus, Pencil, Plus, RotateCcw, Search, Truck, XCircle } from "lucide-react";
 import { AcoesLinha, Botao, CabecalhoPagina, Campo, Cartao, Entrada, ErroCarregamento, EstadoVazio, Modal, Selecao } from "@/components/ui";
-import { catalogoService, estoqueService } from "@/services";
-import { useUsuarioAtual } from "@/hooks";
+import { estoqueService } from "@/services";
 import { useToast } from "@/components/ui/toast";
 import { erroDaApi } from "@/lib/api";
 import { numeroDocumento } from "@/utils/formatos";
-import type { CompraMateriaPrima, MateriaPrima, ProdutoFichaTecnica, SituacaoCompraMateriaPrima } from "@/types/api";
+import type { CompraMateriaPrima, MateriaPrima, SituacaoCompraMateriaPrima } from "@/types/api";
 
 type MaterialForm = { nome: string; quantidadeDisponivel: number; estoqueMinimo: number };
 const materialVazio: MaterialForm = { nome: "", quantidadeDisponivel: 0, estoqueMinimo: 0 };
 type CompraForm = { materiaPrimaId: string; quantidade: number; fornecedor: string; dataPrevista: string };
-type FichaLinha = { materiaPrimaId: string; quantidadePorUnidade: number };
-type ProdutoForm = { nome: string; categoria: string; descricaoBase: string };
 const dataHoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const numero = (n: number) => new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(n);
 const dataPt = (d: string) => { const [a, m, dia] = d.slice(0, 10).split("-"); return `${dia}/${m}/${a}`; };
@@ -26,38 +23,22 @@ export function Estoque() {
   const router = useRouter();
   const qc = useQueryClient();
   const toast = useToast();
-  const { data: usuario } = useUsuarioAtual();
-  const podeGerenciarFichas = usuario?.perfil === "Gestor" || usuario?.perfil === "Administrador";
   const [busca, setBusca] = useState("");
   const [mostrarInativos, setMostrarInativos] = useState(false);
-  const [modal, setModal] = useState<"material" | "compra" | "ficha" | "produtos" | "produto-novo" | null>(null);
+  const [modal, setModal] = useState<"material" | "compra" | null>(null);
   const [materialAtual, setMaterialAtual] = useState<MateriaPrima | null>(null);
   const [historicoMaterial, setHistoricoMaterial] = useState<MateriaPrima | null>(null);
   const [compraCancelar, setCompraCancelar] = useState<CompraMateriaPrima | null>(null);
   const [materialForm, setMaterialForm] = useState<MaterialForm>(materialVazio);
   const [compraForm, setCompraForm] = useState<CompraForm>({ materiaPrimaId: "", quantidade: 1, fornecedor: "", dataPrevista: dataHoje() });
-  const [produtoForm, setProdutoForm] = useState<ProdutoForm>({ nome: "", categoria: "", descricaoBase: "" });
-  const [produtoFicha, setProdutoFicha] = useState<ProdutoFichaTecnica | null>(null);
-  const [fichaLinhas, setFichaLinhas] = useState<FichaLinha[]>([]);
   const [erro, setErro] = useState("");
   const pendencias = useQuery({ queryKey: ["estoque", "pendencias"], queryFn: estoqueService.pendencias });
   const materias = useQuery({ queryKey: ["estoque", "materias"], queryFn: estoqueService.materias });
   const compras = useQuery({ queryKey: ["estoque", "compras"], queryFn: estoqueService.compras });
-  const fichas = useQuery({ queryKey: ["estoque", "fichas"], queryFn: estoqueService.fichas, enabled: podeGerenciarFichas });
   const movimentos = useQuery({ queryKey: ["estoque", "movimentos", historicoMaterial?.id], queryFn: () => estoqueService.movimentos(historicoMaterial!.id), enabled: !!historicoMaterial });
   const atualizar = async () => { await qc.invalidateQueries({ queryKey: ["estoque"] }); };
   const salvarMaterial = useMutation({ mutationFn: () => materialAtual ? estoqueService.atualizarMateria(materialAtual.id, materialForm) : estoqueService.criarMateria(materialForm), onSuccess: async () => { await atualizar(); setModal(null); setErro(""); } });
   const salvarCompra = useMutation({ mutationFn: () => estoqueService.criarCompra(compraForm), onSuccess: async () => { await atualizar(); setModal(null); setErro(""); } });
-  const salvarFicha = useMutation({ mutationFn: () => estoqueService.salvarFicha(produtoFicha!.produtoId, fichaLinhas), onSuccess: async () => { await qc.invalidateQueries({ queryKey: ["estoque", "fichas"] }); setModal(null); setErro(""); } });
-  const salvarProduto = useMutation({ mutationFn: () => catalogoService.criarProduto(produtoForm), onSuccess: async (produto) => {
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ["catalogo", "produtos"] }),
-      qc.invalidateQueries({ queryKey: ["estoque", "fichas"] }),
-    ]);
-    toast("sucesso", `Produto ${produto.nome} cadastrado.`);
-    setErro("");
-    setModal("produtos");
-  } });
   const mudarCompra = useMutation({ mutationFn: ({ id, situacao }: { id: string; situacao: SituacaoCompraMateriaPrima }) => estoqueService.atualizarSituacaoCompra(id, situacao), onSuccess: async (_, variaveis) => {
     await atualizar();
     if (variaveis.situacao === "Cancelada") setCompraCancelar(null);
@@ -70,14 +51,11 @@ export function Estoque() {
 
   function abrirMaterial(m?: MateriaPrima) { setMaterialAtual(m ?? null); setMaterialForm(m ? { nome: m.nome, quantidadeDisponivel: m.quantidadeDisponivel, estoqueMinimo: m.estoqueMinimo } : { ...materialVazio }); setErro(""); setModal("material"); }
   function abrirCompra(m?: MateriaPrima) { setCompraForm({ materiaPrimaId: m?.id ?? ativos[0]?.id ?? "", quantidade: 1, fornecedor: "", dataPrevista: dataHoje() }); setErro(""); setModal("compra"); }
-  function abrirFicha(p: ProdutoFichaTecnica) { setProdutoFicha(p); setFichaLinhas(p.materiais.map((x) => ({ materiaPrimaId: x.materiaPrimaId, quantidadePorUnidade: x.quantidadePorUnidade }))); setErro(""); setModal("ficha"); }
   async function submeter(e: React.FormEvent) { e.preventDefault(); setErro(""); try {
     if (modal === "material") await salvarMaterial.mutateAsync();
     else if (modal === "compra") await salvarCompra.mutateAsync();
-    else if (modal === "ficha") await salvarFicha.mutateAsync();
-    else if (modal === "produto-novo") await salvarProduto.mutateAsync();
   } catch (err) { setErro(erroDaApi(err).message); } }
-  const carregando = salvarMaterial.isPending || salvarCompra.isPending || salvarFicha.isPending || salvarProduto.isPending;
+  const carregando = salvarMaterial.isPending || salvarCompra.isPending;
 
   return <>
     <CabecalhoPagina titulo="Estoque de matéria-prima" subtitulo="Acompanhe o saldo, os níveis mínimos e as compras que estão a caminho."
@@ -133,17 +111,7 @@ export function Estoque() {
             </tbody></table></div>}
     </Cartao>
 
-    {usuario && <section className="mt-7">
-      {podeGerenciarFichas ? <>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div><h2 className="text-base font-semibold text-texto">Fichas técnicas</h2><p className="mt-0.5 text-sm text-texto-fraco">Defina os materiais consumidos por unidade de produto.</p></div>
-          <Botao variante="secundaria" icone={<ClipboardList className="h-4 w-4" />} onClick={() => setModal("produtos")}>Produtos personalizados</Botao>
-        </div>
-        <Cartao><p className="text-sm text-texto-suave">Consulte o catálogo e configure a ficha técnica de cada produto personalizado.</p></Cartao>
-      </> : <Cartao titulo="Fichas técnicas">
-        <p role="status" className="text-sm text-texto-suave">Acesso restrito: somente Gestor ou Administrador pode consultar fichas técnicas e produtos personalizados. Os materiais dos pedidos permanecem disponíveis para consulta.</p>
-      </Cartao>}
-    </section>}
+    <section className="mt-7"><Cartao titulo="Produtos e composição"><p className="mb-3 text-sm text-texto-suave">Cadastre produtos e defina os materiais por unidade na tela Produtos.</p><Link href="/produtos" className="text-sm font-medium text-primaria hover:underline">Abrir catálogo de produtos</Link></Cartao></section>
 
     <section className="mt-7">
       <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-base font-semibold text-texto">Compras previstas e pedidos</h2><p className="mt-0.5 text-sm text-texto-fraco">Os itens entram no saldo disponível quando forem marcados como recebidos.</p></div><Botao variante="secundaria" tamanho="sm" icone={<Plus className="h-3.5 w-3.5" />} onClick={() => abrirCompra()}>Adicionar compra</Botao></div>
@@ -163,85 +131,12 @@ export function Estoque() {
       </Cartao>
     </section>
 
-    <Modal aberto={modal === "produtos"} aoFechar={() => setModal(null)} titulo="Produtos personalizados"
-      descricao="Veja quais produtos já têm ficha técnica e configure os que ainda estão pendentes." largura="max-w-4xl"
-      rodape={<Botao variante="secundaria" onClick={() => setModal(null)}>Fechar</Botao>}>
-      <div className="mb-4 flex justify-end">
-        <Botao icone={<Plus className="h-4 w-4" />} onClick={() => { setProdutoForm({ nome: "", categoria: "", descricaoBase: "" }); setErro(""); setModal("produto-novo"); }}>Cadastrar produto</Botao>
-      </div>
-      {fichas.isError ? <ErroCarregamento mensagem={erroDaApi(fichas.error).message} aoTentar={() => fichas.refetch()} />
-        : fichas.isLoading ? <p className="py-8 text-center text-sm text-texto-fraco">Carregando produtos…</p>
-          : fichas.data?.length === 0 ? <EstadoVazio titulo="Nenhum produto cadastrado" descricao="Cadastre um produto personalizado para incluí-lo no catálogo dos orçamentos." />
-            : <>
-              <div className="space-y-2 md:hidden">
-                {fichas.data?.map((produto) => <article key={produto.produtoId} className="flex items-start gap-3 rounded-lg border border-borda p-3">
-                  <button type="button" className="min-w-0 flex-1 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria" onClick={() => abrirFicha(produto)}
-                    aria-label={`${produto.temFicha ? "Editar" : "Configurar"} ficha técnica de ${produto.produtoNome}`}>
-                    <span className="block break-words font-medium text-texto">{produto.produtoNome}</span>
-                    {produto.descricaoBase && <span className="mt-1 block whitespace-normal break-words text-xs text-texto-fraco">{produto.descricaoBase}</span>}
-                    <span className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-texto-suave">{produto.categoria}</span>
-                      <span className={`rounded-full px-2 py-1 text-xs ${produto.temFicha ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
-                        {produto.temFicha ? "Com ficha técnica" : "Pendente"}
-                      </span>
-                    </span>
-                  </button>
-                  <AcoesLinha acoes={[{
-                    rotulo: `${produto.temFicha ? "Editar" : "Configurar"} ficha técnica de ${produto.produtoNome}`,
-                    icone: produto.temFicha ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />,
-                    aoAcionar: () => abrirFicha(produto),
-                  }]} />
-                </article>)}
-              </div>
-              <div className="hidden overflow-x-auto md:block"><table className="tabela w-full min-w-[680px] text-sm">
-              <thead><tr><th>Produto</th><th>Categoria</th><th>Ficha técnica</th><th className="w-16 text-right">Ações</th></tr></thead>
-              <tbody>{fichas.data?.map((produto) => <tr key={produto.produtoId} className="group cursor-pointer hover:bg-slate-50/60" tabIndex={0}
-                onClick={() => abrirFicha(produto)}
-                onKeyDown={(evento) => {
-                  if (evento.target !== evento.currentTarget) return;
-                  if (evento.key === "Enter" || evento.key === " ") { evento.preventDefault(); abrirFicha(produto); }
-                }}>
-                <td><span className="font-medium">{produto.produtoNome}</span>{produto.descricaoBase && <p className="mt-0.5 max-w-sm truncate text-xs text-texto-fraco">{produto.descricaoBase}</p>}</td>
-                <td className="text-texto-suave">{produto.categoria}</td>
-                <td><span className={`rounded-full px-2 py-1 text-xs ${produto.temFicha ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
-                  {produto.temFicha ? "Com ficha técnica" : "Pendente"}
-                </span></td>
-                <td><AcoesLinha acoes={[{
-                  rotulo: `${produto.temFicha ? "Editar" : "Configurar"} ficha técnica de ${produto.produtoNome}`,
-                  icone: produto.temFicha ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />,
-                  aoAcionar: () => abrirFicha(produto),
-                }]} /></td>
-              </tr>)}</tbody>
-              </table></div>
-            </>}
-    </Modal>
-
-    <Modal aberto={modal === "produto-novo"} aoFechar={() => { if (!salvarProduto.isPending) setModal("produtos"); }} titulo="Cadastrar produto personalizado"
-      descricao="O novo produto ficará disponível para seleção nos orçamentos." largura="max-w-xl"
-      rodape={<><Botao variante="secundaria" disabled={salvarProduto.isPending} onClick={() => setModal("produtos")}>Voltar</Botao>
-        <Botao type="submit" form="form-produto" carregando={salvarProduto.isPending}>Cadastrar produto</Botao></>}>
-      <form id="form-produto" onSubmit={submeter} className="space-y-4">
-        {erro && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
-        <Campo rotulo="Nome do produto" obrigatorio><Entrada required disabled={salvarProduto.isPending} value={produtoForm.nome} onChange={(e) => setProdutoForm({ ...produtoForm, nome: e.target.value })} /></Campo>
-        <Campo rotulo="Categoria" obrigatorio><Entrada required disabled={salvarProduto.isPending} value={produtoForm.categoria} onChange={(e) => setProdutoForm({ ...produtoForm, categoria: e.target.value })} /></Campo>
-        <Campo rotulo="Descrição base" ajuda="Descrição sugerida para os itens de orçamento; pode ser editada em cada orçamento.">
-          <Entrada disabled={salvarProduto.isPending} value={produtoForm.descricaoBase} onChange={(e) => setProdutoForm({ ...produtoForm, descricaoBase: e.target.value })} />
-        </Campo>
-      </form>
-    </Modal>
-
-    <Modal aberto={modal === "material" || modal === "compra" || modal === "ficha"} aoFechar={() => { if (!carregando) setModal(null); }} titulo={modal === "compra" ? "Planejar compra de matéria-prima" : modal === "ficha" ? `Ficha técnica · ${produtoFicha?.produtoNome ?? "Produto"}` : materialAtual ? "Editar matéria-prima" : "Nova matéria-prima"}
-      descricao={modal === "compra" ? "Registre uma compra prevista ou já solicitada ao fornecedor." : modal === "ficha" ? "Consumo padrão por unidade. O consumo variável pode ser ajustado no próprio pedido." : "Cadastre o material, a unidade de controle e o nível mínimo desejado."}
-      rodape={<><Botao variante="secundaria" disabled={carregando} onClick={() => setModal(null)}>Cancelar</Botao><Botao type="submit" form="form-estoque" carregando={carregando}>{modal === "compra" ? "Salvar compra" : modal === "ficha" ? "Salvar ficha" : "Salvar matéria-prima"}</Botao></>}>
+    <Modal aberto={modal === "material" || modal === "compra"} aoFechar={() => { if (!carregando) setModal(null); }} titulo={modal === "compra" ? "Planejar compra de matéria-prima" : materialAtual ? "Editar matéria-prima" : "Nova matéria-prima"}
+      descricao={modal === "compra" ? "Registre uma compra prevista ou já solicitada ao fornecedor." : "Cadastre o material, a unidade de controle e o nível mínimo desejado."}
+      rodape={<><Botao variante="secundaria" disabled={carregando} onClick={() => setModal(null)}>Cancelar</Botao><Botao type="submit" form="form-estoque" carregando={carregando}>{modal === "compra" ? "Salvar compra" : "Salvar matéria-prima"}</Botao></>}>
       <form id="form-estoque" onSubmit={submeter} className="space-y-4">
         {erro && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
-        {modal === "ficha" ? <>
-          {ativos.length === 0 ? <p className="text-sm text-texto-fraco">Cadastre pelo menos uma matéria-prima ativa para montar esta ficha.</p> : <>
-            {fichaLinhas.map((linha, i) => <div key={i} className="grid grid-cols-[1fr_130px_36px] items-end gap-2"><Campo rotulo={i === 0 ? "Matéria-prima" : undefined}><Selecao required disabled={salvarFicha.isPending} value={linha.materiaPrimaId} onChange={(e) => setFichaLinhas(fichaLinhas.map((x, j) => j === i ? { ...x, materiaPrimaId: e.target.value } : x))}><option value="">Selecione</option>{ativos.map((m) => <option key={m.id} value={m.id}>{m.nome} ({m.unidade})</option>)}</Selecao></Campo><Campo rotulo={i === 0 ? "Consumo por unidade" : undefined}><Entrada type="number" min="1" step="1" required disabled={salvarFicha.isPending} value={linha.quantidadePorUnidade} onChange={(e) => setFichaLinhas(fichaLinhas.map((x, j) => j === i ? { ...x, quantidadePorUnidade: Number(e.target.value) } : x))} /></Campo><Botao variante="fantasma" tamanho="sm" aria-label="Remover material da ficha" disabled={salvarFicha.isPending} onClick={() => setFichaLinhas(fichaLinhas.filter((_, j) => j !== i))} icone={<Trash2 className="h-4 w-4" />} /></div>)}
-            <Botao variante="secundaria" tamanho="sm" onClick={() => setFichaLinhas([...fichaLinhas, { materiaPrimaId: "", quantidadePorUnidade: 1 }])}>Adicionar matéria-prima</Botao>
-            <p className="text-xs text-texto-fraco">Deixe a lista vazia para remover a ficha técnica deste produto.</p>
-          </>}
-        </> : modal === "material" ? <>
+        {modal === "material" ? <>
           <Campo rotulo="Nome do material" obrigatorio><Entrada maxLength={120} required disabled={carregando} value={materialForm.nome} onChange={(e) => setMaterialForm({ ...materialForm, nome: e.target.value })} placeholder="Ex.: Camiseta branca, tinta azul-marinho" /></Campo>
           <div className="grid gap-4 sm:grid-cols-3">
             <Campo rotulo="Unidade"><p className="flex h-9 items-center rounded-md border border-borda bg-slate-50 px-3 text-sm text-texto">un</p></Campo>

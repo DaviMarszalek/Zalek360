@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 import axios from "axios";
 import type {
-  Anexo, Calculo, ClienteDetalhe, ClienteListaItem, ClienteRequisicao, ClienteVisaoGeral, Contato, Dashboard, DecisaoResultado,
+  OpcaoCatalogo, OpcaoCatalogoRequisicao, Anexo, Calculo, ClienteDetalhe, ClienteListaItem, ClienteRequisicao, ClienteVisaoGeral, Contato, Dashboard, DecisaoResultado,
   HistoricoEvento, ItemDetalhe, ListaComContagem, ListaFiltrada, LoginResposta, MeioContato, ObservacaoCliente, OpcoesOrcamento,
   OrcamentoDetalhe, OrcamentoListaItem, OrcamentoRequisicao, OrcamentoResumo, Pagina, PedidoDetalhe, PedidoListaItem, PedidoResumo,
   CompraMateriaPrima, FichaTecnica, MateriaPrima, MateriaisPedido, PendenciaEstoquePedido, MovimentoMateriaPrima, Produto, ProdutoFichaTecnica, ProdutoRequisicao, ResultadoDecisao, SituacaoCompraMateriaPrima, SituacaoOrcamento, SituacaoPedido, TipoPessoa, Usuario, VerificacaoDocumento,
@@ -127,10 +127,23 @@ export const anexosService = {
 export const dashboardService = { obter: () => api.get<Dashboard>("/dashboard").then((r) => r.data) };
 
 export const catalogoService = {
+  listarProdutos: (busca: string, incluirInativos: boolean, signal?: AbortSignal) => api.get<Produto[]>("/produtos/catalogo", { params: { busca, incluirInativos }, signal }).then(r => r.data),
+  obterProduto: (id: string) => api.get<Produto>(`/produtos/${id}`).then(r => r.data),
+  atualizarProduto: (id: string, dados: ProdutoRequisicao) => api.put<Produto>(`/produtos/${id}`, dados).then(r => r.data),
+  duplicarProduto: (id: string, nome: string) => api.post<Produto>(`/produtos/${id}/duplicar`, { nome }).then(r => r.data),
+  situacaoProduto: (id: string, ativo: boolean, versao?: number) => api.patch<Produto>(`/produtos/${id}/status`, { ativo, versao }).then(r => r.data),
+  excluirProduto: (id: string, versao?: number) => api.delete(`/produtos/${id}`, { params: { versao } }),
+  opcoesAtivas: () => api.get<OpcaoCatalogo[]>("/catalogo/opcoes").then(r => r.data),
   produtos: () => api.get<Produto[]>("/produtos").then((r) => r.data),
   criarProduto: (dados: ProdutoRequisicao) => api.post<Produto>("/produtos", dados).then((r) => r.data),
   opcoes: () => api.get<OpcoesOrcamento>("/produtos/opcoes").then((r) => r.data),
   responsaveis: () => api.get<Usuario[]>("/usuarios/responsaveis").then((r) => r.data),
+};
+
+export const configuracoesService = {
+  opcoes: () => api.get<OpcaoCatalogo[]>("/configuracoes/opcoes").then(r => r.data),
+  criarOpcao: (dados: OpcaoCatalogoRequisicao) => api.post<OpcaoCatalogo>("/configuracoes/opcoes", dados).then(r => r.data),
+  atualizarOpcao: (id: string, dados: OpcaoCatalogoRequisicao) => api.put<OpcaoCatalogo>(`/configuracoes/opcoes/${id}`, dados).then(r => r.data),
 };
 
 export const estoqueService = {
