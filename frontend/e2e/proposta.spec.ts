@@ -87,10 +87,13 @@ for (const admin of [false, true]) {
     await modal.getByLabel("Canal de envio").selectOption("WhatsApp");
     const baixando = page.waitForEvent("download"); await modal.getByRole("button", { name: "Baixar PDF da proposta" }).click(); await baixando;
     const pasta = path.resolve("../data/revisao-fase4"); await mkdir(pasta, { recursive: true });
+    await expect(page.locator('[aria-live="polite"]').getByRole("button", { name: "Fechar" })).toHaveCount(0, { timeout: 7000 });
     for (const largura of [360, 1280]) {
       await page.setViewportSize({ width: largura, height: 900 });
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await modal.screenshot({ path: path.join(pasta, `${admin ? "Admin" : "Gestor"}-${smtp ? "smtp" : "manual"}-${largura}.png`) });
+      await modal.getByRole("button", { name: "Confirmar apresentação" }).scrollIntoViewIfNeeded();
+      await expect(modal.getByRole("button", { name: "Confirmar apresentação" })).toBeInViewport();
     }
     await modal.getByRole("checkbox", { name: "Já enviei a mensagem e anexei o PDF ao cliente." }).check();
     await modal.getByRole("button", { name: "Confirmar apresentação" }).click();
