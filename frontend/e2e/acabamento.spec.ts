@@ -167,7 +167,9 @@ test("R8: erros de detalhes, abas, materiais e históricos podem ser recuperados
     const bloqueada = page.waitForResponse(r => new URL(r.url()).pathname === api && r.status() === 503);
     await page.goto(tela); if (abrir) await abrir(); await bloqueada;
     const erro = page.getByRole("alert").filter({ hasText: "Não foi possível carregar" }).first(); await expect(erro).toBeVisible();
-    await page.unrouteAll({ behavior: "wait" }); await erro.getByRole("button", { name: "Tentar novamente" }).click();
+    await page.unrouteAll({ behavior: "wait" });
+    const recuperada = page.waitForResponse(r => new URL(r.url()).pathname === api && r.ok());
+    await erro.getByRole("button", { name: "Tentar novamente" }).click(); await recuperada;
     await expect(erro).toHaveCount(0);
   }
   for (const [aba, sufixo] of [["visao-geral", "visao-geral"], ["orcamentos", "orcamentos"], ["pedidos", "pedidos"], ["observacoes", "observacoes"], ["historico", "historico"]])
