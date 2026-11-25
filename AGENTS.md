@@ -53,24 +53,23 @@
 
 ### Testes .NET no Windows
 
-O SDK .NET não está instalado no Windows. Rode os testes em container .NET 8, pela raiz do repositório, com o ambiente de revisão ativo. O comando passa as credenciais localmente ao container sem escrever seus valores no comando/documentação:
+O SDK .NET não está instalado no Windows. Rode os testes em container .NET 8, pela raiz do repositório, com o ambiente de revisão ativo. O script versionado `backend/scripts/testar-revisao.sh` monta `ZALEK_TEST_POSTGRES` dentro do container, sem imprimir as credenciais, e **falha se houver qualquer teste ignorado ou com falha**:
 
 ```powershell
-@'
-export ZALEK_TEST_POSTGRES="Host=db;Port=5432;Database=postgres;Username=$POSTGRES_USER;Password=$POSTGRES_PASSWORD"
-dotnet test Zalek360.sln --nologo
-'@ | docker run --rm -i `
+docker run --rm `
   --network zalek360-revisao_default `
   --env-file .env.revisao `
   --mount "type=bind,source=$($PWD.Path)\backend,target=/src" `
   --mount type=volume,source=zalek360-nuget-cache,target=/root/.nuget/packages `
   -w /src `
-  mcr.microsoft.com/dotnet/sdk:8.0 sh -c "sed 's/\r$//' | sh"
+  mcr.microsoft.com/dotnet/sdk:8.0 sh -c "sed 's/\r$//' scripts/testar-revisao.sh > /tmp/t.sh && sh /tmp/t.sh"
 ```
 
-O here-string literal passado pela entrada padrão preserva as aspas no PowerShell 5.1; o `sed` remove o CR das quebras de linha do Windows. As variáveis são expandidas somente dentro do container, sem imprimir as credenciais.
+No Git Bash, use o mesmo comando com `MSYS_NO_PATHCONV=1` antes de `docker run` e `source=$(cygpath -w "$PWD/backend")`. O `sed` remove o CR das quebras de linha do Windows. Aceite somente a linha final `VALIDAÇÃO APROVADA: N testes, 0 falhas, 0 ignorados.`
 
-O teste PostgreSQL cria e remove bancos de teste com prefixo próprio dentro do ambiente descartável. Sem `ZALEK_TEST_POSTGRES`, os testes PostgreSQL são ignorados; não aceite uma validação com ignorados.
+Não passe o script pela entrada padrão (`@'...'@ | docker run -i`): alguns hosts do PowerShell 5.1 prefixam BOM UTF-8 no stdin, o primeiro `export` falha (`sh: 1: ﻿export: not found`) e os testes PostgreSQL são ignorados com `dotnet test` saindo com código 0.
+
+O teste PostgreSQL cria e remove bancos de teste com prefixo próprio dentro do ambiente descartável. Sem `ZALEK_TEST_POSTGRES`, os testes PostgreSQL são ignorados; o script reprova a validação nesse caso.
 
 ## Convenções e armadilhas
 
