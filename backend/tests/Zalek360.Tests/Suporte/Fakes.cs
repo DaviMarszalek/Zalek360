@@ -79,6 +79,8 @@ public sealed class RepositoriosFake : IUsuarioRepository, IClienteRepository, I
 
     public Task<Usuario?> ObterPorEmailAsync(string emailNormalizado, CancellationToken ct) =>
         Task.FromResult(_b.Usuarios.FirstOrDefault(u => u.Email == emailNormalizado));
+    Task<Usuario?> IUsuarioRepository.ObterParaAlteracaoPorEmailAsync(string emailNormalizado, CancellationToken ct) =>
+        Task.FromResult(_b.Usuarios.FirstOrDefault(u => u.Email == emailNormalizado));
     Task<Usuario?> IUsuarioRepository.ObterPorIdAsync(Guid id, CancellationToken ct) => Task.FromResult(_b.Usuarios.FirstOrDefault(u => u.Id == id));
     Task<IReadOnlyList<Usuario>> IUsuarioRepository.ListarAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<Usuario>>(_b.Usuarios.OrderBy(u => u.Nome).ToList());

@@ -1,9 +1,17 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Options;
 using Zalek360.Api.Configuracao;
+using Zalek360.Api.Ferramentas;
 using Zalek360.Api.Middleware;
 using Zalek360.Infrastructure;
+using Zalek360.Infrastructure.Options;
 using Zalek360.Infrastructure.Persistence;
+using Zalek360.Infrastructure.Seguranca;
+
+// Ferramenta administrativa executada no container (ex.: redefinir senha); não inicia o servidor web.
+if (FerramentaRedefinirSenha.Solicitada(args))
+    return await FerramentaRedefinirSenha.ExecutarAsync(args);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,10 +34,16 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
 
 var app = builder.Build();
 
+// Fora de Development, segredos ausentes, curtos ou publicados no repositório impedem a subida.
+var banco = app.Services.GetRequiredService<IOptions<BancoOptions>>().Value;
+ValidacaoImplantacao.Garantir(app.Configuration["Jwt:Chave"], app.Configuration.GetConnectionString("Zalek360"),
+    banco.ExecutarSeed, banco.SenhaUsuariosDemo, app.Environment.IsDevelopment());
+
 app.UseForwardedHeaders();
 app.UseMiddleware<TratamentoErrosMiddleware>();
 
-if (app.Configuration.GetValue("Swagger:Habilitado", true))
+// Documentação interativa somente em Development (pode ser desligada também ali com Swagger:Habilitado=false).
+if (app.Environment.IsDevelopment() && app.Configuration.GetValue("Swagger:Habilitado", true))
 {
     app.UseSwagger();
     app.UseSwaggerUI(o =>
@@ -56,6 +70,7 @@ app.MapControllers();
 await InicializadorBanco.InicializarAsync(app.Services);
 
 app.Run();
+return 0;
 
 /// <summary>Exposto para testes de integração (WebApplicationFactory).</summary>
 public partial class Program { }

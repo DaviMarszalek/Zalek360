@@ -33,6 +33,13 @@ public class Usuario : Entidade
 
     public static string NormalizarEmail(string email) => email.Trim().ToLowerInvariant();
 
+    /// <summary>Substitui a senha pelo novo hash (a política de senha é validada no caso de uso).</summary>
+    public void DefinirSenhaHash(string senhaHash)
+    {
+        if (string.IsNullOrWhiteSpace(senhaHash)) throw new ArgumentException("Hash de senha obrigatório.", nameof(senhaHash));
+        SenhaHash = senhaHash;
+    }
+
     public static string CalcularIniciais(string nome)
     {
         var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);

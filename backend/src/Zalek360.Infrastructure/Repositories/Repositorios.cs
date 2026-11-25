@@ -63,6 +63,9 @@ internal sealed class UsuarioRepository : IUsuarioRepository
     public Task<Usuario?> ObterPorEmailAsync(string emailNormalizado, CancellationToken ct) =>
         _db.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.Email == emailNormalizado, ct);
 
+    public Task<Usuario?> ObterParaAlteracaoPorEmailAsync(string emailNormalizado, CancellationToken ct) =>
+        _db.Usuarios.FirstOrDefaultAsync(u => u.Email == emailNormalizado, ct);
+
     public Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken ct) =>
         _db.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, ct);
 

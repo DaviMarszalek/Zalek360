@@ -51,12 +51,8 @@ public sealed class UsuarioService
         else if (email.Length > 150 || !EmailValido(email))
             erros["email"] = ["Informe um e-mail válido com até 150 caracteres."];
 
-        if (string.IsNullOrEmpty(request.Senha))
-            erros["senha"] = ["Informe a senha."];
-        else if (request.Senha.Length < TamanhoMinimoSenha)
-            erros["senha"] = [$"Use pelo menos {TamanhoMinimoSenha} caracteres."];
-        else if (Encoding.UTF8.GetByteCount(request.Senha) > TamanhoMaximoSenhaBytes)
-            erros["senha"] = [$"A senha deve ter até {TamanhoMaximoSenhaBytes} bytes em UTF-8."];
+        if (ProblemaSenha(request.Senha) is { } problemaSenha)
+            erros["senha"] = [problemaSenha];
 
         if (erros.Count > 0)
             throw new ValidacaoException(CodigosErro.Validacao, "Corrija os campos destacados.", erros);
@@ -73,6 +69,33 @@ public sealed class UsuarioService
 
         return MapearAcesso(usuario);
     }
+
+    /// <summary>
+    /// Redefine a senha de um usuário existente pelo e-mail (ferramenta administrativa executada no container).
+    /// Usa a mesma política e o mesmo hash BCrypt da criação de contas. A senha nunca é registrada.
+    /// </summary>
+    public async Task<UsuarioAcessoDto> RedefinirSenhaAsync(string? email, string? novaSenha, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ValidacaoException(CodigosErro.Validacao, "Informe o e-mail do usuário.",
+                new Dictionary<string, string[]> { ["email"] = ["Informe o e-mail."] });
+        if (ProblemaSenha(novaSenha) is { } problema)
+            throw new ValidacaoException(CodigosErro.Validacao, problema,
+                new Dictionary<string, string[]> { ["senha"] = [problema] });
+
+        var usuario = await _usuarios.ObterParaAlteracaoPorEmailAsync(Usuario.NormalizarEmail(email), ct)
+                      ?? throw new NaoEncontradoException("Usuário");
+        usuario.DefinirSenhaHash(_hasher.Gerar(novaSenha!));
+        await _uow.SaveChangesAsync(ct);
+        return MapearAcesso(usuario);
+    }
+
+    /// <summary>Política única de senha: obrigatória, mínimo de 12 caracteres e até 72 bytes (limite do BCrypt).</summary>
+    public static string? ProblemaSenha(string? senha) =>
+        string.IsNullOrEmpty(senha) ? "Informe a senha." :
+        senha.Length < TamanhoMinimoSenha ? $"Use pelo menos {TamanhoMinimoSenha} caracteres." :
+        Encoding.UTF8.GetByteCount(senha) > TamanhoMaximoSenhaBytes ? $"A senha deve ter até {TamanhoMaximoSenhaBytes} bytes em UTF-8." :
+        null;
 
     private static bool EmailValido(string email) =>
         MailAddress.TryCreate(email, out var endereco) &&
