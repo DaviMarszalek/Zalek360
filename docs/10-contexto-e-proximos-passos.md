@@ -66,7 +66,7 @@
 - Atualização preservou hashes/contagens de **30 produtos, 39 orçamentos, 54 itens, 13 pedidos e 11 matérias-primas**, antes dos E2E.
 - Dashboard, reposição e pedidos verificados em 360/1280 px, sem rolagem horizontal da página; tabelas usam rolagem interna. E2E dos dois perfis cobre compra prevista, cancelamento, recebimento, baixa única ao iniciar produção e vendas/filtros. Capturas ignoradas em `data/revisao-fase5`.
 - Fase 5 mesclada com OK explícito; o usuário depois autorizou executar a Fase 6 e mesclar seu PR após a validação, sem aguardar uma nova resposta.
-- Fase 6 — cenário Homem-Aranha completo para Gestor e Administrador: materiais/composição, cliente, orçamento com imagem, proposta/PDF, contato, aprovação com reserva parcial, bloqueio por falta, compra/recebimento, recálculo da ficha, baixa única, entrega/vendas e cancelamento/liberação.
+- Fase 6 — [PR #9, entrega final](https://github.com/DaviMarszalek/Zalek360/pull/9): cenário Homem-Aranha completo para Gestor e Administrador: materiais/composição, cliente, orçamento com imagem, proposta/PDF, contato, aprovação com reserva parcial, bloqueio por falta, compra/recebimento, recálculo da ficha, baixa única, entrega/vendas e cancelamento/liberação.
 - Acabamento R8: títulos e retorno dos formulários, rótulos associados aos controles, foco inicial/contenção/Escape/retorno dos modais, abas por teclado e menu móvel acessível, incluindo fechamento ao mudar para desktop. Falha de aprovação não abre dois diálogos; falhas de consultas, histórico, sessão e saída têm retorno e nova tentativa, sem descartar o formulário.
 - Validação Fase 6: backend **139 aprovados, 0 falhas, 0 ignorados**, com PostgreSQL real; Vitest **8/8**; Edge **24/24**. `npm ci`, typecheck, build local e Compose padrão aprovados em sequência. Sem migration/modelo/dependência alterados; comparador não reexecutado.
 - Captura SMTP repetida na Fase 6: **3/3**, incluindo PDF real e ausência de reenvio com chave repetida. Ambiente restaurado sem SMTP direto. Os E2E aguardam uma resposta 401 em GET `/api/auth/me` sem cookies pelo proxy antes das ações; `--wait` do Compose não garante HTTP pronto para a API. Relatórios Playwright ficam fora do contexto de build.
@@ -116,6 +116,6 @@ A Fase 6 usa branch própria criada do `main` atualizado. Plano apresentado e ex
 ## G) Como retomar na próxima sessão
 
 1. Ler `AGENTS.md` e este arquivo; conferir estado real de Git/PRs antes de agir.
-2. A Fase 6 conclui a sequência vigente. Consultar o PR da branch `revisao/fase-6-cenario-acabamento` e atualizar `main` local por fast-forward após confirmar o merge, sem repetir alterações já entregues.
+2. A Fase 6 conclui a sequência vigente. Consultar o [PR #9](https://github.com/DaviMarszalek/Zalek360/pull/9) da branch `revisao/fase-6-cenario-acabamento` e atualizar `main` local por fast-forward após confirmar o merge, sem repetir alterações já entregues.
 3. Usar somente `zalek360-revisao` e `.env.revisao`, nunca exibir nem versionar seu conteúdo. Não tocar no projeto principal.
 4. As pendências da seção F não têm fase definida; discutir decisões/plano antes de implementá-las. Não inventar requisitos nem configurar SMTP externo sem os dados seguros do responsável.
