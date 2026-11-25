@@ -32,6 +32,10 @@ public sealed class EstoqueService
         return materiais.Select(x => MapearMateria(x, aReceber.GetValueOrDefault(x.Id), pendente.GetValueOrDefault(x.Id))).ToList();
     }
 
+    public async Task<IReadOnlyList<MateriaPrimaDto>> ListarReposicaoAsync(CancellationToken ct) =>
+        (await ListarMateriasAsync(ct)).Where(x => x.Ativo && x.QuantidadeSugerida > 0)
+            .OrderByDescending(x => x.FaltaComprar).ThenByDescending(x => x.QuantidadeSugerida).ThenBy(x => x.Nome).ToList();
+
     public Task<IReadOnlyList<PendenciaEstoquePedidoDto>> ListarPendenciasAsync(CancellationToken ct) => _consultaPedidos.ListarPendenciasMateriaisAsync(ct);
 
     public async Task<MateriaPrimaDto> CriarMateriaAsync(MateriaPrimaRequest r, CancellationToken ct)
@@ -116,7 +120,8 @@ public sealed class EstoqueService
     private static string RotuloCompra(SituacaoCompraMateriaPrima s) => s == SituacaoCompraMateriaPrima.Pedido ? "Pedido realizado" : s.ToString();
     private static MateriaPrimaDto MapearMateria(MateriaPrima x, decimal aReceber = 0, decimal pendente = 0) =>
         new(x.Id, x.Nome, x.Unidade, x.QuantidadeDisponivel, x.EstoqueMinimo, aReceber, x.SaldoReservado, x.Ativo,
-            x.SaldoDisponivel, pendente, x.SaldoDisponivel <= x.EstoqueMinimo, Math.Max(0, x.EstoqueMinimo + pendente - x.SaldoDisponivel - aReceber));
+            x.SaldoDisponivel, pendente, x.SaldoDisponivel <= x.EstoqueMinimo, Math.Max(0, x.EstoqueMinimo + pendente - x.SaldoDisponivel - aReceber),
+            x.SaldoDisponivel < x.EstoqueMinimo, Math.Max(0, x.EstoqueMinimo - x.SaldoDisponivel + pendente));
     private static void ValidarMateria(MateriaPrimaRequest r)
     {
         ValidarPrecisao(r.QuantidadeDisponivel, "quantidadeDisponivel");

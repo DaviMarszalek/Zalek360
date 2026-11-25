@@ -9,7 +9,7 @@ public sealed record IndicadoresDto(
     decimal ValorAprovadoNoMes,
     int PedidosEmAndamento,
     int PedidosConcluidosNoMes,
-    string MesReferencia);
+    string MesReferencia, decimal ValorEntregueNoMes, DateOnly InicioMes, DateOnly FimMes, int MateriasParaReposicao);
 
 public sealed record AguardandoRetornoItemDto(
     Guid Id, int Numero, string Cliente, decimal ValorTotal, DateTime? ApresentadoEm, DateOnly Validade, int DiasParaVencer);

@@ -26,8 +26,8 @@ public sealed class PedidosController : ControllerBase
     [HttpGet]
     public Task<ListaComContagemDto<PedidoListaItemDto>> Listar(
         [FromQuery] string? busca, [FromQuery] SituacaoPedido? status, [FromQuery] Guid? responsavelId,
-        [FromQuery] DateOnly? de, [FromQuery] DateOnly? ate, [FromQuery] int? pagina, [FromQuery] int? tamanhoPagina, CancellationToken ct) =>
-        _consultas.ListarAsync(new PedidoFiltro(busca, status, responsavelId, de, ate, pagina, tamanhoPagina), ct);
+        [FromQuery] Guid? clienteId, [FromQuery] DataReferenciaPedido? dataReferencia, [FromQuery] DateOnly? de, [FromQuery] DateOnly? ate, [FromQuery] int? pagina, [FromQuery] int? tamanhoPagina, CancellationToken ct) =>
+        _consultas.ListarAsync(new PedidoFiltro(busca, status, responsavelId, de, ate, pagina, tamanhoPagina, clienteId, dataReferencia ?? DataReferenciaPedido.Criacao), ct);
 
     /// <summary>Criação manual NÃO é permitida: sempre retorna 422 PEDIDO_CRIACAO_DIRETA_NAO_PERMITIDA.</summary>
     [HttpPost]

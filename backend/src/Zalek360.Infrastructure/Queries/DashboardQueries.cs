@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Zalek360.Application.Dtos;
 using Zalek360.Application.Interfaces;
+using Zalek360.Application.Services;
 using Zalek360.Domain.Enums;
 using Zalek360.Infrastructure.Persistence;
 
@@ -17,10 +18,11 @@ internal sealed class DashboardQueries : IDashboardQueries
     private readonly ZalekDbContext _db;
     private readonly IClock _clock;
 
-    public DashboardQueries(ZalekDbContext db, IClock clock)
+    private readonly EstoqueService _estoque;
+    public DashboardQueries(ZalekDbContext db, IClock clock, EstoqueService estoque)
     {
         _db = db;
-        _clock = clock;
+        _clock = clock; _estoque = estoque;
     }
 
     public async Task<DashboardDto> ObterAsync(CancellationToken ct)
@@ -48,8 +50,9 @@ internal sealed class DashboardQueries : IDashboardQueries
         var emAndamento = await pedidos.CountAsync(p => p.Situacao == SituacaoPedido.Aberto
                                                         || p.Situacao == SituacaoPedido.EmProducao
                                                         || p.Situacao == SituacaoPedido.Pronto, ct);
-        var concluidos = await pedidos.CountAsync(p => p.Situacao == SituacaoPedido.Entregue
-                                                       && p.EntregueEm >= inicioMesUtc && p.EntregueEm < inicioProximoMesUtc, ct);
+        var entregues = await pedidos.Where(p => p.Situacao == SituacaoPedido.Entregue
+            && p.EntregueEm >= inicioMesUtc && p.EntregueEm < inicioProximoMesUtc).Select(p => p.ValorTotal).ToListAsync(ct);
+        var reposicao = await _estoque.ListarReposicaoAsync(ct);
 
         var recentes = await OrcamentoQueries.Linhas(orcamentos.OrderByDescending(o => o.Numero).Take(6), ct);
 
@@ -69,7 +72,7 @@ internal sealed class DashboardQueries : IDashboardQueries
 
         return new DashboardDto(
             new IndicadoresDto(emElaboracao, criadosHoje, aguardando, vencendo, valoresAprovados.Count, valoresAprovados.Sum(),
-                emAndamento, concluidos, Meses[hoje.Month - 1]),
+                emAndamento, entregues.Count, Meses[hoje.Month - 1], entregues.Sum(), inicioMes, inicioMes.AddMonths(1).AddDays(-1), reposicao.Count),
             recentes, listaAguardando, aguardando);
     }
 }
