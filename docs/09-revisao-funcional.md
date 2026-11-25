@@ -71,6 +71,21 @@ Implementação na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R
 - Formulário/modal, detalhe do orçamento e pedido verificados em **360 px/1280 px**, sem rolagem horizontal da página. Capturas locais ficam ignoradas em `data/revisao-fase3`. A revisão geral de teclado de todos os modais permanece pendente.
 - O envio por e-mail/WhatsApp, o cenário Homem-Aranha completo e o acabamento geral continuam nas fases previstas em `docs/10-contexto-e-proximos-passos.md`.
 
+## Atualização — Fase 4: envio de proposta (24/11/2026)
+
+- Branch `revisao/fase-4-envio-proposta`, criada de `main` em `3abacc2`, após o merge autorizado do PR #6 e a autorização para iniciar esta fase.
+- Gestor e Administrador revisam destinatário, assunto e mensagem. Com SMTP, a aplicação anexa o PDF e registra apresentação/contato/exportação após aceitação pelo servidor. Aceitação não confirma entrega/leitura.
+- Sem SMTP, disponibiliza `mailto`, cópia da mensagem e PDF para anexar manualmente. WhatsApp usa texto revisável e `wa.me`, sem link público do PDF. Cópia/download/abertura não apresentam a proposta; a confirmação externa é explícita. Outros meios de apresentação foram preservados.
+- Administrador edita modelos persistidos com campos públicos permitidos: cliente, número, total, validade, prazo e empresa. Custos/margens não são oferecidos; campos desconhecidos são rejeitados. Segredos SMTP são configurados por `Email__*`, sem retorno à UI.
+- Tentativa persistida antes do SMTP; chave confirmada retorna recibo sem reenviar. Confirmação incerta não gera retry automático. Bloqueio PostgreSQL e versão impedem envio concorrente da mesma versão; banco e SMTP não formam transação distribuída, por isso uma queda após aceitação pode exigir conferência manual.
+- Migration EF `20261125001901_ModelosEEnviosProposta` cria somente modelos e recibos, com sementes aditivas. Comparador: **0 divergências**, 21 tabelas, 235 colunas, 71 constraints, 72 índices e 2 sequências.
+- Backend **133 aprovados, 0 falhas, 0 ignorados**, com PostgreSQL real. Inclui upgrade desde a Fase 3, concorrência/duplicação, falha SMTP, permissões, modelo/cabeçalhos inválidos e transporte MIME com Unicode, destinatário, mensagem e anexo.
+- `npm ci`, typecheck, Vitest **8/8**, build local e Compose padrão `up --build -d --wait` aprovados em sequência, apenas em `zalek360-revisao`.
+- Upgrade preservou hashes e contagens dos **24 produtos, 24 orçamentos, 37 itens e 11 pedidos** existentes, antes dos E2E.
+- Edge: **13/13** na suíte completa sem SMTP; execução adicional **3/3** com smtp4dev recebeu destinatário, assunto, texto revisado e anexo PDF reais. Repetir a chave de envio não criou outra mensagem. O envio para conta/provedor real da empresa não foi verificado.
+- Nova tela/modal verificada em **360 px e 1280 px**, com confirmação alcançável pela rolagem interna e Escape, sem rolagem horizontal da página. Capturas em `data/revisao-fase4` ficam ignoradas pelo Git. A captura visual aguarda o toast expirar para não fechar o modal ao clicar fora.
+- Revisão restaurada à configuração padrão, sem SMTP direto; capturador local permanece disponível em `http://localhost:5180`, sem relay externo. Configurar conta/provedor real e senha de aplicativo continua sob responsabilidade do ambiente seguro; nenhum segredo foi exibido ou versionado.
+
 ## Limitações da execução ponta a ponta
 
 O cenário Homem-Aranha completo permanece pendente para a fase prevista. Na auditoria inicial, a tentativa manual com `curl.exe` não preservou as aspas JSON no PowerShell; o 500 observado não era evidência de falha de credenciais. O login com JSON válido foi confirmado e o teste de navegador passou para os dois perfis após as correções da Fase 0.
@@ -118,8 +133,8 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R4.5 Miniatura no pedido | Atende na Fase 3 | Pedido mostra miniatura das imagens copiadas do orçamento; arquivos de outros formatos mantêm ícone/link autenticado. | Preservar. | P/M | Médio |
 | R4.6 Disponibilidade das matérias-primas no orçamento | Atende na Fase 3 | Backend simula necessidade/saldo/falta por item sem duplicar saldo compartilhado; inclui reservas do próprio pedido. Não grava reservas nem bloqueia orçamento. | Preservar caráter informativo. | M | Alto |
 | R4.7 Cálculo automático | Atende | O orçamento usa cálculo posterior no backend e mostra totais no resumo. | Preservar cálculo no backend; não duplicar regra no frontend. | P | Médio |
-| R4.8 PDF | Atende | Gestor e Administrador consultam pelo GET de pré-visualização (sem histórico) e exportam pelo POST auditado. Teste de integração valida ambos. | Preservar. | P | Baixo |
-| R4.9 Contato e decisão existentes | Atende | Fluxo mantém elaboração, apresentação, aguardando retorno, decisão e aprovação. | Preservar; padronizar comunicação em português. | P | Médio |
+| R4.8 PDF | Atende | Pré-visualização GET e exportação POST preservadas. Fase 4 prepara PDF para apresentação sem selo de rascunho; mensagem/PDF sem custo ou margem. | Preservar. | P | Baixo |
+| R4.9 Contato e decisão existentes | Atende na Fase 4 | SMTP registra após aceitação; envio externo exige confirmação. Fluxo de decisão/aprovação e apresentação por outros meios preservados. | Preservar. | P | Médio |
 | R5.1 Aprovação gera pedido | Atende | `RegistrarDecisao` aprova em transação e gera pedido. | Preservar. | P | Alto |
 | R5.2 Reserva limitada ao disponível | Atende | A reserva usa mínimo físico menos reservado e cria pendência pela diferença. | Preservar concorrência PostgreSQL. | P | Alto |
 | R5.3 Pendência por falta | Atende | Pedido misto reserva o conhecido e gera pendência por saldo/ficha. | Preservar e mostrar visualmente no fluxo. | P | Alto |
@@ -247,6 +262,8 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
    - Confirmar se imagens devem ter miniatura real no orçamento e pedido; PDF deve continuar como link seguro.
 
 ## Plano de fases recomendado
+
+Plano histórico da revisão inicial. A ordem vigente e as aprovações de cada fase estão em `docs/10-contexto-e-proximos-passos.md`.
 
 ### Fase 1 — Segurança e identidade (P/M)
 
