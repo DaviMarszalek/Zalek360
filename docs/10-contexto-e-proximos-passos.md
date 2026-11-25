@@ -1,7 +1,7 @@
 # Contexto e próximos passos do Zalek360
 
 **Atualizado em:** 25/11/2026
-**Base consultada:** `main`/`origin/main` em `35ce777`, após o merge autorizado do PR #7 em 24/11/2026. Fase 5 na branch `revisao/fase-5-estoque-vendas`, autorizada pelo usuário.
+**Base de partida da Fase 6:** `main`/`origin/main` em `2da907d`, após o merge autorizado do PR #8 em 25/11/2026. Entrega na branch `revisao/fase-6-cenario-acabamento`. O usuário autorizou executar e encerrar as fases restantes após validação, enquanto estiver ausente; conferir o estado atual no GitHub ao retomar.
 
 ## A) Como o negócio funciona
 
@@ -23,7 +23,7 @@
 
 ## C) Decisões tomadas e origem
 
-- **Fluxo simples de pedido:** Aberto → Em produção → Pronto → Entregue, com transições manuais e baixa das matérias-primas reservadas ao passar para Em produção. A Ordem de Serviço por etapas foi descartada pelo usuário (R5). Não remover código legado de OS sem perguntar. `docs/08-mvp2.md` ainda descreve OS como fase futura; atualizar essa documentação na Fase 6.
+- **Fluxo simples de pedido:** Aberto → Em produção → Pronto → Entregue, com transições manuais e baixa das matérias-primas reservadas ao passar para Em produção. A Ordem de Serviço por etapas foi descartada pelo usuário (R5). Não remover código legado de OS sem perguntar. `docs/08-mvp2.md` foi atualizado na Fase 6 para registrar esta substituição; nenhum código legado foi removido.
 - **Reservas:** na aprovação, reservar até o saldo disponível; a diferença vira pendência. Cancelamento libera apenas reservas ativas. Aprovado pelo usuário nos requisitos R5/Fase 2.0.
 - **Estoque:** controlar matérias-primas; unidade fixa `un` e quantidades inteiras. Definido nos requisitos R2.
 - **Responsável do orçamento:** sempre o usuário autenticado na criação; na edição, preservar o responsável original. Aprovado na Fase 1.
@@ -38,8 +38,8 @@
 
 ### Git e PRs
 
-- `main`/`origin/main`: `35ce777`, merge do PR #7 aprovado pelo usuário em 24/11/2026.
-- PRs #1 (Fase 0), #2 (Next.js), #3 (Fase 1/R1 definitiva), #4 (regras/contexto), #5 (Fase 2/catálogo), #6 (Fase 3/orçamento) e #7 (Fase 4/envio): **MESCLADOS**.
+- Base da Fase 6: `2da907d`, merge do PR #8 aprovado pelo usuário em 25/11/2026. A entrega da Fase 6 está descrita ao final desta lista.
+- PRs #1 (Fase 0), #2 (Next.js), #3 (Fase 1/R1 definitiva), #4 (regras/contexto), #5 (Fase 2/catálogo), #6 (Fase 3/orçamento), #7 (Fase 4/envio) e #8 (Fase 5/estoque e vendas): **MESCLADOS**.
 - A Fase 1 teve 105 testes backend aprovados/0 ignorados, Vitest 5/5, Edge 4/4 e typecheck/build/Compose aprovados.
 - Fase 2 — [PR #5 mesclado](https://github.com/DaviMarszalek/Zalek360/pull/5), com autorização explícita. Branch da entrega: `revisao/fase-2-catalogo`.
 - Implementado na Fase 2: tela Produtos com pesquisa, cadastro/edição, composição, preço/custo opcionais, duplicação, inativação/reativação e exclusão definitiva por Administrador apenas quando nunca usado; Configurações para categorias, tipos de personalização, condições de pagamento e motivos de decisão.
@@ -60,12 +60,18 @@
 - Capturador smtp4dev confirmou destinatário, assunto, texto revisado e PDF anexado, com uma mensagem por chave. Testes cobrem upgrade, concorrência, erro SMTP, campos públicos e MIME Unicode. Conta/provedor real não foi testado.
 - Upgrade preservou hashes/contagens de **24 produtos, 24 orçamentos, 37 itens e 11 pedidos** existentes, antes dos E2E. Modal validado em 360/1280 px com rolagem interna até a confirmação, sem rolagem horizontal da página; capturas ignoradas em `data/revisao-fase4`.
 - Ambiente de revisão restaurado sem SMTP direto. Capturador local em `http://localhost:5180`, sem relay externo; o override `docker-compose.email-teste.yml` é exclusivo da revisão. Ambiente principal e segredos preservados.
-- Fase 5 — [PR #8 aberto](https://github.com/DaviMarszalek/Zalek360/pull/8), autorizada e implementada na branch `revisao/fase-5-estoque-vendas`: cartão/lista de reposição e filtro abaixo do mínimo; vendas entregues no mês em quantidade/valor; filtros de pedidos por cliente, status e período com referência de data do pedido/entrega.
+- Fase 5 — [PR #8 mesclado](https://github.com/DaviMarszalek/Zalek360/pull/8), autorizada e implementada na branch `revisao/fase-5-estoque-vendas`: cartão/lista de reposição e filtro abaixo do mínimo; vendas entregues no mês em quantidade/valor; filtros de pedidos por cliente, status e período com referência de data do pedido/entrega.
 - Sugestão bruta = máximo de zero e mínimo − saldo livre + pendências; falta líquida desconta compras previstas. Ambas ficam visíveis; a compra é sugerida e revisável, sem criação automática. Materiais inativos são excluídos das duas visões de reposição.
 - Validação Fase 5: backend **139 aprovados, 0 falhas, 0 ignorados**, PostgreSQL real; Vitest **8/8**; Edge **15/15**. `npm ci`, typecheck, build local e Compose padrão aprovados. Sem migration ou alteração de esquema; comparador não foi reexecutado.
 - Atualização preservou hashes/contagens de **30 produtos, 39 orçamentos, 54 itens, 13 pedidos e 11 matérias-primas**, antes dos E2E.
 - Dashboard, reposição e pedidos verificados em 360/1280 px, sem rolagem horizontal da página; tabelas usam rolagem interna. E2E dos dois perfis cobre compra prevista, cancelamento, recebimento, baixa única ao iniciar produção e vendas/filtros. Capturas ignoradas em `data/revisao-fase5`.
-- Merge da Fase 5 e início da Fase 6 exigem novas autorizações explícitas do usuário.
+- Fase 5 mesclada com OK explícito; o usuário depois autorizou executar a Fase 6 e mesclar seu PR após a validação, sem aguardar uma nova resposta.
+- Fase 6 — cenário Homem-Aranha completo para Gestor e Administrador: materiais/composição, cliente, orçamento com imagem, proposta/PDF, contato, aprovação com reserva parcial, bloqueio por falta, compra/recebimento, recálculo da ficha, baixa única, entrega/vendas e cancelamento/liberação.
+- Acabamento R8: títulos e retorno dos formulários, rótulos associados aos controles, foco inicial/contenção/Escape/retorno dos modais, abas por teclado e menu móvel acessível, incluindo fechamento ao mudar para desktop. Falha de aprovação não abre dois diálogos; falhas de consultas, histórico, sessão e saída têm retorno e nova tentativa, sem descartar o formulário.
+- Validação Fase 6: backend **139 aprovados, 0 falhas, 0 ignorados**, com PostgreSQL real; Vitest **8/8**; Edge **24/24**. `npm ci`, typecheck, build local e Compose padrão aprovados em sequência. Sem migration/modelo/dependência alterados; comparador não reexecutado.
+- Captura SMTP repetida na Fase 6: **3/3**, incluindo PDF real e ausência de reenvio com chave repetida. Ambiente restaurado sem SMTP direto. Os E2E aguardam uma resposta 401 em GET `/api/auth/me` sem cookies pelo proxy antes das ações; `--wait` do Compose não garante HTTP pronto para a API. Relatórios Playwright ficam fora do contexto de build.
+- Atualização preservou hashes/contagens de **46 produtos, 63 orçamentos, 82 itens, 29 pedidos e 25 matérias-primas**, antes dos dados novos dos E2E. Capturas complementares de rotas/abas em 360/1280 px, sem rolagem horizontal da página; artefatos ignorados em `data/revisao-fase6`. Ambiente principal preservado.
+- `docs/08-mvp2.md` atualizado: fluxo simples substitui OS por etapas. Código legado de OS preservado. Esta é a última fase definida; os itens sem fase ficam na seção F.
 - Referências: [PR #3](https://github.com/DaviMarszalek/Zalek360/pull/3), [PR #4](https://github.com/DaviMarszalek/Zalek360/pull/4) e matriz em `docs/09-revisao-funcional.md`.
 
 ### Ambiente
@@ -74,49 +80,42 @@
 - Na consulta anterior, o projeto principal `zalek360` estava ativo nas portas 5432, 5000 e 3000. Não foi acessado nem alterado nesta revalidação. Nunca interromper nem limpar esse projeto.
 - `.env.revisao` está ignorado nesta branch, sem conteúdo exibido ou versionado. O `.gitignore` atualizado e `.env.revisao.example` já estão em `main` após o PR #3. Nunca adicionar `.env.revisao` ao Git.
 
-## E) Próximas fases, na ordem aprovada
+## E) Fases da sequência aprovada
 
-As Fases 2 (catálogo), 3 (orçamento) e 4 (envio) estão mescladas; a Fase 5 está implementada nesta branch e aguarda revisão de seu PR. A ordem abaixo permanece aprovada, sem autorização automática para iniciar uma fase futura.
+As Fases 2–5 estão mescladas. A Fase 6 foi implementada e validada, concluindo a sequência definida. Em 25/11/2026, o usuário autorizou iniciar e executar todas as fases seguintes, incluindo os merges após validação. Essa autorização não define requisitos ausentes nem habilita ações no ambiente principal.
 
 1. **Fase 3 — Orçamento:** preço automático do produto com aviso e restauração; margem interna para Gestor e Administrador; modal “Novo produto” sem perder dados do orçamento; miniatura de referência no orçamento e pedido; disponibilidade/falta de matérias-primas por item, informativa e sem bloquear. Mesclada no PR #6.
 2. **Fase 4 — Envio da proposta:** e-mail SMTP com PDF, mensagem editável antes do envio e captura por smtp4dev; fallback `mailto` sem SMTP; WhatsApp com mensagem pronta e `wa.me`, sem link público do PDF. Mesclada no PR #7.
-3. **Fase 5 — Estoque mínimo e vendas:** filtro abaixo do mínimo, cartão/lista Repor estoque, sugestão bruta e falta líquida, dashboard de entregues e filtros por período/cliente/status. Implementada nesta branch; aguardar OK para merge.
-4. **Fase 6 — Cenário completo e acabamento:** E2E do cenário Homem-Aranha completo; documentar em `docs/08-mvp2.md` que o fluxo simples substitui OS por etapas; concluir pendências R8.
+3. **Fase 5 — Estoque mínimo e vendas:** filtro abaixo do mínimo, cartão/lista Repor estoque, sugestão bruta e falta líquida, dashboard de entregues e filtros por período/cliente/status. Mesclada no PR #8.
+4. **Fase 6 — Cenário completo e acabamento:** cenário Homem-Aranha completo e R8 implementados/validados; `docs/08-mvp2.md` atualizado com o fluxo simples. Última entrega do plano.
 
-Criar branch nova da fase seguinte a partir do `main` atualizado somente depois que o usuário aprovar o merge do PR da fase atual. Apresentar plano curto e aguardar “pode seguir” antes de codar.
+A Fase 6 usa branch própria criada do `main` atualizado. Plano apresentado e execução autorizada. Não há Fase 7 definida; pendências sem fase ou com decisão de negócio ausente não devem ser implementadas por inferência.
 
 ## F) Pendências e não verificados
 
-### Validação ainda não executada
+### Não verificado e dependência externa
 
-- Cenário Homem-Aranha completo de ponta a ponta.
-- Inspeção visual das demais rotas em 360 px e 1280 px. Produtos/Configurações foram verificados na Fase 2; orçamento/detalhe do pedido na Fase 3; envio na Fase 4; dashboard, reposição e lista de pedidos na Fase 5.
-- Navegação por teclado em todos os modais: foco inicial, Escape, contenção e retorno do foco.
-- Revisão de estados de carregamento/erro/vazio em todas as consultas e ações.
-- Envio por conta/provedor real da empresa (captura SMTP local já validada na Fase 4).
+- Envio por conta/provedor real da empresa. Captura SMTP local validada; falta a configuração segura de conta habilitada e parâmetros do provedor. Não solicitar segredos em commits, mensagens ou documentação.
 
-### Funcionalidades ainda pendentes na matriz R1–R8
+### Funcionalidades pendentes, sem fase de implementação definida
 
-- Matérias-primas: código único e categoria; recebimento parcial; motivo de ajuste obrigatório e detalhado.
-- Catálogo/orçamento: requisitos das Fases 2/3 implementados, incluindo modal de produto, preço com aviso/restauração, margem interna e preservação do histórico. Fases 3/4 mescladas; Fase 5 aguarda revisão/merge.
-- Orçamento/pedido: miniaturas e disponibilidade por item implementadas na Fase 3; envio da proposta implementado na Fase 4, sem antecipar estoque/vendas.
-- Estoque/pedidos: baixa única ao iniciar produção validada no E2E da Fase 5. Atualizar documentação da decisão de não usar OS por etapas e executar o cenário Homem-Aranha completo na Fase 6.
-- Reposição: implementada na Fase 5, aguardando revisão/merge.
-- Dashboard/vendas: requisitos implementados na Fase 5, aguardando revisão/merge.
-- Acabamento R8: consistência de textos, estados de carregamento e erro, responsividade e teclado.
+- Matérias-primas: código único e categoria, recebimento parcial/custos e motivo de ajuste obrigatório/detalhado. Código depende de decidir geração automática/manual e planejar os registros existentes; categoria depende de decidir obrigatoriedade.
+- Complementação automática de reservas por prioridade. Hoje o recebimento exige reaplicar explicitamente a ficha do pedido; o cenário completo verifica esse fluxo.
+- Tela de Usuários, desativação e redefinição de senha. GET/POST `/api/usuarios` existentes continuam exclusivos do Administrador.
+- Configuração dos dados da empresa/e-mail permanece no servidor; a interface administrativa completa desses dados não integra as fases entregues. Segredos SMTP não devem ser expostos pela UI.
+- Produtos acabados/pronta-entrega, Financeiro e OS por etapas continuam fora do escopo vigente. Não remover código legado de OS sem perguntar.
+- Cenário completo, reposição, vendas e acabamento R8 estão concluídos. Não há Fase 7 definida; novas funcionalidades exigem plano e decisões próprios.
 
 ### Notas de sincronização da documentação
 
 - A matriz R1 e a nota R3.6 em `docs/09-revisao-funcional.md` foram atualizadas nesta branch: preço de venda/custo e margem interna para Gestor e Administrador já estão aprovados para as Fases 2/3.
 - Configurações de opções foram implementadas na Fase 2, com GET/POST/PUT exclusivos do Administrador e testes 403 para os outros perfis. A tela de Usuários continua pendente; GET/POST `/api/usuarios` permanecem exclusivos do Administrador. Modelos de mensagem e status de envio foram acrescentados na Fase 4; dados da empresa continuam por configuração do servidor. Segredos SMTP ficam somente no ambiente local/seguro.
-- `docs/08-mvp2.md` ainda descreve OS como fase futura. A decisão de substituir OS por fluxo simples foi aprovada; registrar a decisão na Fase 6. Não remover código legado de OS sem perguntar.
+- `docs/08-mvp2.md` registra o fluxo simples como vigente e o descarte do antigo plano de OS por etapas. A referência histórica de estabilização foi preservada. Não remover código legado de OS sem perguntar.
 - Para usar SMTP com destinatários reais após a Fase 4, o usuário precisa providenciar uma conta de e-mail habilitada para SMTP e senha de aplicativo, além dos parâmetros do provedor. Nunca solicitar que esses segredos sejam commitados; configurar somente no ambiente local/seguro.
 
 ## G) Como retomar na próxima sessão
 
-1. Ler `AGENTS.md` e este arquivo.
-2. Conferir `git status` e a branch antes de trocar de contexto. Retomar `revisao/fase-5-estoque-vendas` enquanto seu PR estiver aberto; atualizar `origin` e integrar `origin/main` por merge, preservando alterações locais.
-3. Abrir Docker Desktop e confirmar “Engine running”. Não tocar no projeto principal.
-4. PR #7 está mesclado. Conferir o [PR #8 da Fase 5](https://github.com/DaviMarszalek/Zalek360/pull/8), aberto para revisão; não mesclar sem novo OK do usuário.
-5. Usar o ambiente de revisão com `docker compose -p zalek360-revisao --env-file .env.revisao ...`; nunca exibir ou adicionar o `.env.revisao`.
-6. Aguardar aprovação para mesclar a Fase 5 e para iniciar a Fase 6, em branch nova do `main` atualizado e com plano curto aprovado.
+1. Ler `AGENTS.md` e este arquivo; conferir estado real de Git/PRs antes de agir.
+2. A Fase 6 conclui a sequência vigente. Consultar o PR da branch `revisao/fase-6-cenario-acabamento` e atualizar `main` local por fast-forward após confirmar o merge, sem repetir alterações já entregues.
+3. Usar somente `zalek360-revisao` e `.env.revisao`, nunca exibir nem versionar seu conteúdo. Não tocar no projeto principal.
+4. As pendências da seção F não têm fase definida; discutir decisões/plano antes de implementá-las. Não inventar requisitos nem configurar SMTP externo sem os dados seguros do responsável.
