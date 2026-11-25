@@ -88,7 +88,7 @@ Implementação na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R
 
 ## Atualização — Fase 5: estoque mínimo e vendas (25/11/2026)
 
-- Branch `revisao/fase-5-estoque-vendas`, criada de `main` em `35ce777`, após o merge autorizado do PR #7 e a autorização da Fase 5.
+- [PR #8 aberto](https://github.com/DaviMarszalek/Zalek360/pull/8), branch `revisao/fase-5-estoque-vendas`, criada de `main` em `35ce777`, após o merge autorizado do PR #7 e a autorização da Fase 5. Aguardar novo OK para merge.
 - Reposição usa `máximo(0, mínimo − saldo livre + pendências de reservas ativas)`. A sugestão bruta fica separada da falta líquida de compra, que desconta compras planejadas/pedidas a receber. Canceladas/recebidas e reservas liberadas/consumidas não são somadas novamente.
 - Cartão **Repor estoque** no dashboard, lista dedicada e filtro **Abaixo do mínimo**. Apenas materiais ativos; abaixo do mínimo é estrito, sem incluir igualdade ou mínimo zero com saldo zero.
 - Planejar compra do item preenche a falta líquida e permite revisão antes de salvar; na lista de reposição, a ação fica desabilitada quando compras previstas já cobrem a necessidade. Pedidos sem ficha permanecem na lista de pendências, sem quantidade de material inventada.

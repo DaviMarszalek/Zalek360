@@ -60,7 +60,7 @@
 - Capturador smtp4dev confirmou destinatário, assunto, texto revisado e PDF anexado, com uma mensagem por chave. Testes cobrem upgrade, concorrência, erro SMTP, campos públicos e MIME Unicode. Conta/provedor real não foi testado.
 - Upgrade preservou hashes/contagens de **24 produtos, 24 orçamentos, 37 itens e 11 pedidos** existentes, antes dos E2E. Modal validado em 360/1280 px com rolagem interna até a confirmação, sem rolagem horizontal da página; capturas ignoradas em `data/revisao-fase4`.
 - Ambiente de revisão restaurado sem SMTP direto. Capturador local em `http://localhost:5180`, sem relay externo; o override `docker-compose.email-teste.yml` é exclusivo da revisão. Ambiente principal e segredos preservados.
-- Fase 5 autorizada e implementada na branch `revisao/fase-5-estoque-vendas`: cartão/lista de reposição e filtro abaixo do mínimo; vendas entregues no mês em quantidade/valor; filtros de pedidos por cliente, status e período com referência de data do pedido/entrega.
+- Fase 5 — [PR #8 aberto](https://github.com/DaviMarszalek/Zalek360/pull/8), autorizada e implementada na branch `revisao/fase-5-estoque-vendas`: cartão/lista de reposição e filtro abaixo do mínimo; vendas entregues no mês em quantidade/valor; filtros de pedidos por cliente, status e período com referência de data do pedido/entrega.
 - Sugestão bruta = máximo de zero e mínimo − saldo livre + pendências; falta líquida desconta compras previstas. Ambas ficam visíveis; a compra é sugerida e revisável, sem criação automática. Materiais inativos são excluídos das duas visões de reposição.
 - Validação Fase 5: backend **139 aprovados, 0 falhas, 0 ignorados**, PostgreSQL real; Vitest **8/8**; Edge **15/15**. `npm ci`, typecheck, build local e Compose padrão aprovados. Sem migration ou alteração de esquema; comparador não foi reexecutado.
 - Atualização preservou hashes/contagens de **30 produtos, 39 orçamentos, 54 itens, 13 pedidos e 11 matérias-primas**, antes dos E2E.
@@ -117,6 +117,6 @@ Criar branch nova da fase seguinte a partir do `main` atualizado somente depois 
 1. Ler `AGENTS.md` e este arquivo.
 2. Conferir `git status` e a branch antes de trocar de contexto. Retomar `revisao/fase-5-estoque-vendas` enquanto seu PR estiver aberto; atualizar `origin` e integrar `origin/main` por merge, preservando alterações locais.
 3. Abrir Docker Desktop e confirmar “Engine running”. Não tocar no projeto principal.
-4. PR #7 está mesclado. Conferir o PR da Fase 5, aberto para revisão; não mesclar sem novo OK do usuário.
+4. PR #7 está mesclado. Conferir o [PR #8 da Fase 5](https://github.com/DaviMarszalek/Zalek360/pull/8), aberto para revisão; não mesclar sem novo OK do usuário.
 5. Usar o ambiente de revisão com `docker compose -p zalek360-revisao --env-file .env.revisao ...`; nunca exibir ou adicionar o `.env.revisao`.
 6. Aguardar aprovação para mesclar a Fase 5 e para iniciar a Fase 6, em branch nova do `main` atualizado e com plano curto aprovado.
