@@ -7,7 +7,7 @@ import { catalogoService, estoqueService } from "@/services";
 import { erroCampo, erroDaApi } from "@/lib/api";
 import type { Produto } from "@/types/api";
 
-export function FormularioProduto({ produto, aoSalvar }: { produto?: Produto; aoSalvar: () => Promise<void> }) {
+export function FormularioProduto({ produto, aoSalvar }: { produto?: Produto; aoSalvar: (produto: Produto) => Promise<void> }) {
   const [nome, setNome] = useState(produto?.nome ?? "");
   const [categoria, setCategoria] = useState(produto?.categoria ?? "");
   const [descricao, setDescricao] = useState(produto?.descricaoBase ?? "");

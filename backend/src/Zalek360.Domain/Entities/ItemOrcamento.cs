@@ -21,7 +21,8 @@ public sealed record DadosItemOrcamento(
     decimal ValorUnitario,
     decimal ValorPersonalizacaoUnitario,
     DadosPersonalizacao Personalizacao,
-    IReadOnlyList<ArquivoAnexo> Anexos);
+    IReadOnlyList<ArquivoAnexo> Anexos,
+    decimal? CustoUnitarioInterno = null);
 
 /// <summary>RF 4.1.2.1 / 4.1.2.2 — item do orçamento com valores e especificação de personalização.</summary>
 public class ItemOrcamento : Entidade
@@ -38,6 +39,8 @@ public class ItemOrcamento : Entidade
     public string? Descricao { get; private set; }
     public int Quantidade { get; private set; }
     public decimal ValorUnitario { get; private set; }
+    /// <summary>Custo conhecido na inclusão/troca do produto. Exclusivo da análise interna, sem backfill do legado.</summary>
+    public decimal? CustoUnitarioInterno { get; private set; }
     public decimal ValorPersonalizacaoUnitario { get; private set; }
     public decimal SubtotalProduto { get; private set; }
     public decimal TotalPersonalizacao { get; private set; }
@@ -132,6 +135,7 @@ public class ItemOrcamento : Entidade
         Descricao = TextoOpcional.Limpar(d.Descricao);
         Quantidade = d.Quantidade;
         ValorUnitario = Dinheiro.Arredondar(d.ValorUnitario);
+        CustoUnitarioInterno = d.CustoUnitarioInterno;
         ValorPersonalizacaoUnitario = Dinheiro.Arredondar(d.ValorPersonalizacaoUnitario);
         TipoPersonalizacao = d.Personalizacao.TipoPersonalizacao!.Trim();
         CorPeca = d.Personalizacao.CorPeca!.Trim();

@@ -52,7 +52,24 @@ Implementação na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R
 - Upgrade do Compose preservou contagens e hashes dos **8 produtos, 16 orçamentos e 7 pedidos** existentes, antes dos novos dados de E2E. O ambiente principal não foi acessado.
 - Consulta de pesquisa anterior à exclusão é cancelada antes de atualizar o catálogo, para não reapresentar o item removido. Preço/custo nulos aparecem como “Não informado”, sem serem convertidos em zero.
 - Pendências gerais mantidas: cenário Homem-Aranha completo, inspeção das demais rotas em tamanhos móveis e foco/teclado em todos os modais.
-- Preço automático, margem no orçamento, produto novo dentro do orçamento e miniaturas permanecem na Fase 3. Tela de Usuários e demais configurações administrativas não foram antecipadas.
+- Na entrega da Fase 2, preço automático, margem, produto no orçamento e miniaturas ficaram para a Fase 3 (atualização abaixo). Tela de Usuários e demais configurações administrativas não foram antecipadas.
+
+## Atualização — Fase 3: orçamento (24/11/2026)
+
+- [PR #6 aberto](https://github.com/DaviMarszalek/Zalek360/pull/6), branch `revisao/fase-3-orcamento`, criada de `main` em `3c827a0` após o merge autorizado do PR #5. Plano aprovado pelo usuário; aguardar novo OK para merge.
+- Preço aplicado na seleção do produto, com edição, aviso e restauração. Abrir edição não altera preço histórico; produto sem preço pede valor manual.
+- Modal compartilha o cadastro do catálogo e seleciona o novo produto mantendo os dados do orçamento. Descrição/preço já preenchidos no item são preservados.
+- Análise interna por API para os dois perfis: total com personalização após desconto menos custo dos produtos, sem despesas adicionais; percentual sobre a venda. Valores incompletos/custo ausente não geram margem fictícia; total zero não gera percentual.
+- Custo registrado ao incluir/trocar o produto; edição do mesmo produto mantém o custo e nome históricos, inclusive quando ele foi inativado. Produto inativo não pode ser usado em item novo. Os DTOs da proposta e o gerador de PDF permanecem sem custo/margem.
+- Disponibilidade atual por item, na ordem dos itens, incluindo reservas ativas do próprio pedido. Sem reserva ou bloqueio por esta consulta. Produtos sem composição e matérias-primas inativas são indicados.
+- Miniaturas autenticadas no formulário/detalhe do orçamento e nas referências do pedido. Link e ícone mantidos para outros formatos; imagem indisponível tem fallback.
+- Migration `20261124231443_CustoInternoNoItemOrcamento` adiciona uma coluna nullable, sem backfill. Teste PostgreSQL faz upgrade desde a Fase 2 preservando item e valores; custo histórico segue nulo mesmo com custo atual no catálogo.
+- Backend: **124 aprovados, 0 falhas e 0 ignorados**, com PostgreSQL real. Comparador: **0 divergências**, 19 tabelas, 222 colunas, 67 constraints, 67 índices, 2 sequências.
+- Vitest **8/8**, incluindo preservação dos campos/anexos, preço/edição/restauração e modal; `npm ci`, typecheck e build local aprovados.
+- Compose construído e iniciado com `up --build -d --wait`, exclusivamente na revisão (3100/5100/55432). Contagens e hashes dos **14 produtos, 19 orçamentos, 28 itens e 7 pedidos** existentes foram preservados no upgrade, antes dos E2E.
+- Edge **10/10**: mantém as regressões das Fases 1/2 e percorre, para cada perfil, seleção/restauração do preço, produto no modal com composição, margem, falta informativa, gravação, aprovação e miniatura no pedido. Confere a análise após reservar materiais para o próprio pedido e não registra erros JavaScript.
+- Formulário/modal, detalhe do orçamento e pedido verificados em **360 px/1280 px**, sem rolagem horizontal da página. Capturas locais ficam ignoradas em `data/revisao-fase3`. A revisão geral de teclado de todos os modais permanece pendente.
+- O envio por e-mail/WhatsApp, o cenário Homem-Aranha completo e o acabamento geral continuam nas fases previstas em `docs/10-contexto-e-proximos-passos.md`.
 
 ## Limitações da execução ponta a ponta
 
@@ -90,16 +107,16 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R2.11 Histórico de movimentos por item | Atende | Endpoint `materias-primas/{id}/movimentos` e interface mostram histórico. | Preservar; melhorar filtros por tipo/período se necessário. | P | Baixo |
 | R3.1 Produto com nome, descrição e composição | Atende na Fase 2 | [FormularioProduto.tsx](../frontend/features/produtos/FormularioProduto.tsx) salva dados, valores e composição no mesmo fluxo; operação transacional na API. | Preservar. | M | Alto |
 | R3.2 Cadastro de produto na tela de produtos | Atende na Fase 2 | Rota `/produtos`, menu para Gestor/Administrador, pesquisa, cadastro e edição; Estoque aponta para o catálogo. | Preservar. | M | Médio |
-| R3.3 Produto criado dentro do orçamento | Não atende | O formulário de orçamento lista produtos existentes, mas não possui modal "Novo produto". | Criar modal no próprio formulário, criar via API, atualizar lista e selecionar sem limpar a descrição/anexos já preenchidos. | M | Alto |
-| R3.4 Produto criado entra no catálogo | Não atende | Não há criação a partir do orçamento. O cadastro na tela Produtos cria catálogo, mas não retorna ao fluxo do orçamento. | Compartilhar o mesmo serviço/API e atualizar TanStack Query após criação. | M | Alto |
+| R3.3 Produto criado dentro do orçamento | Atende na Fase 3 | Modal compartilha `FormularioProduto`, com preço/custo/composição e seleção no item. | Preservar dados preenchidos do orçamento. | M | Alto |
+| R3.4 Produto criado entra no catálogo | Atende na Fase 3 | Cadastro usa a mesma API de produtos e invalida a consulta de catálogo, sem sair do orçamento. | Preservar. | M | Alto |
 | R3.5 Duplicar produto | Atende na Fase 2 | API e interface duplicam descrição, preço/custo e composição; nome novo obrigatório, sem copiar vínculos históricos. | Preservar. | M | Médio |
-| R3.6 Preço sugerido no produto | Parcial — catálogo pronto na Fase 2 | Produto já possui preço de venda/custo opcionais. Orçamento mantém o valor informado manualmente. | Fase 3: aplicar preço com aviso/restauração e margem interna para Gestor/Administrador; nunca incluir custo/margem em PDF ou mensagens. | M | Alto |
+| R3.6 Preço sugerido no produto | Atende na Fase 3 | Seleção aplica preço; alteração mostra aviso/restauração. Análise interna para Gestor/Administrador usa custo registrado no item, sem estimar legado pelo catálogo atual. | Preservar histórico; custo/margem nunca no PDF ou mensagens. | M | Alto |
 | R4.1 Escolher cliente | Atende | Formulário possui busca e seleção de cliente em [FormularioOrcamento.tsx](../frontend/features/orcamentos/FormularioOrcamento.tsx). | Preservar. | P | Baixo |
 | R4.2 Escolher produto existente | Atende | Formulário lista produtos existentes e permite quantidade/valores/personalização. | Preservar. | P | Baixo |
-| R4.3 Criar novo produto no item | Não atende | Não existe modal ou ação no formulário. | Criar modal compartilhado; manter cliente, itens, desconto e anexos. | M | Alto |
-| R4.4 Foto/referência por item | Parcial | O orçamento permite anexar arquivos por item e o pedido renderiza os anexos copiados. | Verificar miniatura real no navegador e padronizar abertura/thumbnail, principalmente em celular. | M | Médio |
-| R4.5 Miniatura no pedido | Parcial | [DetalhePedido.tsx](../frontend/features/pedidos/DetalhePedido.tsx) mostra anexos como links com ícone; não há garantia visual de miniatura. | Exibir miniatura apenas para imagem e manter link seguro para PDF/outros arquivos. | P/M | Médio |
-| R4.6 Disponibilidade das matérias-primas no orçamento | Não atende | O cálculo do orçamento não consulta posição disponível; não há indicação disponível/falta X. | Consultar posição pelo backend no preview/cálculo e usar erro/aviso informativo sem bloquear. | M | Alto |
+| R4.3 Criar novo produto no item | Atende na Fase 3 | Modal mantém cliente, outros itens, desconto, personalização, descrição/valor já preenchidos e anexos. | Preservar. | M | Alto |
+| R4.4 Foto/referência por item | Atende na Fase 3 | `ReferenciaAnexo` mostra imagem autenticada no formulário/detalhe; mantém abertura do arquivo e fallback para falha. | Preservar. | M | Médio |
+| R4.5 Miniatura no pedido | Atende na Fase 3 | Pedido mostra miniatura das imagens copiadas do orçamento; arquivos de outros formatos mantêm ícone/link autenticado. | Preservar. | P/M | Médio |
+| R4.6 Disponibilidade das matérias-primas no orçamento | Atende na Fase 3 | Backend simula necessidade/saldo/falta por item sem duplicar saldo compartilhado; inclui reservas do próprio pedido. Não grava reservas nem bloqueia orçamento. | Preservar caráter informativo. | M | Alto |
 | R4.7 Cálculo automático | Atende | O orçamento usa cálculo posterior no backend e mostra totais no resumo. | Preservar cálculo no backend; não duplicar regra no frontend. | P | Médio |
 | R4.8 PDF | Atende | Gestor e Administrador consultam pelo GET de pré-visualização (sem histórico) e exportam pelo POST auditado. Teste de integração valida ambos. | Preservar. | P | Baixo |
 | R4.9 Contato e decisão existentes | Atende | Fluxo mantém elaboração, apresentação, aguardando retorno, decisão e aprovação. | Preservar; padronizar comunicação em português. | P | Médio |
@@ -140,7 +157,7 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 - A coluna `condicao_pagamento` em orçamentos e pedidos agora permite nulo; a migration nova não transforma os valores existentes.
 - O seed de banco novo contém `gestao@zalekpersonalizados.com.br`; bancos já preenchidos mantêm suas contas anteriores.
 - Quantidades inteiras já estão presentes em migration/modelo; o cadastro fixa unidade `un`.
-- O catálogo da Fase 2 permite dados/valores/composição, duplicação, inativação/reativação e exclusão por Administrador de produto nunca usado; aplicação do preço no orçamento fica na Fase 3.
+- O catálogo da Fase 2 permite dados/valores/composição, duplicação, inativação/reativação e exclusão por Administrador de produto nunca usado; preço automático e análise interna foram acrescentados na Fase 3.
 - Não existe chamada de produto novo no formulário de orçamento.
 - A disponibilidade das matérias-primas não é apresentada no cálculo do orçamento.
 - O dashboard usa orçamentos aprovados no mês e não pedidos entregues em quantidade/valor.
@@ -180,8 +197,8 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 ### Médio
 
 7. **Duplicar produto — resolvido na Fase 2**
-8. **Preço sugerido — cadastrado no catálogo na Fase 2; aplicação no orçamento pendente na Fase 3**
-9. **Disponibilidade da ficha não aparece no orçamento**
+8. **Preço sugerido — resolvido na Fase 3, com aviso e restauração**
+9. **Disponibilidade da ficha no orçamento — resolvido na Fase 3, como informação sem bloqueio**
 10. **Dashboard não possui vendas entregues nem reposição**
 11. **Estoque não possui filtro dedicado abaixo do mínimo**
 12. **Revisão de responsividade e teclado incompleta**

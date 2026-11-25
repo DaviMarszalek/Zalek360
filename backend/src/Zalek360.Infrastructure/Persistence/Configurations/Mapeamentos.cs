@@ -251,6 +251,7 @@ internal sealed class ItemOrcamentoMap : IEntityTypeConfiguration<ItemOrcamento>
         b.Property(x => x.ProdutoNome).HasMaxLength(100).IsRequired();
         b.Property(x => x.Descricao).HasMaxLength(500);
         b.Property(x => x.ValorUnitario).HasPrecision(Tipos.Precisao, Tipos.Escala);
+        b.Property(x => x.CustoUnitarioInterno).HasPrecision(12, 2);
         b.Property(x => x.ValorPersonalizacaoUnitario).HasColumnName("valor_personalizacao_unit").HasPrecision(Tipos.Precisao, Tipos.Escala);
         b.Property(x => x.SubtotalProduto).HasPrecision(Tipos.Precisao, Tipos.Escala);
         b.Property(x => x.TotalPersonalizacao).HasPrecision(Tipos.Precisao, Tipos.Escala);

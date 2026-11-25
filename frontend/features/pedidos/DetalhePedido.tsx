@@ -3,8 +3,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Ban, Check, FileImage, FileText, Info } from "lucide-react";
+import { ArrowRight, Ban, Check, FileText, Info } from "lucide-react";
 import { AreaTexto, Aviso, BadgePedido, Botao, CabecalhoPagina, Campo, Cartao, Carregando, ErroCarregamento, Etiqueta, Info2, Modal } from "@/components/ui";
+import { ReferenciaAnexo } from "@/components/ui/ReferenciaAnexo";
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, LinhaDoTempo, Voltar } from "@/features/comum";
 import { MateriaisDoPedido } from "@/features/pedidos/MateriaisDoPedido";
@@ -168,7 +169,7 @@ export function DetalhePedido() {
             {anexos.length === 0 ? <p className="text-sm text-texto-fraco">Nenhum arquivo foi anexado ao orçamento de origem.</p>
               : <div className="flex flex-wrap gap-2">{anexos.map((a) => (
                 <a key={a.id} href={anexosService.url(a.id, true)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-md border border-borda bg-white px-2.5 py-1.5 text-[13px] hover:border-primaria">
-                  {a.ehImagem ? <FileImage className="h-4 w-4 text-texto-fraco" /> : <FileText className="h-4 w-4 text-texto-fraco" />}{a.nome}
+                  <ReferenciaAnexo anexo={a} />{a.nome}
                   <span className="numero text-xs text-texto-fraco">{tamanhoArquivo(a.tamanhoBytes)}{p.itens.length > 1 && ` · item ${a.item}`}</span>
                 </a>))}</div>}
           </Cartao>

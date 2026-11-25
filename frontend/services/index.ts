@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 import axios from "axios";
 import type {
-  OpcaoCatalogo, OpcaoCatalogoRequisicao, Anexo, Calculo, ClienteDetalhe, ClienteListaItem, ClienteRequisicao, ClienteVisaoGeral, Contato, Dashboard, DecisaoResultado,
+  AnaliseOrcamento, AnaliseOrcamentoRequest, OpcaoCatalogo, OpcaoCatalogoRequisicao, Anexo, Calculo, ClienteDetalhe, ClienteListaItem, ClienteRequisicao, ClienteVisaoGeral, Contato, Dashboard, DecisaoResultado,
   HistoricoEvento, ItemDetalhe, ListaComContagem, ListaFiltrada, LoginResposta, MeioContato, ObservacaoCliente, OpcoesOrcamento,
   OrcamentoDetalhe, OrcamentoListaItem, OrcamentoRequisicao, OrcamentoResumo, Pagina, PedidoDetalhe, PedidoListaItem, PedidoResumo,
   CompraMateriaPrima, FichaTecnica, MateriaPrima, MateriaisPedido, PendenciaEstoquePedido, MovimentoMateriaPrima, Produto, ProdutoFichaTecnica, ProdutoRequisicao, ResultadoDecisao, SituacaoCompraMateriaPrima, SituacaoOrcamento, SituacaoPedido, TipoPessoa, Usuario, VerificacaoDocumento,
@@ -61,6 +61,8 @@ export const clientesService = {
 };
 
 export const orcamentosService = {
+  analisar: (dados: AnaliseOrcamentoRequest, signal?: AbortSignal) => api.post<AnaliseOrcamento>("/orcamentos/analise-interna", dados, { signal }).then(r => r.data),
+  analiseInterna: (id: string, signal?: AbortSignal) => api.get<AnaliseOrcamento>(`/orcamentos/${id}/analise-interna`, { signal }).then(r => r.data),
   exportarPdf: async (id: string, inline = false, registrar = true) => {
     try {
       const url = `/orcamentos/${id}/${registrar ? "exportacoes" : "exportar-pdf"}`;

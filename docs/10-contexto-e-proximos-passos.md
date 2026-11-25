@@ -1,7 +1,7 @@
 # Contexto e próximos passos do Zalek360
 
 **Atualizado em:** 24/11/2026
-**Base consultada:** `main`/`origin/main` em `9fc55ff`, após o merge autorizado do PR #3 em 24/11/2026. Fase 2 na branch `revisao/fase-2-catalogo`.
+**Base consultada:** `main`/`origin/main` em `3c827a0`, após o merge autorizado do PR #5 em 24/11/2026. Fase 3 na branch `revisao/fase-3-orcamento`, com plano aprovado.
 
 ## A) Como o negócio funciona
 
@@ -29,7 +29,7 @@
 - **Responsável do orçamento:** sempre o usuário autenticado na criação; na edição, preservar o responsável original. Aprovado na Fase 1.
 - **Condição de pagamento:** opcional; vazia é exibida como “A combinar”. Aprovado na Fase 1.
 - **Opções gerenciáveis:** toda opção de domínio vinda do banco deve ser gerenciável pelo Administrador, incluindo produtos, tipos de personalização, condições de pagamento, motivos de decisão e categorias. Regra geral aprovada pelo usuário.
-- **Produto:** possui preço de venda e custo/preço pago opcionais no catálogo (Fase 2). Na Fase 3, o preço sugerirá o valor do item do orçamento, editável com aviso de alteração e opção de restaurar. Custo e margem aparecem apenas na tela para Gestor e Administrador, nunca no PDF ou em mensagens ao cliente. Aprovado nas Fases 2 e 3.
+- **Produto:** possui preço de venda e custo/preço pago opcionais no catálogo (Fase 2). Na Fase 3, o preço sugere o valor do item do orçamento, editável com aviso de alteração e opção de restaurar. O custo conhecido é registrado ao incluir/trocar o produto no item e preservado na edição do mesmo produto; custos antigos ausentes continuam não informados. A margem estimada usa total com personalização após desconto menos custo dos produtos, sem despesas adicionais, e percentual sobre a venda. Custo e margem aparecem apenas na tela para Gestor e Administrador, nunca no PDF ou em mensagens ao cliente. Aprovado nas Fases 2 e 3.
 - **Remoção de produto:** somente Administrador pode excluir definitivamente se nunca foi usado em orçamento/pedido; se já foi usado, inativar para preservar histórico e impedir novos usos. Aprovado para a Fase 2.
 - **Envio da proposta:** requisitos da Fase 4 aprovados pelo usuário. E-mail com mensagem revisável, PDF e SMTP configurado por variáveis `Email__*`; sem SMTP, abrir `mailto`, baixar o PDF e registrar apresentação somente após confirmação. WhatsApp com mensagem para copiar e link `wa.me`; anexar o PDF manualmente, sem link público. Modelos editáveis pelo Administrador.
 - **Estoque de produtos acabados/pronta-entrega:** fora do escopo atual; tratar somente se o usuário solicitar.
@@ -38,17 +38,22 @@
 
 ### Git e PRs
 
-- `main`/`origin/main`: `9fc55ff`, merge do PR #3 aprovado pelo usuário em 24/11/2026.
-- PRs #1 (Fase 0), #2 (Next.js), #3 (Fase 1/R1 definitiva) e #4 (regras/contexto): **MESCLADOS**.
+- `main`/`origin/main`: `3c827a0`, merge do PR #5 aprovado pelo usuário em 24/11/2026.
+- PRs #1 (Fase 0), #2 (Next.js), #3 (Fase 1/R1 definitiva), #4 (regras/contexto) e #5 (Fase 2/catálogo): **MESCLADOS**.
 - A Fase 1 teve 105 testes backend aprovados/0 ignorados, Vitest 5/5, Edge 4/4 e typecheck/build/Compose aprovados.
-- Fase 2 — [PR #5 aberto](https://github.com/DaviMarszalek/Zalek360/pull/5), branch `revisao/fase-2-catalogo`, criada do `main` atualizado. Plano aprovado pelo usuário; a entrega aguarda revisão e OK explícito para merge em PR próprio.
-- Implementado nesta fase: tela Produtos com pesquisa, cadastro/edição, composição, preço/custo opcionais, duplicação, inativação/reativação e exclusão definitiva por Administrador apenas quando nunca usado; Configurações para categorias, tipos de personalização, condições de pagamento e motivos de decisão.
+- Fase 2 — [PR #5 mesclado](https://github.com/DaviMarszalek/Zalek360/pull/5), com autorização explícita. Branch da entrega: `revisao/fase-2-catalogo`.
+- Implementado na Fase 2: tela Produtos com pesquisa, cadastro/edição, composição, preço/custo opcionais, duplicação, inativação/reativação e exclusão definitiva por Administrador apenas quando nunca usado; Configurações para categorias, tipos de personalização, condições de pagamento e motivos de decisão.
 - Migration `20261124220121_CatalogoProdutosEOpcoes` gerada via EF sobre o snapshot existente. Preço/custo dos produtos antigos permanecem nulos; categorias legadas são copiadas para opções sem alterar produtos/históricos. A semeadura das opções ocorre na migration, inclusive em bancos já existentes.
-- Comparador executado no ambiente de revisão: **0 divergências**, 19 tabelas, 221 colunas, 67 constraints, 67 índices e 2 sequências. Os bancos temporários foram removidos sem apagar volumes.
+- Comparador da Fase 2 executado no ambiente de revisão: **0 divergências**, 19 tabelas, 221 colunas, 67 constraints, 67 índices e 2 sequências. Os bancos temporários foram removidos sem apagar volumes.
 - **Validação final da Fase 2:** backend **117 aprovados, 0 falhas, 0 ignorados** com PostgreSQL real; Vitest **5/5**; Edge **8/8**; `npm ci`, typecheck, build local e Compose aprovados, em sequência.
 - Produtos/Configurações e formulários verificados em 360 px/1280 px, sem rolagem horizontal, com Escape nos modais. Dados/capturas locais ficam ignorados em `data/revisao-fase2`.
 - Antes dos E2E, o upgrade preservou contagens e hashes dos 8 produtos, 16 orçamentos e 7 pedidos existentes na revisão. Testes adicionais incluem consulta atrasada durante exclusão, 403 em configurações e apresentação correta de valores nulos.
-- Fase 3 e merge da Fase 2 ainda exigem autorização explícita.
+- Fase 3 — [PR #6 aberto](https://github.com/DaviMarszalek/Zalek360/pull/6), autorizada e implementada na branch `revisao/fase-3-orcamento`: preço automático com aviso/restauração; análise interna de custo/margem para Gestor e Administrador; cadastro de produto em modal mantendo os dados do orçamento; miniaturas de referência no orçamento/pedido; necessidade/saldo/falta de materiais por item, informativos.
+- Migration via EF `20261124231443_CustoInternoNoItemOrcamento`: somente custo nullable no item, sem backfill. Histórico de nome/preço/custo preservado; catálogo não altera itens existentes.
+- Validação Fase 3: backend **124 aprovados, 0 falhas, 0 ignorados**, PostgreSQL real; Vitest **8/8**; Edge **10/10**; `npm ci`, typecheck, build local e Compose aprovados, em sequência. Comparador: **0 divergências**, 19 tabelas, 222 colunas, 67 constraints, 67 índices, 2 sequências.
+- Upgrade da Fase 3 preservou contagens/hashes de **14 produtos, 19 orçamentos, 28 itens e 7 pedidos**, antes dos dados novos dos E2E. Ambiente principal não foi acessado.
+- E2E da Fase 3 executa os dois perfis até o pedido, verifica margem/materiais e carregamento real das miniaturas. Formulário/modal, detalhe e pedido verificados em 360 px/1280 px, sem rolagem horizontal da página; capturas ignoradas em `data/revisao-fase3`.
+- Merge da Fase 3 e início da Fase 4 exigem novas autorizações explícitas do usuário.
 - Referências: [PR #3](https://github.com/DaviMarszalek/Zalek360/pull/3), [PR #4](https://github.com/DaviMarszalek/Zalek360/pull/4) e matriz em `docs/09-revisao-funcional.md`.
 
 ### Ambiente
@@ -59,9 +64,9 @@
 
 ## E) Próximas fases, na ordem aprovada
 
-A **Fase 2 — Catálogo de produtos** está nesta branch: produtos com composição/valores no mesmo formulário, ciclo de vida do catálogo e opções gerenciáveis persistidas. A edição não altera os valores dos itens já registrados; preço automático e margem no orçamento ficam na Fase 3.
+As Fases 2 (catálogo) e 3 (orçamento) têm implementação concluída; a Fase 3 aguarda a revisão de seu PR. A ordem abaixo permanece aprovada, sem autorização automática para iniciar uma fase futura.
 
-1. **Fase 3 — Orçamento:** preço automático do produto com aviso e restauração; margem interna para Gestor e Administrador; modal “Novo produto” sem perder dados do orçamento; miniatura de referência no orçamento e pedido; disponibilidade/falta de matérias-primas por item, informativa e sem bloquear.
+1. **Fase 3 — Orçamento:** preço automático do produto com aviso e restauração; margem interna para Gestor e Administrador; modal “Novo produto” sem perder dados do orçamento; miniatura de referência no orçamento e pedido; disponibilidade/falta de matérias-primas por item, informativa e sem bloquear. Implementada nesta branch; aguardar OK para merge.
 2. **Fase 4 — Envio da proposta:** e-mail SMTP com PDF, mensagem editável antes do envio e teste com smtp4dev/MailHog; fallback `mailto` quando SMTP não estiver configurado; WhatsApp com mensagem pronta e `wa.me`, sem link público do PDF.
 3. **Fase 5 — Estoque mínimo e vendas:** filtro abaixo do mínimo, cartão e lista “Repor estoque” com sugestão `mínimo − disponível + pendências`; dashboard de pedidos entregues no mês e filtros por período, cliente e status.
 4. **Fase 6 — Cenário completo e acabamento:** E2E do cenário Homem-Aranha completo; documentar em `docs/08-mvp2.md` que o fluxo simples substitui OS por etapas; concluir pendências R8.
@@ -73,7 +78,7 @@ Criar branch nova da fase seguinte a partir do `main` atualizado somente depois 
 ### Validação ainda não executada
 
 - Cenário Homem-Aranha completo de ponta a ponta.
-- Inspeção visual das demais rotas em 360 px e 1280 px. Produtos, Configurações e seus formulários já foram verificados na Fase 2.
+- Inspeção visual das demais rotas em 360 px e 1280 px. Produtos/Configurações e seus formulários foram verificados na Fase 2; formulário/modal do orçamento, detalhe e pedido foram verificados na Fase 3.
 - Navegação por teclado em todos os modais: foco inicial, Escape, contenção e retorno do foco.
 - Revisão de estados de carregamento/erro/vazio em todas as consultas e ações.
 - Fase 4: envio real de e-mail via servidor SMTP de teste, incluindo destinatário, assunto e PDF anexado.
@@ -81,8 +86,8 @@ Criar branch nova da fase seguinte a partir do `main` atualizado somente depois 
 ### Funcionalidades ainda pendentes na matriz R1–R8
 
 - Matérias-primas: código único e categoria; recebimento parcial; motivo de ajuste obrigatório e detalhado.
-- Catálogo/orçamento: cadastro a partir do orçamento, aplicação automática do preço com aviso/restauração e margem interna continuam na Fase 3. A tela Produtos, duplicação, composição/valores e remoção com preservação do histórico foram implementadas na Fase 2.
-- Orçamento/pedido: miniaturas verificadas no navegador e disponibilidade de matérias-primas por item.
+- Catálogo/orçamento: requisitos das Fases 2/3 implementados, incluindo modal de produto, preço com aviso/restauração, margem interna e preservação do histórico. Aguardar revisão/merge da Fase 3.
+- Orçamento/pedido: miniaturas e disponibilidade por item implementadas na Fase 3; envio da proposta permanece na Fase 4.
 - Estoque/pedidos: validar em fluxo real a baixa ao iniciar produção e atualizar documentação da decisão de não usar OS por etapas.
 - Reposição: cartão/lista “Repor estoque”, filtro abaixo do mínimo e quantidade sugerida com pendências.
 - Dashboard/vendas: valor e quantidade de pedidos entregues no mês, rótulo consolidado de orçamentos em aberto e filtros de pedidos por período/cliente/status.
@@ -91,15 +96,15 @@ Criar branch nova da fase seguinte a partir do `main` atualizado somente depois 
 ### Notas de sincronização da documentação
 
 - A matriz R1 e a nota R3.6 em `docs/09-revisao-funcional.md` foram atualizadas nesta branch: preço de venda/custo e margem interna para Gestor e Administrador já estão aprovados para as Fases 2/3.
-- Configurações de opções foram implementadas nesta Fase 2, com GET/POST/PUT exclusivos do Administrador e testes 403 para os outros perfis. A tela de Usuários continua pendente; GET/POST `/api/usuarios` permanecem exclusivos do Administrador. Modelos de mensagem, dados da empresa e e-mail pela interface ficam nas fases correspondentes, sem alteração de segredos nesta entrega.
+- Configurações de opções foram implementadas na Fase 2, com GET/POST/PUT exclusivos do Administrador e testes 403 para os outros perfis. A tela de Usuários continua pendente; GET/POST `/api/usuarios` permanecem exclusivos do Administrador. Modelos de mensagem, dados da empresa e e-mail pela interface ficam nas fases correspondentes, sem alteração de segredos nesta entrega.
 - `docs/08-mvp2.md` ainda descreve OS como fase futura. A decisão de substituir OS por fluxo simples foi aprovada; registrar a decisão na Fase 6. Não remover código legado de OS sem perguntar.
 - Para implementar SMTP na Fase 4, o usuário precisa providenciar uma conta de e-mail habilitada para SMTP e senha de aplicativo, além dos parâmetros do provedor. Nunca solicitar que esses segredos sejam commitados; configurar somente no ambiente local/seguro.
 
 ## G) Como retomar na próxima sessão
 
 1. Ler `AGENTS.md` e este arquivo.
-2. Conferir `git status` e a branch antes de trocar de contexto. Retomar `revisao/fase-2-catalogo` enquanto seu PR estiver aberto; atualizar `origin` e integrar `origin/main` por merge, preservando alterações locais.
+2. Conferir `git status` e a branch antes de trocar de contexto. Retomar `revisao/fase-3-orcamento` enquanto seu PR estiver aberto; atualizar `origin` e integrar `origin/main` por merge, preservando alterações locais.
 3. Abrir Docker Desktop e confirmar “Engine running”. Não tocar no projeto principal.
-4. Conferir o estado do PR #5 (Fase 2) no GitHub. Não mesclar nenhum PR sem OK do usuário.
+4. PR #5 está mesclado. Conferir o [PR #6 da Fase 3](https://github.com/DaviMarszalek/Zalek360/pull/6), aberto para revisão; não mesclar sem novo OK do usuário.
 5. Usar o ambiente de revisão com `docker compose -p zalek360-revisao --env-file .env.revisao ...`; nunca exibir ou adicionar o `.env.revisao`.
-6. Aguardar aprovação para mesclar a Fase 2 e para iniciar a Fase 3, em branch nova do `main` atualizado e com plano curto aprovado.
+6. Aguardar aprovação para mesclar a Fase 3 e para iniciar a Fase 4, em branch nova do `main` atualizado e com plano curto aprovado.
