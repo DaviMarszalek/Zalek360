@@ -29,13 +29,19 @@ function FormularioProposta({ o, dados, aoFechar, aoOutro, aoOcupado }: { o: Orc
   const mailto = `mailto:${encodeURIComponent(destino.trim())}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(mensagemEmail)}`;
   const whatsapp = `https://wa.me/${internacional}?text=${encodeURIComponent(mensagemWa)}`;
 
-  async function atualizar() {
-    await Promise.all([qc.invalidateQueries({ queryKey: ["orcamento", o.id] }), qc.invalidateQueries({ queryKey: ["orcamentos"] }), qc.invalidateQueries({ queryKey: ["dashboard"] }), qc.invalidateQueries({ queryKey: ["cliente", o.cliente.id] }), qc.invalidateQueries({ queryKey: ["proposta", o.id] })]);
+  // A gravação já foi confirmada pela API: aplica o detalhe retornado e fecha o modal na hora.
+  // As demais consultas (análise interna, histórico, listas) são atualizadas em segundo plano,
+  // sem prender o modal aberto enquanto recarregam.
+  function concluir(detalhe: OrcamentoDetalhe | null, mensagem: string) {
+    if (detalhe) qc.setQueryData(["orcamento", o.id], detalhe);
+    for (const queryKey of [["orcamento", o.id], ["orcamentos"], ["dashboard"], ["cliente", o.cliente.id]]) void qc.invalidateQueries({ queryKey });
+    // A preparação (["proposta", id]) usa gcTime 0 e é descartada quando o modal fecha.
+    toast("sucesso", mensagem); aoFechar();
   }
   const enviar = useMutation({ mutationFn: () => propostaService.enviar(o.id, { chaveEnvio: chave, destinatario: destino, assunto, mensagem: mensagemEmail, versao: dados.versao }), retry: false,
-    onMutate: () => { aoOcupado(true); setTentou(true); setAviso(""); }, onSettled: () => aoOcupado(false), onSuccess: async () => { await atualizar(); toast("sucesso", "Proposta aceita pelo servidor de e-mail e apresentação registrada."); aoFechar(); } });
-  const consultar = useMutation({ mutationFn: () => propostaService.consultar(o.id, chave), retry: false, onSuccess: async r => {
-    if (r.situacao === "Enviado") { await atualizar(); toast("sucesso", "O envio foi confirmado e já está registrado."); aoFechar(); }
+    onMutate: () => { aoOcupado(true); setTentou(true); setAviso(""); }, onSettled: () => aoOcupado(false), onSuccess: r => concluir(r.orcamento, "Proposta aceita pelo servidor de e-mail e apresentação registrada.") });
+  const consultar = useMutation({ mutationFn: () => propostaService.consultar(o.id, chave), retry: false, onSuccess: r => {
+    if (r.situacao === "Enviado") concluir(null, "O envio foi confirmado e já está registrado.");
     else setAviso("O envio continua sem confirmação. Confira sua caixa de enviados antes de preparar outro envio.");
   } });
   const pdf = useMutation({ mutationFn: () => propostaService.pdf(o.id), onSuccess: arquivo => {
@@ -43,7 +49,7 @@ function FormularioProposta({ o, dados, aoFechar, aoOutro, aoOcupado }: { o: Orc
     a.href = url; a.download = `Proposta-${String(o.numero).padStart(6, "0")}.pdf`; document.body.appendChild(a); a.click(); a.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000); setBaixou(true); void qc.invalidateQueries({ queryKey: ["orcamento", o.id] });
   } });
-  const confirmar = useMutation({ mutationFn: () => propostaService.confirmar(o.id, canal, dados.versao), retry: false, onMutate: () => aoOcupado(true), onSettled: () => aoOcupado(false), onSuccess: async () => { await atualizar(); toast("sucesso", "Apresentação da proposta registrada."); aoFechar(); } });
+  const confirmar = useMutation({ mutationFn: () => propostaService.confirmar(o.id, canal, dados.versao), retry: false, onMutate: () => aoOcupado(true), onSettled: () => aoOcupado(false), onSuccess: detalhe => concluir(detalhe, "Apresentação da proposta registrada.") });
   const pendente = enviar.isPending || confirmar.isPending;
   async function copiar() {
     try { await navigator.clipboard.writeText(mensagem); toast("sucesso", "Mensagem copiada."); } catch { setAviso("Não foi possível copiar. Selecione o texto da mensagem e copie manualmente."); }
