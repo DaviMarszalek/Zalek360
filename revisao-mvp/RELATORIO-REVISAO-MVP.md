@@ -631,7 +631,7 @@ Cada fase corresponde a uma branch e um PR, seguindo o fluxo do `AGENTS.md`.
 - `backend/**/bin|obj`;
 - capturas dos E2E em `data/revisao-fase4|5|6`.
 
-**Incidente corrigido:** a primeira execução do script de interface gravou as capturas em `C:\Users\DAVICORREIAMARSZALEK\OneDrive%20-%20Grupo%20Wolf%20360\...` (caminho com `%20`). Os arquivos foram movidos para `evidencias/ui/`, a árvore vazia criada por engano foi removida e o script foi corrigido.
+**Incidente corrigido:** a primeira execução do script de interface gravou as capturas em uma pasta irmã do repositório com `%20` no nome (caminho com `%20`). Os arquivos foram movidos para `evidencias/ui/`, a árvore vazia criada por engano foi removida e o script foi corrigido.
 
 **Segredos:** nenhum valor de `.env.revisao` foi exibido ou gravado. Os tokens ficaram numa pasta temporária fora do repositório. A varredura de `revisao-mvp/` por JWT e pela senha de demonstração está limpa.
 
