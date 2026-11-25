@@ -21,3 +21,7 @@ data/
 .vscode/
 .idea/
 *.user
+
+# Revisão do MVP: só o relatório é versionado; evidências, logs e scripts ficam locais
+revisao-mvp/*
+!revisao-mvp/RELATORIO-REVISAO-MVP.md

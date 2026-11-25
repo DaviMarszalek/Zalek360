@@ -1,6 +1,6 @@
 # Contexto e próximos passos do Zalek360
 
-**Atualizado em:** 25/11/2026
+**Atualizado em:** 25/11/2026 (Fase 7)
 **Base de partida da Fase 6:** `main`/`origin/main` em `2da907d`, após o merge autorizado do PR #8 em 25/11/2026. Entrega na branch `revisao/fase-6-cenario-acabamento`. O usuário autorizou executar e encerrar as fases restantes após validação, enquanto estiver ausente; conferir o estado atual no GitHub ao retomar.
 
 ## A) Como o negócio funciona
@@ -73,6 +73,16 @@
 - Atualização preservou hashes/contagens de **46 produtos, 63 orçamentos, 82 itens, 29 pedidos e 25 matérias-primas**, antes dos dados novos dos E2E. Capturas complementares de rotas/abas em 360/1280 px, sem rolagem horizontal da página; artefatos ignorados em `data/revisao-fase6`. Ambiente principal preservado.
 - `docs/08-mvp2.md` atualizado: fluxo simples substitui OS por etapas. Código legado de OS preservado. Esta é a última fase definida; os itens sem fase ficam na seção F.
 - Referências: [PR #3](https://github.com/DaviMarszalek/Zalek360/pull/3), [PR #4](https://github.com/DaviMarszalek/Zalek360/pull/4) e matriz em `docs/09-revisao-funcional.md`.
+
+### Fase 7 — correções da revisão do MVP (25/11/2026)
+
+A revisão completa do MVP (`revisao-mvp/RELATORIO-REVISAO-MVP.md`, commit revisado `5faa20e`) gerou o roadmap "Agora". O usuário autorizou executar as fases 7.0 a 7.3 e mesclar cada PR somente com a validação completa verde. Funcionalidades da seção F continuam fora.
+
+- **7.0 — E2E instável e comando de testes:**
+  - O modal "Enviar proposta" fechava somente depois de recarregar todas as consultas do orçamento, inclusive a análise interna, que fica lenta com o volume. Na suíte completa isso passava dos 5 s do teste `proposta.spec.ts:100`. Agora o modal aplica o detalhe retornado pela API e fecha na hora; as demais consultas atualizam em segundo plano.
+  - O teste espera a resposta 200 de `POST .../proposta/confirmacao` e restaura o modelo global de e-mail em `finally`.
+  - Os testes PostgreSQL usam 120 s para criar e remover bancos temporários. Antes, um `DROP DATABASE` lento estourou os 30 s padrão.
+  - O comando de testes .NET do `AGENTS.md` passou a usar `backend/scripts/testar-revisao.sh`, que não depende da entrada padrão (o BOM do PowerShell fazia os testes PostgreSQL serem ignorados em silêncio) e reprova qualquer teste ignorado.
 
 ### Ambiente
 
