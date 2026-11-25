@@ -6,14 +6,14 @@ O cliente **não acessa o sistema**: WhatsApp, ligação, e-mail ou conversa pre
 
 | Serviço | Endereço |
 |---|---|
-| Frontend (Next.js) | http://localhost:3000 |
-| API (ASP.NET Core) | http://localhost:5000 |
-| Swagger | http://localhost:5000/swagger |
-| Health check | http://localhost:5000/health |
+| Frontend (Next.js) | http://localhost:3000 (acessível na rede) |
+| API (ASP.NET Core) | http://127.0.0.1:5000 (somente este computador) |
+| Swagger | http://localhost:5000/swagger — **somente em Development** (`dotnet run`, seção 2) |
+| Health check | http://127.0.0.1:5000/health |
 
-**Acessos de demonstração em banco novo:** `admin@zalekpersonalizados.com.br` (Administrador) e `gestao@zalekpersonalizados.com.br` (Gestor), ambos com senha `Zalek@2026`.
-As contas históricas Maria Silva, Carlos Souza e Fernanda Lima (perfil Atendente) continuam no seed, com a mesma senha. Perfis legados são preservados nos dados, mas não autenticam no modelo de acesso atual.
-Em bases já populadas pelo seed anterior, a conta Gestor existente continua com `gestor@zalekpersonalizados.com.br`; o seed não renomeia nem cria contas quando já há usuários. Entre como Administrador e crie uma conta Gestor pela rota `POST /api/usuarios` no Swagger; essa ação não altera nem exclui contas ou históricos existentes.
+**Acessos de demonstração:** criados pelo seed somente quando `EXECUTAR_SEED=true` e `SENHA_USUARIOS_DEMO` estão definidos e o banco está vazio (desenvolvimento e revisão). Contas: `admin@zalekpersonalizados.com.br` (Administrador) e `gestao@zalekpersonalizados.com.br` (Gestor), com a senha de demonstração `Zalek@2026` informada em `SENHA_USUARIOS_DEMO`.
+As contas históricas Maria Silva, Carlos Souza e Fernanda Lima (perfil Atendente) também são criadas pelo seed. Perfis legados são preservados nos dados, mas não autenticam no modelo de acesso atual.
+Em bases já populadas pelo seed anterior, a conta Gestor existente continua com `gestor@zalekpersonalizados.com.br`; o seed não renomeia nem cria contas quando já há usuários. Para trocar a senha de qualquer conta existente sem tela, use `backend/tools/redefinir-senha` (senha lida sem eco, nunca por argumento). Em ambiente com dados reais, **nunca** deixe a senha de demonstração: veja `docs/11-atualizar-ambiente-principal.md`.
 
 ---
 
@@ -21,32 +21,43 @@ Em bases já populadas pelo seed anterior, a conta Gestor existente continua com
 
 Pré-requisito: Docker com Compose v2.
 
-```bash
+**O `.env` é obrigatório.** O Compose não tem chave JWT nem senha de banco padrão: sem `JWT_CHAVE` e `POSTGRES_PASSWORD`, qualquer comando `docker compose` para com a mensagem `required variable ... is missing a value`. Gere os segredos sem exibi-los:
+
+```powershell
+Copy-Item .env.example .env
+powershell -ExecutionPolicy Bypass -File infra/implantacao/preparar-segredos.ps1 -ArquivoEnv .env -GerarChaveJwt -GerarSenhaBanco   # volume novo
 docker compose up --build
 ```
 
+Para um ambiente que **já tem banco** (como o principal), não use `-GerarSenhaBanco`: siga `docs/11-atualizar-ambiente-principal.md`, que troca a senha com `ALTER ROLE` na ordem segura.
+
 Na primeira subida, a API:
-1. espera o PostgreSQL aceitar conexões;
-2. aplica as migrations pendentes;
-3. confere se todas as colunas do modelo existem no banco;
-4. grava os dados de demonstração.
+1. confere a configuração: fora de Development, recusa chave JWT com menos de 32 caracteres ou publicada no repositório e senha de banco com menos de 16 caracteres ou publicada (mensagem `Configuração insegura`, sem valores);
+2. espera o PostgreSQL aceitar conexões;
+3. aplica as migrations pendentes;
+4. confere se todas as colunas do modelo existem no banco;
+5. grava os dados de demonstração **somente** com `EXECUTAR_SEED=true` e `SENHA_USUARIOS_DEMO` definidos (padrão: desligado).
 
 Quando o log mostrar `Now listening on: http://[::]:8080`, abra http://localhost:3000.
 
 - **Dados persistentes:** os volumes `dados-postgres` (banco) e `anexos` (artes enviadas) sobrevivem a `docker compose down`.
-- **Recomeçar do zero:** `docker compose down -v` apaga os volumes, e o seed é recriado na próxima subida.
-- **Portas ocupadas:** se 3000, 5000 ou 5432 já estiverem em uso, copie `.env.example` para `.env` e altere `FRONTEND_PORTA_HOST`, `BACKEND_PORTA_HOST` ou `POSTGRES_PORTA_HOST`.
-- **Fora da demonstração local:** defina `POSTGRES_PASSWORD` e `JWT_CHAVE` no `.env`. Gere a chave com `openssl rand -base64 48`; a API não inicia com chave de menos de 32 caracteres.
+- **Recomeçar do zero:** `docker compose down -v` apaga os volumes (e todos os dados).
+- **Portas:** o frontend é publicado na rede; API e PostgreSQL só em `127.0.0.1`. Se 3000, 5000 ou 5432 estiverem em uso, altere `FRONTEND_PORTA_HOST`, `BACKEND_PORTA_HOST` ou `POSTGRES_PORTA_HOST` no `.env`.
+- **Cookie seguro:** `COOKIE_SEGURA` vale `true` por padrão; o login só se mantém em HTTPS ou `http://localhost`. Para acesso por `http://IP` na rede local sem HTTPS, configure HTTPS (`infra/nginx/`) ou use `COOKIE_SEGURA=false` conscientemente.
+- **Backup e atualização do ambiente principal:** `docs/11-atualizar-ambiente-principal.md`.
 
 ### Ambiente isolado de revisão e testes
 
 O ambiente de revisão nunca compartilha containers, portas, banco ou volumes com o projeto principal. Use sempre o projeto Compose `zalek360-revisao` e o arquivo local ignorado `.env.revisao`; não execute `down -v` sem autorização explícita, mesmo nesse projeto.
 
-Na primeira utilização, copie o exemplo e defina uma senha exclusiva para o banco descartável:
+Na primeira utilização, copie o exemplo, gere os segredos sem exibi-los e informe a senha de demonstração em `SENHA_USUARIOS_DEMO` (o seed da revisão cria as contas do `AGENTS.md` em banco novo):
 
 ```powershell
 Copy-Item .env.revisao.example .env.revisao
+powershell -ExecutionPolicy Bypass -File infra/implantacao/preparar-segredos.ps1 -ArquivoEnv .env.revisao -GerarChaveJwt -GerarSenhaBanco
 ```
+
+Com o banco de revisão já existente, troque a senha com `-ContainerBanco zalek360-revisao-db-1 -TrocarSenhaBanco` no lugar de `-GerarSenhaBanco`.
 
 Suba o ambiente com:
 
@@ -181,7 +192,7 @@ infra/nginx/                   Exemplo de proxy reverso com HTTPS
 
 ## 5. API
 
-Documentação interativa em `/swagger`. Para autenticar lá, chame `POST /api/auth/login` (o cookie é definido automaticamente) ou cole o `accessToken` retornado em **Authorize**.
+Documentação interativa em `/swagger`, **somente com `ASPNETCORE_ENVIRONMENT=Development`** (execução local, seção 2); nos containers ela não é publicada. Para autenticar lá, chame `POST /api/auth/login` (o cookie é definido automaticamente) ou cole o `accessToken` retornado em **Authorize**.
 
 | Recurso | Endpoints |
 |---|---|

@@ -659,9 +659,12 @@ Atualizado a cada PR da Fase 7. Status: **corrigido** (mesclado em `main`), **em
 
 | Achado | Status | Onde |
 |---|---|---|
-| M7 — E2E instável em `proposta.spec.ts:100` | em PR | Fase 7.0: modal fecha com o detalhe retornado pela API; teste espera a resposta da confirmação |
-| B10 — comando de teste .NET aceitava ignorados | em PR | Fase 7.0: `backend/scripts/testar-revisao.sh` + `AGENTS.md` |
-| B11 (parcial) — E2E alterava o modelo global sem `finally` | em PR | Fase 7.0 |
-| Instabilidade nova: `DROP DATABASE` dos testes PostgreSQL estourando 30 s | em PR | Fase 7.0: tempo limite de 120 s |
+| M7 — E2E instável em `proposta.spec.ts:100` | corrigido | PR #10 (Fase 7.0): modal fecha com o detalhe da API; testes esperam a resposta da API |
+| B10 — comando de teste .NET aceitava ignorados | corrigido | PR #10: `backend/scripts/testar-revisao.sh` + `AGENTS.md` |
+| B11 (parcial) — E2E alterava o modelo global sem `finally` | corrigido | PR #10 |
+| Instabilidade nova: `DROP DATABASE` dos testes PostgreSQL estourando 30 s | corrigido | PR #10: tempo limite de 120 s |
 | B15 — ref local com `.env.revisao` | corrigido | ref apagada em 25/11/2026 (sem `gc`) |
-| C1, A1, A2, A3, M1, M2 e demais | pendente | Fases 7.1 a 7.3 e seguintes |
+| C1 — chave JWT padrão versionada | em PR | Fase 7.1: segredos obrigatórios; API recusa chaves publicadas ou curtas fora de Development |
+| A1 — padrões inseguros do compose | em PR | Fase 7.1: senha do banco obrigatória; banco e API em 127.0.0.1; Swagger só em Development; cookie Secure e seed desligado por padrão |
+| Senhas de demonstração em ambiente real | em PR | Fase 7.1: `backend/tools/redefinir-senha` e `docs/11` |
+| A2, A3, M1, M2 e demais | pendente | Fases 7.2, 7.3 e seguintes |

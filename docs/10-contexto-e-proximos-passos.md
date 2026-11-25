@@ -83,6 +83,15 @@ A revisão completa do MVP (`revisao-mvp/RELATORIO-REVISAO-MVP.md`, commit revis
   - O teste espera a resposta 200 de `POST .../proposta/confirmacao` e restaura o modelo global de e-mail em `finally`.
   - Os testes PostgreSQL usam 120 s para criar e remover bancos temporários. Antes, um `DROP DATABASE` lento estourou os 30 s padrão.
   - O comando de testes .NET do `AGENTS.md` passou a usar `backend/scripts/testar-revisao.sh`, que não depende da entrada padrão (o BOM do PowerShell fazia os testes PostgreSQL serem ignorados em silêncio) e reprova qualquer teste ignorado.
+  - Mesclada no [PR #10](https://github.com/DaviMarszalek/Zalek360/pull/10).
+- **7.1 — Segurança de implantação (achados C1 e A1):**
+  - Compose sem segredo padrão: `JWT_CHAVE` e `POSTGRES_PASSWORD` obrigatórios (`${VAR:?mensagem}`); sem eles, o comando para com mensagem clara.
+  - Fora de Development, a API não sobe com chave JWT < 32 caracteres ou publicada no repositório, nem com senha de banco < 16 caracteres ou publicada (comparação por SHA-256, sem os valores no código). Mensagem `Configuração insegura`, sem valores.
+  - PostgreSQL e API publicados só em `127.0.0.1`; o frontend continua na rede. Swagger somente em Development. Cookie `Secure` por padrão (`COOKIE_SEGURA=true`). Seed de demonstração desligado por padrão (`EXECUTAR_SEED=false`; com `true`, `SENHA_USUARIOS_DEMO` é obrigatória). A revisão liga o seed pelo `.env.revisao`.
+  - `infra/implantacao/preparar-segredos.ps1`: gera `JWT_CHAVE` e troca a senha do PostgreSQL com `ALTER ROLE` dentro do container (senha por variável de ambiente e `\getenv`), gravando o `.env` só depois do sucesso. Nenhum valor exibido.
+  - `backend/tools/redefinir-senha`: redefine a senha de um usuário pelo e-mail, executando `dotnet Zalek360.Api.dll redefinir-senha <e-mail>` no container; senha lida sem eco, nunca por argumento. Mesma política (12+ caracteres) e mesmo BCrypt. Sem endpoint nem tela (a tela de Usuários continua na seção F).
+  - `docs/11-atualizar-ambiente-principal.md`: passo a passo para o usuário aplicar no ambiente principal (backup → `ALTER ROLE` → `.env` → recriar só a API → conferir → senhas demo). Procedimento testado no ambiente de revisão em 25/11/2026.
+  - Decisões provisórias: nomes das opções mantidos (`EXECUTAR_SEED`, `COOKIE_SEGURA`, agora com padrão seguro); mínimo de 16 caracteres para a senha do banco; API e banco em `127.0.0.1` (o comparador continua usando a porta 55432 da revisão).
 
 ### Ambiente
 
