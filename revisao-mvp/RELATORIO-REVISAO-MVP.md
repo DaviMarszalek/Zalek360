@@ -664,7 +664,8 @@ Atualizado a cada PR da Fase 7. Status: **corrigido** (mesclado em `main`), **em
 | B11 (parcial) — E2E alterava o modelo global sem `finally` | corrigido | PR #10 |
 | Instabilidade nova: `DROP DATABASE` dos testes PostgreSQL estourando 30 s | corrigido | PR #10: tempo limite de 120 s |
 | B15 — ref local com `.env.revisao` | corrigido | ref apagada em 25/11/2026 (sem `gc`) |
-| C1 — chave JWT padrão versionada | em PR | Fase 7.1: segredos obrigatórios; API recusa chaves publicadas ou curtas fora de Development |
-| A1 — padrões inseguros do compose | em PR | Fase 7.1: senha do banco obrigatória; banco e API em 127.0.0.1; Swagger só em Development; cookie Secure e seed desligado por padrão |
-| Senhas de demonstração em ambiente real | em PR | Fase 7.1: `backend/tools/redefinir-senha` e `docs/11` |
-| A2, A3, M1, M2 e demais | pendente | Fases 7.2, 7.3 e seguintes |
+| C1 — chave JWT padrão versionada | corrigido no código (PR #11); **ambiente principal pendente do docs/11** | Fase 7.1: segredos obrigatórios; API recusa chaves publicadas ou curtas fora de Development |
+| A1 — padrões inseguros do compose | corrigido no código (PR #11); ambiente principal pendente do docs/11 | Fase 7.1: senha do banco obrigatória; banco e API em 127.0.0.1; Swagger só em Development; cookie Secure e seed desligado por padrão |
+| Senhas de demonstração em ambiente real | ferramenta pronta (PR #11); troca pendente no ambiente principal | Fase 7.1: `backend/tools/redefinir-senha` e `docs/11` |
+| A2 — sem backup e restauração | em PR | Fase 7.2: `infra/backup/*.ps1` e `docs/12`; restauração testada em banco temporário |
+| A3, M1, M2 e demais | pendente | Fase 7.3 e seguintes |

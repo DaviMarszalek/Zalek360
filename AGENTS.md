@@ -90,6 +90,6 @@ O teste PostgreSQL cria e remove bancos de teste com prefixo próprio dentro do 
 
 ## Documentação e escopo
 
-- Documentação viva: `README.md`, `docs/08-mvp2.md`, `docs/09-revisao-funcional.md` (matriz R1–R8), `docs/10-contexto-e-proximos-passos.md` e `docs/11-atualizar-ambiente-principal.md`.
+- Documentação viva: `README.md`, `docs/08-mvp2.md`, `docs/09-revisao-funcional.md` (matriz R1–R8), `docs/10-contexto-e-proximos-passos.md`, `docs/11-atualizar-ambiente-principal.md` e `docs/12-backup-e-restauracao.md`.
 - Atualize a documentação diretamente relacionada ao trabalho de cada fase.
 - Respeite as decisões de negócio e as pendências descritas em `docs/10-contexto-e-proximos-passos.md`; não implemente fases futuras sem autorização.

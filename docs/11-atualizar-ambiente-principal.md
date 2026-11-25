@@ -46,7 +46,9 @@ docker exec zalek360-backend-1 rm /tmp/anexos.tgz
 Get-ChildItem $destino | Select-Object Name, Length
 ```
 
-Confira que os dois arquivos existem e não estão vazios, e copie a pasta para **outro disco ou nuvem** antes de seguir. (A Fase 7.2 acrescenta scripts de backup e restauração testados; quando estiverem no `main`, o `docs/12-backup-e-restauracao.md` passa a ser a referência.)
+Confira que os dois arquivos existem e não estão vazios, e copie a pasta para **outro disco ou nuvem** antes de seguir.
+
+Os comandos acima funcionam com o código atual, antes do `git pull`. Depois de atualizado, use o script testado `infra/backup/backup.ps1` (gera também um manifesto com SHA-256) e teste a restauração com `infra/backup/restaurar.ps1`, como descrito em `docs/12-backup-e-restauracao.md`.
 
 ## 2. Atualizar o código
 
@@ -158,7 +160,7 @@ Depois, entre no sistema com cada conta e a senha nova.
 - **API não conecta ao banco (`password authentication failed`):** o `ALTER ROLE` e o `.env` ficaram diferentes. Rode o passo 3 de novo apenas com `-TrocarSenhaBanco` (gera outra senha, altera o banco e regrava o `.env`) e repita o passo 4.
 - **Existe `.env.novo` e nenhuma mensagem de sucesso:** o `ALTER ROLE` pode ter sido aplicado sem a troca do arquivo. Renomeie `.env.novo` para `.env` e repita o passo 4.
 - **Voltar o código:** `git switch --detach <commit anterior>` e `docker compose up -d --build`. O `.env` novo continua válido para o código antigo (mesmas variáveis). Não apague o `.env`: a senha antiga do banco não vale mais.
-- **Restaurar dados:** restaure primeiro num banco temporário para conferir. Com os arquivos do passo 1: `docker cp banco-AAAAMMDD-HHMMSS.dump zalek360-db-1:/tmp/b.dump` e `docker exec zalek360-db-1 sh -c 'createdb -U $POSTGRES_USER zalek360_restauracao && pg_restore -U $POSTGRES_USER -d zalek360_restauracao --no-owner /tmp/b.dump'`. Para substituir o banco principal, siga o `docs/12-backup-e-restauracao.md` (Fase 7.2).
+- **Restaurar dados:** restaure primeiro num banco temporário para conferir. Com os arquivos do passo 1: `docker cp banco-AAAAMMDD-HHMMSS.dump zalek360-db-1:/tmp/b.dump` e `docker exec zalek360-db-1 sh -c 'createdb -U $POSTGRES_USER zalek360_restauracao && pg_restore -U $POSTGRES_USER -d zalek360_restauracao --no-owner /tmp/b.dump'`. Para substituir o banco principal, siga a seção 4 do `docs/12-backup-e-restauracao.md`.
 
 ## Observações de segurança
 
