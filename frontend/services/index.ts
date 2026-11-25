@@ -104,7 +104,7 @@ export const orcamentosService = {
 };
 
 export const pedidosService = {
-  listar: (p: { busca?: string; status?: SituacaoPedido | ""; responsavelId?: string; de?: string; ate?: string; pagina?: number }) =>
+  listar: (p: { busca?: string; status?: SituacaoPedido | ""; responsavelId?: string; clienteId?: string; dataReferencia?: "Criacao" | "Entrega"; de?: string; ate?: string; pagina?: number }) =>
     api.get<ListaComContagem<PedidoListaItem>>("/pedidos", { params: limpar({ ...p, tamanhoPagina: 20 }) }).then((r) => r.data),
   obter: (id: string) => api.get<PedidoDetalhe>(`/pedidos/${id}`).then((r) => r.data),
   historico: (id: string) => api.get<HistoricoEvento[]>(`/pedidos/${id}/historico`).then((r) => r.data),

@@ -39,16 +39,25 @@ export function Dashboard() {
           <Link href="/orcamentos/novo"><Botao icone={<Plus className="h-4 w-4" />}>Novo orçamento</Botao></Link>
         </>} />
       {q.isError && <ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} />}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {!d ? Array.from({ length: 4 }).map((_, i) => <Esqueleto key={i} className="h-[124px]" />) : <>
+      <h2 className="mb-3 text-sm font-semibold">Orçamentos em aberto</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {!d ? Array.from({ length: 2 }).map((_, i) => <Esqueleto key={i} className="h-[124px]" />) : <>
           <Indicador titulo="Orçamentos em elaboração" valor={d.indicadores.orcamentosEmElaboracao} icone={<FileText className="h-4 w-4" />} href="/orcamentos?status=EmElaboracao"
             detalhe={`${d.indicadores.orcamentosCriadosHoje} ${d.indicadores.orcamentosCriadosHoje === 1 ? "criado" : "criados"} hoje`} />
           <Indicador titulo="Aguardando retorno" valor={d.indicadores.aguardandoRetorno} icone={<Clock className="h-4 w-4" />} href="/orcamentos?status=AguardandoRetorno"
             detalhe={d.indicadores.aguardandoVencemEm3Dias > 0 ? <span className="text-amber-700">{d.indicadores.aguardandoVencemEm3Dias} {d.indicadores.aguardandoVencemEm3Dias === 1 ? "vence" : "vencem"} em até 3 dias</span> : "Nenhum vencendo nos próximos 3 dias"} />
-          <Indicador titulo={`Aprovados em ${d.indicadores.mesReferencia}`} valor={d.indicadores.aprovadosNoMes} icone={<CheckCircle2 className="h-4 w-4" />} href="/orcamentos?status=Aprovado&periodo=mes"
-            detalhe={`${moeda(d.indicadores.valorAprovadoNoMes)} aprovados`} />
+        </>}
+      </div>
+      <h2 className="mb-3 mt-6 text-sm font-semibold">Vendas e operação</h2>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {!d ? Array.from({ length: 3 }).map((_, i) => <Esqueleto key={i} className="h-[124px]" />) : <>
+          <Indicador titulo={`Vendas entregues em ${d.indicadores.mesReferencia}`} valor={moeda(d.indicadores.valorEntregueNoMes)} icone={<CheckCircle2 className="h-4 w-4" />}
+            href={`/pedidos?status=Entregue&periodo=personalizado&dataReferencia=Entrega&de=${d.indicadores.inicioMes}&ate=${d.indicadores.fimMes}`}
+            detalhe={`${d.indicadores.pedidosConcluidosNoMes} ${d.indicadores.pedidosConcluidosNoMes === 1 ? "pedido entregue" : "pedidos entregues"} no mês, pela data de entrega`} />
           <Indicador titulo="Pedidos em andamento" valor={d.indicadores.pedidosEmAndamento} icone={<Package className="h-4 w-4" />} href="/pedidos"
-            detalhe={`${d.indicadores.pedidosConcluidosNoMes} ${d.indicadores.pedidosConcluidosNoMes === 1 ? "entregue" : "entregues"} no mês`} />
+            detalhe="Abertos, em produção e prontos" />
+          <Indicador titulo="Repor estoque" valor={d.indicadores.materiasParaReposicao} icone={<Package className="h-4 w-4" />} href="/estoque?filtro=reposicao"
+            detalhe="Matérias-primas com sugestão de reposição" />
         </>}
       </div>
 

@@ -5,8 +5,9 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, Info, Package, Search } from "lucide-react";
 import { AcoesLinha, Abas, BadgePedido, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Etiqueta, Paginacao, Selecao } from "@/components/ui";
-import { FiltroPeriodo, intervaloDoPeriodo, Periodo } from "@/features/comum";
+import { intervaloDoPeriodo, opcoesPeriodo, Periodo } from "@/features/comum";
 import { pedidosService } from "@/services";
+import { FiltroCliente } from "./FiltroCliente";
 import { useDebounce, useResponsaveis } from "@/hooks";
 import { erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -32,21 +33,28 @@ export function ListaPedidos() {
   const router = useRouter();
   const [status, setStatus] = useState<SituacaoPedido | "">((params.get("status") as SituacaoPedido) ?? "");
   // Protótipo: período padrão "Últimos 30 dias"; ao chegar filtrando por status (ex.: dashboard), mostra todo o período.
-  const [periodo, setPeriodo] = useState<Periodo>((params.get("periodo") as Periodo) ?? (params.get("status") ? "todos" : "30"));
+  const [periodo, setPeriodo] = useState<Periodo | "personalizado">((params.get("periodo") as Periodo | "personalizado") ?? (params.get("status") ? "todos" : "30"));
+  const [clienteId, setClienteId] = useState(params.get("clienteId") ?? "");
+  const [dataReferencia, setDataReferencia] = useState<"Criacao" | "Entrega">(params.get("dataReferencia") === "Entrega" ? "Entrega" : "Criacao");
+  const [de, setDe] = useState(params.get("de") ?? "");
+  const [ate, setAte] = useState(params.get("ate") ?? "");
+  const periodoInvalido = periodo === "personalizado" && !!de && !!ate && de > ate;
+  const intervalo = periodo === "personalizado" ? { de: de || undefined, ate: ate || undefined } : intervaloDoPeriodo(periodo);
   const [busca, setBusca] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [pagina, setPagina] = useState(1);
   const termo = useDebounce(busca.trim());
   const responsaveis = useResponsaveis();
   const q = useQuery({
-    queryKey: ["pedidos", status, periodo, termo, responsavelId, pagina],
-    queryFn: () => pedidosService.listar({ status, busca: termo, responsavelId, pagina, ...intervaloDoPeriodo(periodo) }),
+    queryKey: ["pedidos", status, periodo, termo, responsavelId, clienteId, dataReferencia, intervalo.de, intervalo.ate, pagina],
+    queryFn: () => pedidosService.listar({ status, busca: termo, responsavelId, clienteId, dataReferencia, pagina, ...intervalo }),
     placeholderData: keepPreviousData,
+    enabled: !periodoInvalido,
   });
   const cont = q.data?.contagemPorSituacao;
-  const filtrando = !!(termo || responsavelId || periodo !== "30" || status);
+  const filtrando = !!(termo || responsavelId || clienteId || periodo !== "30" || status || dataReferencia !== "Criacao");
   const reiniciar = () => setPagina(1);
-  const limpar = () => { setBusca(""); setResponsavelId(""); setPeriodo("todos"); setStatus(""); reiniciar(); };
+  const limpar = () => { setBusca(""); setResponsavelId(""); setPeriodo("todos"); setStatus(""); setClienteId(""); setDataReferencia("Criacao"); setDe(""); setAte(""); reiniciar(); };
 
   return (
     <>
@@ -71,10 +79,14 @@ export function ListaPedidos() {
           <Selecao className="w-auto min-w-[170px]" value={responsavelId} onChange={(e) => { setResponsavelId(e.target.value); reiniciar(); }} aria-label="Responsável">
             <option value="">Todos os responsáveis</option>{responsaveis.data?.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
           </Selecao>
-          <FiltroPeriodo valor={periodo} aoMudar={(p) => { setPeriodo(p); reiniciar(); }} />
+          <FiltroCliente clienteId={clienteId} aoMudar={id => { setClienteId(id); reiniciar(); }} />
+          <Selecao aria-label="Data de referência" className="w-auto max-w-full" value={dataReferencia} onChange={e => { setDataReferencia(e.target.value as "Criacao" | "Entrega"); reiniciar(); }}><option value="Criacao">Data do pedido</option><option value="Entrega">Data da entrega</option></Selecao>
+          <Selecao aria-label="Período" className="w-auto max-w-full" value={periodo} onChange={e => { setPeriodo(e.target.value as Periodo | "personalizado"); reiniciar(); }}>{opcoesPeriodo.map(p => <option key={p.id} value={p.id}>{p.rotulo}</option>)}<option value="personalizado">Personalizado</option></Selecao>
+          {periodo === "personalizado" && <><label className="flex items-center gap-2 text-sm">De<Entrada type="date" aria-label="Data inicial" value={de} onChange={e => { setDe(e.target.value); reiniciar(); }} /></label><label className="flex items-center gap-2 text-sm">Até<Entrada type="date" aria-label="Data final" value={ate} onChange={e => { setAte(e.target.value); reiniciar(); }} /></label></>}
           {filtrando && <Botao variante="fantasma" onClick={limpar}>Limpar filtros</Botao>}
         </div>
-        {q.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div>
+        {dataReferencia === "Entrega" && <p className="px-4 py-2 text-xs text-texto-fraco">Período pela data da entrega: inclui somente pedidos entregues, no fuso da empresa.</p>}
+        {periodoInvalido ? <p role="alert" className="p-4 text-sm text-red-700">A data final deve ser igual ou posterior à inicial.</p> : q.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div>
           : !q.data ? <div className="space-y-2 p-4">{Array.from({ length: 6 }).map((_, i) => <Esqueleto key={i} className="h-11" />)}</div>
             : q.data.itens.length === 0 ? <EstadoVazio icone={<Package className="h-5 w-5" />} titulo="Nenhum pedido encontrado"
                 descricao={filtrando ? "Ajuste os filtros ou amplie o período." : "Os pedidos aparecem aqui assim que um orçamento é aprovado pelo cliente."}
