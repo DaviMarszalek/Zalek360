@@ -53,7 +53,7 @@
 - Validação Fase 3: backend **124 aprovados, 0 falhas, 0 ignorados**, PostgreSQL real; Vitest **8/8**; Edge **10/10**; `npm ci`, typecheck, build local e Compose aprovados, em sequência. Comparador: **0 divergências**, 19 tabelas, 222 colunas, 67 constraints, 67 índices, 2 sequências.
 - Upgrade da Fase 3 preservou contagens/hashes de **14 produtos, 19 orçamentos, 28 itens e 7 pedidos**, antes dos dados novos dos E2E. Ambiente principal não foi acessado.
 - E2E da Fase 3 executa os dois perfis até o pedido, verifica margem/materiais e carregamento real das miniaturas. Formulário/modal, detalhe e pedido verificados em 360 px/1280 px, sem rolagem horizontal da página; capturas ignoradas em `data/revisao-fase3`.
-- Fase 4 autorizada e implementada na branch `revisao/fase-4-envio-proposta`: revisão do destinatário/mensagem, SMTP com PDF, fallback `mailto`, WhatsApp sem link público e confirmação externa explícita. Apresentação por outros meios preservada.
+- Fase 4 — [PR #7 aberto](https://github.com/DaviMarszalek/Zalek360/pull/7), autorizada e implementada na branch `revisao/fase-4-envio-proposta`: revisão do destinatário/mensagem, SMTP com PDF, fallback `mailto`, WhatsApp sem link público e confirmação externa explícita. Apresentação por outros meios preservada.
 - Modelos persistidos editáveis só pelo Administrador; dados públicos permitidos por lista explícita. Configuração SMTP por `Email__*`, sem expor credenciais na interface. Tentativa persistida antes do SMTP, sem reenvio automático quando a confirmação é incerta; bloqueio do orçamento evita envios concorrentes na mesma versão.
 - Migration EF `20261125001901_ModelosEEnviosProposta`: duas tabelas novas e sementes de modelos, sem alterar dados comerciais existentes. Comparador: **0 divergências**, 21 tabelas, 235 colunas, 71 constraints, 72 índices, 2 sequências.
 - Validação Fase 4: backend **133 aprovados, 0 falhas, 0 ignorados**, PostgreSQL real; Vitest **8/8**; Edge **13/13** na suíte completa sem SMTP e **3/3** na captura SMTP adicional. `npm ci`, typecheck, build local e Compose padrão aprovados, em sequência.
@@ -112,6 +112,6 @@ Criar branch nova da fase seguinte a partir do `main` atualizado somente depois 
 1. Ler `AGENTS.md` e este arquivo.
 2. Conferir `git status` e a branch antes de trocar de contexto. Retomar `revisao/fase-4-envio-proposta` enquanto seu PR estiver aberto; atualizar `origin` e integrar `origin/main` por merge, preservando alterações locais.
 3. Abrir Docker Desktop e confirmar “Engine running”. Não tocar no projeto principal.
-4. PR #6 está mesclado. Conferir o PR da Fase 4, aberto para revisão; não mesclar sem novo OK do usuário.
+4. PR #6 está mesclado. Conferir o [PR #7 da Fase 4](https://github.com/DaviMarszalek/Zalek360/pull/7), aberto para revisão; não mesclar sem novo OK do usuário.
 5. Usar o ambiente de revisão com `docker compose -p zalek360-revisao --env-file .env.revisao ...`; nunca exibir ou adicionar o `.env.revisao`.
 6. Aguardar aprovação para mesclar a Fase 4 e para iniciar a Fase 5, em branch nova do `main` atualizado e com plano curto aprovado.

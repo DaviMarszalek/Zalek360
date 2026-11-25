@@ -73,7 +73,7 @@ Implementação na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R
 
 ## Atualização — Fase 4: envio de proposta (24/11/2026)
 
-- Branch `revisao/fase-4-envio-proposta`, criada de `main` em `3abacc2`, após o merge autorizado do PR #6 e a autorização para iniciar esta fase.
+- [PR #7 aberto](https://github.com/DaviMarszalek/Zalek360/pull/7), branch `revisao/fase-4-envio-proposta`, criada de `main` em `3abacc2`, após o merge autorizado do PR #6 e a autorização para iniciar esta fase. Aguardar novo OK para merge.
 - Gestor e Administrador revisam destinatário, assunto e mensagem. Com SMTP, a aplicação anexa o PDF e registra apresentação/contato/exportação após aceitação pelo servidor. Aceitação não confirma entrega/leitura.
 - Sem SMTP, disponibiliza `mailto`, cópia da mensagem e PDF para anexar manualmente. WhatsApp usa texto revisável e `wa.me`, sem link público do PDF. Cópia/download/abertura não apresentam a proposta; a confirmação externa é explícita. Outros meios de apresentação foram preservados.
 - Administrador edita modelos persistidos com campos públicos permitidos: cliente, número, total, validade, prazo e empresa. Custos/margens não são oferecidos; campos desconhecidos são rejeitados. Segredos SMTP são configurados por `Email__*`, sem retorno à UI.
