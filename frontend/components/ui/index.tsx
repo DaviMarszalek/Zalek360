@@ -2,6 +2,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AlertCircle, CheckCircle2, Info, Loader2, X } from "lucide-react";
+import { useOrigemFocoDialogo } from "./FocoDialogo";
 import { cn } from "@/lib/utils";
 import { estiloSituacaoOrcamento, estiloSituacaoPedido, rotuloSituacaoOrcamento, rotuloSituacaoPedido } from "@/lib/status";
 import type { SituacaoOrcamento, SituacaoPedido } from "@/types/api";
@@ -130,10 +131,10 @@ const estilosAviso: Record<TipoAviso, string> = {
 export function Aviso({ tipo = "info", titulo, children, acao, className }: { tipo?: TipoAviso; titulo?: React.ReactNode; children?: React.ReactNode; acao?: React.ReactNode; className?: string }) {
   const Icone = tipo === "sucesso" ? CheckCircle2 : tipo === "info" ? Info : AlertCircle;
   return (
-    <div role={tipo === "erro" ? "alert" : "status"} className={cn("flex flex-wrap items-start gap-3 rounded-lg border px-4 py-3 text-sm", estilosAviso[tipo], className)}>
+    <div role={tipo === "erro" ? "alert" : "status"} className={cn("grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-lg border px-4 py-3 text-sm sm:flex", estilosAviso[tipo], className)}>
       <Icone className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="min-w-0 flex-1">{titulo && <p className="font-medium">{titulo}</p>}{children && <div className={cn(titulo && "mt-0.5", "opacity-90")}>{children}</div>}</div>
-      {acao}
+      {acao && <div className="col-start-2 sm:shrink-0">{acao}</div>}
     </div>
   );
 }
@@ -168,17 +169,22 @@ export function ErroCarregamento({ mensagem, aoTentar }: { mensagem?: string; ao
 export function Modal({ aberto, aoFechar, titulo, descricao, children, rodape, largura = "max-w-lg" }: {
   aberto: boolean; aoFechar: () => void; titulo: React.ReactNode; descricao?: React.ReactNode; children?: React.ReactNode; rodape?: React.ReactNode; largura?: string;
 }) {
+  const focoAnterior = useOrigemFocoDialogo();
   const origem = React.useRef<HTMLElement | null>(null);
+  const rotuloOrigem = React.useRef<string | null>(null);
   return (
     <DialogPrimitive.Root open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-[1px]" />
-        <DialogPrimitive.Content onOpenAutoFocus={() => { origem.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }}
+        <DialogPrimitive.Content onOpenAutoFocus={() => { origem.current = focoAnterior?.current?.elemento ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null); rotuloOrigem.current = focoAnterior?.current?.rotulo ?? origem.current?.getAttribute("aria-label") ?? null; }}
           onCloseAutoFocus={evento => {
             evento.preventDefault();
             // Outro diálogo pode ter sido aberto na sequência da confirmação.
             if (document.querySelector('[role="dialog"][data-state="open"]')) return;
-            if (origem.current?.isConnected && !origem.current.closest('[aria-hidden="true"]')) origem.current.focus();
+            // Uma consulta pode substituir o botão da linha enquanto o diálogo está aberto.
+            const destino = origem.current?.isConnected ? origem.current : rotuloOrigem.current
+              ? document.querySelector<HTMLElement>(`[aria-label="${CSS.escape(rotuloOrigem.current)}"]`) : null;
+            if (destino && !destino.closest('[aria-hidden="true"]')) destino.focus();
             else document.querySelector<HTMLElement>("main h1")?.focus();
           }} className={cn("fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-borda bg-white shadow-modal focus:outline-none", largura)}>
           <div className="flex shrink-0 items-start justify-between gap-4 border-b border-borda px-6 py-4">

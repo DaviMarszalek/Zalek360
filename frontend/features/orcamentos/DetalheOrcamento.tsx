@@ -173,7 +173,7 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
   const opcoesResultado: ResultadoDecisao[] = somenteCancelar ? ["Cancelado"] : ["Aprovado", "Recusado", "Cancelado"];
   return (
     <>
-      <Modal aberto={aberto && !confirmar} aoFechar={aoFechar} titulo={somenteCancelar ? "Cancelar orçamento" : "Registrar decisão do cliente"} largura="max-w-xl"
+      <Modal aberto={aberto && !confirmar && !falhaAprovacao} aoFechar={aoFechar} titulo={somenteCancelar ? "Cancelar orçamento" : "Registrar decisão do cliente"} largura="max-w-xl"
         descricao={`Orçamento ${numeroDocumento(o.numero)} · ${o.cliente.nome} · ${moeda(o.resumo.valorTotal)}`}
         rodape={<><Botao variante="secundaria" onClick={aoFechar}>Voltar</Botao>
           <Botao variante={resultado === "Aprovado" ? "sucesso" : resultado ? "perigo" : "primaria"} disabled={!resultado} carregando={m.isPending} onClick={avancar}>
@@ -293,7 +293,7 @@ export function DetalheOrcamento() {
 
           <Cartao titulo="Histórico do orçamento">
             <div className="-mt-2 mb-4"><Abas ativa={aba} aoMudar={setAba} abas={[{ id: "", rotulo: "Tudo" }, { id: "alteracoes", rotulo: "Alterações e decisões" }, { id: "contatos", rotulo: "Contatos" }]} /></div>
-            {!historico.data ? <Carregando /> : <LinhaDoTempo eventos={historico.data} vazio={aba === "contatos" ? "Nenhum contato registrado ainda." : undefined} />}
+            {historico.isError ? <ErroCarregamento mensagem={erroDaApi(historico.error).message} aoTentar={() => historico.refetch()} /> : !historico.data ? <Carregando /> : <LinhaDoTempo eventos={historico.data} vazio={aba === "contatos" ? "Nenhum contato registrado ainda." : undefined} />}
           </Cartao>
         </div>
 

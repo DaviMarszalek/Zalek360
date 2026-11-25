@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Building2, CheckCircle2, Loader2, User } from "lucide-react";
-import { Aviso, Botao, Campo, Cartao, Entrada, AreaTexto, Selecao } from "@/components/ui";
+import { Aviso, Botao, CabecalhoPagina, Campo, Cartao, Entrada, AreaTexto, Selecao } from "@/components/ui";
+import { Voltar } from "@/features/comum";
 import { useToast } from "@/components/ui/toast";
 import { cepService, clientesService } from "@/services";
 import { useUsuarioAtual } from "@/hooks";
@@ -155,6 +156,7 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
 
   return (
     <form onSubmit={(ev) => { ev.preventDefault(); setCriarOrcamento(false); salvar.mutate(); }} noValidate className="mx-auto w-full max-w-4xl space-y-5">
+      <CabecalhoPagina titulo={edicao ? "Editar cliente" : "Novo cliente"} voltar={<Voltar href={cliente ? `/clientes/${cliente.id}` : "/clientes"}>Clientes</Voltar>} />
       {erro && qtdErros > 0 && !(verificacao?.clienteExistente) && <Aviso tipo="erro"
         titulo={abaPrimeiroErro && mensagemPrimeiroErro ? `${rotuloAba[abaPrimeiroErro]}: ${mensagemPrimeiroErro}` : "Corrija os campos destacados para salvar o cliente."}>
         {qtdErros} {qtdErros === 1 ? "campo precisa" : "campos precisam"} de atenção.

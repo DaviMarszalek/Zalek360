@@ -4,12 +4,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Loader2, PackagePlus, Paperclip, Plus, Search, Trash2, UserPlus, X } from "lucide-react";
-import { Aviso, AreaTexto, Botao, Campo, Cartao, Entrada, ErroCarregamento, EstadoVazio, Modal, Selecao } from "@/components/ui";
+import { Aviso, AreaTexto, Botao, CabecalhoPagina, Campo, Cartao, Entrada, ErroCarregamento, EstadoVazio, Modal, Selecao } from "@/components/ui";
 import { ReferenciaAnexo } from "@/components/ui/ReferenciaAnexo";
 import { FormularioProduto } from "@/features/produtos/FormularioProduto";
 import { DisponibilidadeItem, ResumoAnaliseInterna } from "./AnaliseInterna";
 import { useToast } from "@/components/ui/toast";
-import { CartaoCliente } from "@/features/comum";
+import { CartaoCliente, Voltar } from "@/features/comum";
 import { anexosService, clientesService, orcamentosService } from "@/services";
 import { useDebounce, useOpcoesOrcamento, useProdutos, useUsuarioAtual } from "@/hooks";
 import { erroCampo, erroDaApi } from "@/lib/api";
@@ -201,6 +201,8 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
     return <Aviso tipo="erro" titulo="Acesso somente para consulta">A criação e a edição de orçamentos não estão disponíveis para este perfil.</Aviso>;
 
   return (
+    <>
+    <CabecalhoPagina titulo={edicao ? `Editar orçamento ${numeroDocumento(orcamento!.numero)}` : "Novo orçamento"} voltar={<Voltar href={orcamento ? `/orcamentos/${orcamento.id}` : "/orcamentos"}>Orçamentos</Voltar>} />
     <div ref={topo} className="grid gap-6 xl:grid-cols-[1fr_340px]">
       <div className="min-w-0 space-y-5">
         {erro && (erro.code === "ORCAMENTO_SEM_ITENS"
@@ -356,5 +358,6 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
         }} />}
       </Modal>
     </div>
+    </>
   );
 }
