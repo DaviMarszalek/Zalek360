@@ -4,7 +4,7 @@ namespace Zalek360.Application.Dtos;
 
 public sealed record MateriaPrimaDto(Guid Id, string Nome, string Unidade, decimal QuantidadeDisponivel, decimal EstoqueMinimo,
     decimal QuantidadeAReceber, decimal QuantidadeReservada, bool Ativo, decimal SaldoDisponivel,
-    decimal QuantidadePendente, bool NoMinimo, decimal FaltaComprar);
+    decimal QuantidadePendente, bool NoMinimo, decimal FaltaComprar, bool AbaixoDoMinimo = false, decimal QuantidadeSugerida = 0);
 public sealed record MateriaPrimaRequest(string? Nome, string? Unidade, decimal QuantidadeDisponivel, decimal EstoqueMinimo);
 public sealed record CompraMateriaPrimaDto(Guid Id, Guid MateriaPrimaId, string MateriaPrimaNome, string Unidade, decimal Quantidade,
     string? Fornecedor, DateOnly DataPrevista, SituacaoCompraMateriaPrima Situacao, DateTime CriadaEm,

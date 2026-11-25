@@ -13,7 +13,8 @@ internal sealed class PedidoQueries : IPedidoQueries
 {
     private readonly ZalekDbContext _db;
 
-    public PedidoQueries(ZalekDbContext db) => _db = db;
+    private readonly IClock _clock;
+    public PedidoQueries(ZalekDbContext db, IClock clock) { _db = db; _clock = clock; }
 
     public async Task<IReadOnlyList<PendenciaEstoquePedidoDto>> ListarPendenciasMateriaisAsync(CancellationToken ct)
     {
@@ -32,6 +33,8 @@ internal sealed class PedidoQueries : IPedidoQueries
 
     public async Task<ListaComContagemDto<PedidoListaItemDto>> ListarAsync(PedidoFiltro filtro, CancellationToken ct)
     {
+        if (!Enum.IsDefined(filtro.DataReferencia) || filtro.De > filtro.Ate || filtro.Ate == DateOnly.MaxValue)
+            throw new ValidacaoException(CodigosErro.Validacao, "Informe um período válido; a data final deve ser igual ou posterior à inicial.", new Dictionary<string, string[]> { ["periodo"] = ["Revise as datas e a referência do período."] });
         var (pagina, tamanho) = Paginacao.Normalizar(filtro.Pagina, filtro.TamanhoPagina);
         var consulta = _db.Pedidos.AsNoTracking();
 
@@ -46,8 +49,18 @@ internal sealed class PedidoQueries : IPedidoQueries
                 : consulta.Where(p => p.Cliente!.BuscaNormalizada.Contains(termo));
         }
         if (filtro.ResponsavelId is { } responsavel) consulta = consulta.Where(p => p.ResponsavelId == responsavel);
-        if (filtro.De is { } de) consulta = consulta.Where(p => p.DataPedido >= de);
-        if (filtro.Ate is { } ate) consulta = consulta.Where(p => p.DataPedido <= ate);
+        if (filtro.ClienteId is { } clienteId) consulta = consulta.Where(p => p.ClienteId == clienteId);
+        if (filtro.DataReferencia == DataReferenciaPedido.Entrega)
+        {
+            consulta = consulta.Where(p => p.Situacao == SituacaoPedido.Entregue && p.EntregueEm != null);
+            if (filtro.De is { } de) { var inicio = _clock.InicioDoDiaLocalEmUtc(de); consulta = consulta.Where(p => p.EntregueEm >= inicio); }
+            if (filtro.Ate is { } ate) { var fim = _clock.InicioDoDiaLocalEmUtc(ate.AddDays(1)); consulta = consulta.Where(p => p.EntregueEm < fim); }
+        }
+        else
+        {
+            if (filtro.De is { } de) consulta = consulta.Where(p => p.DataPedido >= de);
+            if (filtro.Ate is { } ate) consulta = consulta.Where(p => p.DataPedido <= ate);
+        }
 
         var contagens = await consulta.GroupBy(p => p.Situacao).Select(g => new { g.Key, Total = g.Count() }).ToListAsync(ct);
         var contagemPorSituacao = Enum.GetValues<SituacaoPedido>().ToDictionary(

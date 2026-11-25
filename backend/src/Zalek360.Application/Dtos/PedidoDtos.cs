@@ -2,8 +2,10 @@ using Zalek360.Domain.Enums;
 
 namespace Zalek360.Application.Dtos;
 
+public enum DataReferenciaPedido { Criacao, Entrega }
+
 public sealed record PedidoFiltro(
-    string? Busca, SituacaoPedido? Situacao, Guid? ResponsavelId, DateOnly? De, DateOnly? Ate, int? Pagina, int? TamanhoPagina);
+    string? Busca, SituacaoPedido? Situacao, Guid? ResponsavelId, DateOnly? De, DateOnly? Ate, int? Pagina, int? TamanhoPagina, Guid? ClienteId = null, DataReferenciaPedido DataReferencia = DataReferenciaPedido.Criacao);
 
 public sealed record PedidoListaItemDto(
     Guid Id, int Numero, Guid OrcamentoId, int OrcamentoNumero, Guid ClienteId, string Cliente, DateOnly Data,

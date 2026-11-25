@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Archive, CalendarDays, CheckCircle2, ClipboardList, History, PackageCheck, PackagePlus, Pencil, Plus, RotateCcw, Search, Truck, XCircle } from "lucide-react";
 import { AcoesLinha, Botao, CabecalhoPagina, Campo, Cartao, Entrada, ErroCarregamento, EstadoVazio, Modal, Selecao } from "@/components/ui";
 import { estoqueService } from "@/services";
@@ -21,6 +21,8 @@ const dataPt = (d: string) => { const [a, m, dia] = d.slice(0, 10).split("-"); r
 
 export function Estoque() {
   const router = useRouter();
+  const params = useSearchParams();
+  const [filtroEstoque, setFiltroEstoque] = useState(params.get("filtro") === "reposicao" ? "reposicao" : params.get("filtro") === "abaixo" ? "abaixo" : "todos");
   const qc = useQueryClient();
   const toast = useToast();
   const [busca, setBusca] = useState("");
@@ -36,7 +38,7 @@ export function Estoque() {
   const materias = useQuery({ queryKey: ["estoque", "materias"], queryFn: estoqueService.materias });
   const compras = useQuery({ queryKey: ["estoque", "compras"], queryFn: estoqueService.compras });
   const movimentos = useQuery({ queryKey: ["estoque", "movimentos", historicoMaterial?.id], queryFn: () => estoqueService.movimentos(historicoMaterial!.id), enabled: !!historicoMaterial });
-  const atualizar = async () => { await qc.invalidateQueries({ queryKey: ["estoque"] }); };
+  const atualizar = async () => { await Promise.all([qc.invalidateQueries({ queryKey: ["estoque"] }), qc.invalidateQueries({ queryKey: ["dashboard"] })]); };
   const salvarMaterial = useMutation({ mutationFn: () => materialAtual ? estoqueService.atualizarMateria(materialAtual.id, materialForm) : estoqueService.criarMateria(materialForm), onSuccess: async () => { await atualizar(); setModal(null); setErro(""); } });
   const salvarCompra = useMutation({ mutationFn: () => estoqueService.criarCompra(compraForm), onSuccess: async () => { await atualizar(); setModal(null); setErro(""); } });
   const mudarCompra = useMutation({ mutationFn: ({ id, situacao }: { id: string; situacao: SituacaoCompraMateriaPrima }) => estoqueService.atualizarSituacaoCompra(id, situacao), onSuccess: async (_, variaveis) => {
@@ -44,13 +46,14 @@ export function Estoque() {
     if (variaveis.situacao === "Cancelada") setCompraCancelar(null);
   }, onError: (e) => toast("erro", erroDaApi(e).message) });
   const mudarAtivo = useMutation({ mutationFn: ({ id, ativo }: { id: string; ativo: boolean }) => estoqueService.definirMateriaAtiva(id, ativo), onSuccess: atualizar, onError: (e) => toast("erro", erroDaApi(e).message) });
-  const itens = useMemo(() => (materias.data ?? []).filter((m) => (mostrarInativos || m.ativo) && `${m.nome} ${m.unidade}`.toLocaleLowerCase("pt-BR").includes(busca.toLocaleLowerCase("pt-BR"))), [materias.data, mostrarInativos, busca]);
+  const itens = useMemo(() => (materias.data ?? []).filter((m) => (mostrarInativos || m.ativo) && (filtroEstoque === "todos" || m.ativo && (filtroEstoque === "abaixo" ? m.abaixoDoMinimo : m.quantidadeSugerida > 0)) && `${m.nome} ${m.unidade}`.toLocaleLowerCase("pt-BR").includes(busca.toLocaleLowerCase("pt-BR"))), [materias.data, mostrarInativos, busca, filtroEstoque]);
   const ativos = materias.data?.filter((m) => m.ativo) ?? [];
-  const baixos = ativos.filter((m) => m.noMinimo);
+  const baixos = ativos.filter((m) => m.abaixoDoMinimo);
+  const repor = ativos.filter(m => m.quantidadeSugerida > 0);
   const comprasAbertas = (compras.data ?? []).filter((c) => c.aberta);
 
   function abrirMaterial(m?: MateriaPrima) { setMaterialAtual(m ?? null); setMaterialForm(m ? { nome: m.nome, quantidadeDisponivel: m.quantidadeDisponivel, estoqueMinimo: m.estoqueMinimo } : { ...materialVazio }); setErro(""); setModal("material"); }
-  function abrirCompra(m?: MateriaPrima) { setCompraForm({ materiaPrimaId: m?.id ?? ativos[0]?.id ?? "", quantidade: 1, fornecedor: "", dataPrevista: dataHoje() }); setErro(""); setModal("compra"); }
+  function abrirCompra(m?: MateriaPrima) { setCompraForm({ materiaPrimaId: m?.id ?? ativos[0]?.id ?? "", quantidade: Math.max(1, m?.faltaComprar ?? 1), fornecedor: "", dataPrevista: dataHoje() }); setErro(""); setModal("compra"); }
   async function submeter(e: React.FormEvent) { e.preventDefault(); setErro(""); try {
     if (modal === "material") await salvarMaterial.mutateAsync();
     else if (modal === "compra") await salvarCompra.mutateAsync();
@@ -61,9 +64,10 @@ export function Estoque() {
     <CabecalhoPagina titulo="Estoque de matéria-prima" subtitulo="Acompanhe o saldo, os níveis mínimos e as compras que estão a caminho."
       acoes={<><Botao variante="secundaria" icone={<Truck className="h-4 w-4" />} onClick={() => abrirCompra()}>Planejar compra</Botao><Botao icone={<Plus className="h-4 w-4" />} onClick={() => abrirMaterial()}>Nova matéria-prima</Botao></>} />
 
-    <div className="mb-5 grid gap-3 sm:grid-cols-3">
-      <Cartao><p className="text-xs font-medium uppercase tracking-wide text-texto-fraco">Matérias-primas ativas</p><p className="mt-2 text-2xl font-semibold numero text-texto">{ativos.length}</p></Cartao>
-      <Cartao><p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-texto-fraco"><AlertTriangle className="h-3.5 w-3.5" />No mínimo ou abaixo</p><p className={`mt-2 text-2xl font-semibold numero ${baixos.length ? "text-amber-700" : "text-texto"}`}>{baixos.length}</p></Cartao>
+    <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <Cartao><p className="text-xs font-medium uppercase tracking-wide text-texto-fraco">Matérias-primas ativas</p><p className="mt-2 text-2xl font-semibold numero text-texto">{materias.data ? ativos.length : "—"}</p></Cartao>
+      <Cartao><p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-texto-fraco"><AlertTriangle className="h-3.5 w-3.5" />Abaixo do mínimo</p><p className={`mt-2 text-2xl font-semibold numero ${baixos.length ? "text-amber-700" : "text-texto"}`}>{materias.data ? baixos.length : "—"}</p></Cartao>
+      <Cartao><p className="text-xs font-medium uppercase tracking-wide text-texto-fraco">Repor estoque</p><p className="numero mt-2 text-2xl font-semibold">{materias.data ? repor.length : "—"}</p><Botao tamanho="sm" variante="fantasma" onClick={() => setFiltroEstoque("reposicao")}>Ver lista de reposição</Botao></Cartao>
       <Cartao><p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-texto-fraco"><Truck className="h-3.5 w-3.5" />Compras a caminho</p><p className="mt-2 text-2xl font-semibold numero text-texto">{comprasAbertas.length}</p></Cartao>
     </div>
 
@@ -74,15 +78,17 @@ export function Estoque() {
             : <div className="space-y-2">{pendencias.data.map((p) => <div key={p.pedidoId} className="flex flex-wrap items-center justify-between gap-2 text-sm"><Link href={`/pedidos/${p.pedidoId}`} className="font-medium text-primaria hover:underline">Pedido #{p.pedidoNumero}</Link><span className="text-amber-800">{p.descricao}</span><span className="numero text-texto-fraco">{dataPt(p.prazoEntrega)}</span></div>)}</div>}
     </Cartao>
 
-    <Cartao semPadding>
+    <Cartao titulo={filtroEstoque === "reposicao" ? "Repor estoque" : "Matérias-primas"} semPadding>
       <div className="flex flex-wrap items-center gap-3 border-b border-borda p-4">
         <div className="relative min-w-[230px] flex-1"><Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-texto-fraco" /><Entrada className="pl-9" placeholder="Buscar matéria-prima" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar matérias-primas" /></div>
+        <Selecao aria-label="Filtrar estoque" className="w-auto max-w-full" value={filtroEstoque} onChange={e => setFiltroEstoque(e.target.value)}><option value="todos">Todas as matérias-primas</option><option value="abaixo">Abaixo do mínimo</option><option value="reposicao">Repor estoque</option></Selecao>
         <label className="flex items-center gap-2 text-sm text-texto-suave"><input type="checkbox" checked={mostrarInativos} onChange={(e) => setMostrarInativos(e.target.checked)} />Mostrar inativas</label>
       </div>
+      {filtroEstoque === "reposicao" && <p className="border-b border-borda px-4 py-3 text-xs text-texto-suave">Sugestão: mínimo − saldo livre + pendências, limitada a zero. “Falta comprar” desconta as compras previstas a receber. Pedidos sem ficha técnica precisam de definição dos materiais na lista de pendências.</p>}
       {materias.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(materias.error).message} aoTentar={() => materias.refetch()} /></div>
         : materias.isLoading ? <div className="p-8 text-center text-sm text-texto-fraco">Carregando estoque…</div>
-          : itens.length === 0 ? <EstadoVazio icone={<ClipboardList className="h-5 w-5" />} titulo={busca ? "Nenhum item encontrado" : "Nenhuma matéria-prima cadastrada"} descricao="Cadastre os materiais utilizados nas encomendas para acompanhar o que há disponível e o que precisa ser reposto." acao={<Botao icone={<Plus className="h-4 w-4" />} onClick={() => abrirMaterial()}>Cadastrar matéria-prima</Botao>} />
-            : <div className="overflow-x-auto"><table className="tabela w-full min-w-[960px] text-sm"><thead><tr><th>Matéria-prima</th><th className="text-right">Saldo físico</th><th className="text-right">Reservado</th><th className="text-right">Livre p/ pedidos</th><th className="text-right">Estoque mínimo</th><th className="text-right">A receber</th><th className="text-right">Falta comprar</th><th>Status</th><th className="w-36 text-right">Ações</th></tr></thead><tbody>
+          : itens.length === 0 ? <EstadoVazio icone={<ClipboardList className="h-5 w-5" />} titulo={filtroEstoque !== "todos" ? "Nenhuma matéria-prima neste filtro" : busca ? "Nenhum item encontrado" : "Nenhuma matéria-prima cadastrada"} descricao="Cadastre os materiais utilizados nas encomendas para acompanhar o que há disponível e o que precisa ser reposto." acao={<Botao icone={<Plus className="h-4 w-4" />} onClick={() => abrirMaterial()}>Cadastrar matéria-prima</Botao>} />
+            : <div className="overflow-x-auto"><table className="tabela w-full min-w-[1080px] text-sm"><thead><tr><th>Matéria-prima</th><th className="text-right">Saldo físico</th><th className="text-right">Reservado</th><th className="text-right">Livre p/ pedidos</th><th className="text-right">Estoque mínimo</th><th className="text-right">Reposição sugerida</th><th className="text-right">A receber</th><th className="text-right">Falta comprar</th><th>Status</th><th className="w-36 text-right">Ações</th></tr></thead><tbody>
               {itens.map((m) => {
                 const livre = m.saldoDisponivel;
                 const falta = m.faltaComprar;
@@ -93,6 +99,7 @@ export function Estoque() {
                   <td className="numero text-right text-texto-suave whitespace-nowrap">{numero(m.quantidadeReservada)} {m.unidade}{m.quantidadePendente > 0 && <p className="text-xs text-amber-700">Pendente: {numero(m.quantidadePendente)} {m.unidade}</p>}</td>
                   <td className={`numero text-right font-medium whitespace-nowrap ${livre < 0 ? "text-red-700" : "text-texto"}`}>{numero(livre)} {m.unidade}</td>
                   <td className="numero text-right text-texto-suave whitespace-nowrap">{numero(m.estoqueMinimo)} {m.unidade}</td>
+                  <td className="numero text-right whitespace-nowrap">{numero(m.quantidadeSugerida)} {m.unidade}</td>
                   <td className="numero text-right text-texto-suave whitespace-nowrap">{numero(m.quantidadeAReceber)} {m.unidade}</td>
                   <td className={`numero text-right font-medium whitespace-nowrap ${falta > 0 ? "text-red-700" : "text-texto-suave"}`}>{numero(falta)} {m.unidade}</td>
                   <td><span className={`rounded-full px-2 py-1 text-xs ${!m.ativo ? "bg-slate-100 text-slate-600" : baixo ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-700"}`}>{!m.ativo ? "Inativa" : baixo && m.quantidadeAReceber > 0 ? "Reposição a caminho" : baixo ? "Atenção" : "Adequado"}</span></td>
@@ -100,7 +107,7 @@ export function Estoque() {
                     { rotulo: `Ver movimentações de ${m.nome}`, icone: <History className="h-4 w-4" />, aoAcionar: () => setHistoricoMaterial(m) },
                     { rotulo: `Editar matéria-prima ${m.nome}`, icone: <Pencil className="h-4 w-4" />, aoAcionar: () => abrirMaterial(m) },
                     ...(m.ativo ? [
-                      { rotulo: `Planejar compra de ${m.nome}`, icone: <PackagePlus className="h-4 w-4" />, aoAcionar: () => abrirCompra(m) },
+                      { rotulo: `Planejar compra de ${m.nome}`, icone: <PackagePlus className="h-4 w-4" />, aoAcionar: () => abrirCompra(m), desabilitada: filtroEstoque === "reposicao" && m.faltaComprar <= 0 },
                       { rotulo: `Desativar ${m.nome}`, icone: <Archive className="h-4 w-4" />, aoAcionar: () => mudarAtivo.mutate({ id: m.id, ativo: false }), desabilitada: mudarAtivo.isPending },
                     ] : [
                       { rotulo: `Reativar ${m.nome}`, icone: <RotateCcw className="h-4 w-4" />, aoAcionar: () => mudarAtivo.mutate({ id: m.id, ativo: true }), desabilitada: mudarAtivo.isPending },

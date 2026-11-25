@@ -42,7 +42,7 @@ public class EstoqueTransacionalTests
         new(ResultadoDecisao.Aprovado, MeioContato.Email, new DateTimeOffset(Dados.Agora), null, null, versao);
 
     internal static PedidoService Pedidos(BancoSqlite banco, ZalekDbContext db) =>
-        new(new PedidoRepository(db), new PedidoQueries(db), db, banco.Relogio, new UsuarioAtualFake(), banco.Estoque(db));
+        new(new PedidoRepository(db), new PedidoQueries(db, banco.Relogio), db, banco.Relogio, new UsuarioAtualFake(), banco.Estoque(db));
 
     [Theory]
     [InlineData(10, 6, 0)]

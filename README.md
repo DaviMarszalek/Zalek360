@@ -244,13 +244,30 @@ docker compose -p zalek360-revisao --env-file .env.revisao -f docker-compose.yml
 
 O [smtp4dev](https://github.com/rnwood/smtp4dev) fica em `http://localhost:5180`, acessível apenas localmente, sem relay configurado; SMTP é interno à rede da revisão. Os E2E usam destinatários `example.test`; o override fixa remetente `propostas@example.test`, autenticação vazia e conexão ao capturador. Não use o override no ambiente principal. A validação padrão continua usando o comando de revisão do `AGENTS.md`; a captura SMTP é uma verificação adicional.
 
+### Estoque mínimo e vendas — Fase 5
+
+O dashboard mostra **Repor estoque** e **Vendas entregues no mês** (quantidade e valor dos pedidos pela data de entrega, no fuso da empresa). O cartão de vendas abre os mesmos limites de mês nos filtros de pedidos. **Orçamentos em aberto** agrupa os atalhos de elaboração e aguardando retorno; as contagens continuam separadas para orientar a próxima ação.
+
+Em **Estoque**, o filtro oferece todas as matérias-primas, **Abaixo do mínimo** e **Repor estoque**. Abaixo do mínimo significa saldo livre estritamente menor que o mínimo; materiais inativos ficam fora das duas visões de reposição. A sugestão é calculada na API:
+
+- **Reposição sugerida:** `máximo(0, mínimo − saldo livre + pendências de reservas ativas)`.
+- **Falta comprar:** `máximo(0, reposição sugerida − compras previstas a receber)`.
+
+Compras planejadas/pedidas aparecem separadamente em **A receber**. Compras canceladas/recebidas não são descontadas novamente; recebimento já aumenta o saldo físico. Reservas liberadas/consumidas não compõem pendências. Pedidos sem ficha aparecem em **Pendências de materiais**; não se inventa quantidade de material para eles.
+
+**Planejar compra** no item preenche a falta líquida, editável antes de salvar. Na visão de reposição, a ação fica desabilitada quando as compras previstas já cobrem a necessidade. A lista não cria compras automaticamente.
+
+**Pedidos** tem busca/seletor de cliente, status, responsável e período predefinido ou personalizado. A referência pode ser **Data do pedido** ou **Data da entrega**; esta última inclui somente pedidos entregues. As datas inicial/final são inclusivas e a API converte as datas de entrega pelo fuso da empresa. Período invertido é rejeitado.
+
+API: `GET /api/estoque/reposicao`, `GET /api/estoque/materias-primas?abaixoDoMinimo=true` e `GET /api/pedidos?clienteId=...&dataReferencia=Entrega&de=AAAA-MM-DD&ate=AAAA-MM-DD`, todos sob `Operacao`. Esta fase altera consultas/contratos e interface, sem migration ou mudança de esquema.
+
 ## 6. Testes
 
 ```bash
 cd backend && ./scripts/testar.sh      # equivalente a: dotnet test Zalek360.sln
 ```
 
-Na validação da Fase 4, **133 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **8/8** e Edge **13/13** na suíte completa, mais **3/3** na captura SMTP isolada. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
+Na validação da Fase 5, **139 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **8/8** e Edge **15/15** na suíte completa. A captura SMTP adicional permanece validada na Fase 4 (**3/3**); o envio não foi alterado nesta fase. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
 
 - **27 de domínio:** cliente, CPF/CNPJ, cálculo, ciclo do orçamento, expiração e pedido.
 - **14 de casos de uso**, com repositórios em memória:

@@ -29,7 +29,7 @@ export interface ProdutoRequisicao { nome: string; categoria: string; descricaoB
 export type TipoOpcaoCatalogo = "TipoPersonalizacao" | "CondicaoPagamento" | "MotivoDecisao" | "CategoriaProduto";
 export interface OpcaoCatalogo { id: string; tipo: TipoOpcaoCatalogo; nome: string; ativo: boolean; ordem: number; versao: number }
 export interface OpcaoCatalogoRequisicao { tipo: TipoOpcaoCatalogo; nome: string; ativo: boolean; ordem: number; versao?: number }
-export interface MateriaPrima { id: string; nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number; quantidadeAReceber: number; quantidadeReservada: number; ativo: boolean; saldoDisponivel: number; quantidadePendente: number; noMinimo: boolean; faltaComprar: number }
+export interface MateriaPrima { id: string; nome: string; unidade: string; quantidadeDisponivel: number; estoqueMinimo: number; quantidadeAReceber: number; quantidadeReservada: number; ativo: boolean; saldoDisponivel: number; quantidadePendente: number; noMinimo: boolean; faltaComprar: number; abaixoDoMinimo: boolean; quantidadeSugerida: number }
 export type SituacaoCompraMateriaPrima = "Planejada" | "Pedido" | "Recebida" | "Cancelada";
 export interface CompraMateriaPrima { id: string; materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidade: number; fornecedor: string | null; dataPrevista: string; situacao: SituacaoCompraMateriaPrima; criadaEm: string; aberta: boolean; situacaoDescricao: string; situacoesPermitidas: { valor: SituacaoCompraMateriaPrima; rotulo: string }[] }
 export interface FichaTecnicaLinha { materiaPrimaId: string; materiaPrimaNome: string; unidade: string; quantidadePorUnidade: number }
@@ -152,7 +152,7 @@ export interface PedidoDetalhe {
 export interface Dashboard {
   indicadores: {
     orcamentosEmElaboracao: number; orcamentosCriadosHoje: number; aguardandoRetorno: number; aguardandoVencemEm3Dias: number;
-    aprovadosNoMes: number; valorAprovadoNoMes: number; pedidosEmAndamento: number; pedidosConcluidosNoMes: number; mesReferencia: string;
+    aprovadosNoMes: number; valorAprovadoNoMes: number; pedidosEmAndamento: number; pedidosConcluidosNoMes: number; mesReferencia: string; valorEntregueNoMes: number; inicioMes: string; fimMes: string; materiasParaReposicao: number;
   };
   orcamentosRecentes: OrcamentoListaItem[];
   aguardandoRetorno: { id: string; numero: number; cliente: string; valorTotal: number; apresentadoEm: string | null; validade: string; diasParaVencer: number }[];

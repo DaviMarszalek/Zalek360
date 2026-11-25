@@ -18,7 +18,10 @@ public sealed class EstoqueController : ControllerBase
     public Task<IReadOnlyList<PendenciaEstoquePedidoDto>> ListarPendencias(CancellationToken ct) => _service.ListarPendenciasAsync(ct);
 
     [HttpGet("materias-primas")]
-    public Task<IReadOnlyList<MateriaPrimaDto>> ListarMaterias(CancellationToken ct) => _service.ListarMateriasAsync(ct);
+    public async Task<IReadOnlyList<MateriaPrimaDto>> ListarMaterias([FromQuery] bool abaixoDoMinimo, CancellationToken ct) =>
+        (await _service.ListarMateriasAsync(ct)).Where(x => !abaixoDoMinimo || x.Ativo && x.AbaixoDoMinimo).ToList();
+    [HttpGet("reposicao")]
+    public Task<IReadOnlyList<MateriaPrimaDto>> Reposicao(CancellationToken ct) => _service.ListarReposicaoAsync(ct);
     [HttpGet("materias-primas/{id:guid}/movimentos")]
     public Task<IReadOnlyList<MovimentoMateriaPrimaDto>> ListarMovimentos(Guid id, CancellationToken ct) => _service.ListarMovimentosAsync(id, ct);
     [HttpPost("materias-primas")]
