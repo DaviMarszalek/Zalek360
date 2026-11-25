@@ -45,6 +45,13 @@ services:
       Empresa__Endereco: ${Empresa__Endereco:-}
       Empresa__CaminhoLogo: ${Empresa__CaminhoLogo:-}
       Empresa__TextoRodape: ${Empresa__TextoRodape:-}
+      Email__Host: ${Email__Host:-}
+      Email__Porta: ${Email__Porta:-587}
+      Email__Seguranca: ${Email__Seguranca:-StartTls}
+      Email__Usuario: ${Email__Usuario:-}
+      Email__Senha: ${Email__Senha:-}
+      Email__Remetente: ${Email__Remetente:-}
+      Email__NomeRemetente: ${Email__NomeRemetente:-Zalek Personalizados}
       Banco__ExecutarSeed: ${EXECUTAR_SEED:-true}
       Banco__SenhaUsuariosDemo: ${SENHA_USUARIOS_DEMO:-Zalek@2026}
       Swagger__Habilitado: ${SWAGGER_HABILITADO:-true}
@@ -68,6 +75,18 @@ services:
       - "${FRONTEND_PORTA_HOST:-3000}:3000"
     depends_on:
       - backend
+    restart: unless-stopped
+
+  # Só é iniciado explicitamente para testes no projeto zalek360-revisao.
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    profiles: [teste-email]
+    environment:
+      ServerOptions__Urls: http://*:80
+      ServerOptions__HostName: smtp4dev
+      ServerOptions__TlsMode: None
+    ports:
+      - "127.0.0.1:5180:80"
     restart: unless-stopped
 
 volumes:
