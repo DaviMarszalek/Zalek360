@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Loader2, PackagePlus, Paperclip, Plus, Search, Trash2, UserPlus, X } from "lucide-react";
-import { Aviso, AreaTexto, Botao, Campo, Cartao, Entrada, EstadoVazio, Modal, Selecao } from "@/components/ui";
+import { Aviso, AreaTexto, Botao, Campo, Cartao, Entrada, ErroCarregamento, EstadoVazio, Modal, Selecao } from "@/components/ui";
 import { ReferenciaAnexo } from "@/components/ui/ReferenciaAnexo";
 import { FormularioProduto } from "@/features/produtos/FormularioProduto";
 import { DisponibilidadeItem, ResumoAnaliseInterna } from "./AnaliseInterna";
@@ -41,18 +41,27 @@ function SeletorCliente({ cliente, aoSelecionar, erro }: { cliente: ClienteCard 
     </div>
   );
   return (
-    <div className="relative">
+    <div className="relative" onBlur={evento => { if (!evento.currentTarget.contains(evento.relatedTarget)) setAberto(false); }}
+      onKeyDown={evento => {
+        if (evento.key === "Escape") { setAberto(false); return; }
+        if (evento.key !== "ArrowDown" && evento.key !== "ArrowUp") return;
+        evento.preventDefault(); setAberto(true);
+        const opcoes = Array.from(evento.currentTarget.querySelectorAll<HTMLButtonElement>('[data-opcao-cliente]'));
+        if (!opcoes.length) return;
+        const atual = opcoes.indexOf(document.activeElement as HTMLButtonElement);
+        opcoes[evento.key === "ArrowDown" ? (atual + 1) % opcoes.length : atual <= 0 ? opcoes.length - 1 : atual - 1].focus();
+      }}>
       <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-texto-fraco" />
       <Entrada className="pl-9" placeholder="Pesquisar cliente cadastrado por nome, CPF/CNPJ ou telefone" value={termo} invalido={!!erro}
-        onChange={(e) => { setTermo(e.target.value); setAberto(true); }} onFocus={() => setAberto(true)} onBlur={() => setTimeout(() => setAberto(false), 180)} aria-label="Cliente" />
+        onChange={(e) => { setTermo(e.target.value); setAberto(true); }} onFocus={() => setAberto(true)} aria-label="Cliente" />
       {erro && <p className="mt-1 text-xs text-red-600">{erro}</p>}
       {aberto && (
         <div className="absolute z-20 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border border-borda bg-white shadow-modal">
-          {!q.data ? <p className="flex items-center gap-2 px-4 py-3 text-sm text-texto-fraco"><Loader2 className="h-4 w-4 animate-spin" />Buscando...</p>
+          {q.isError ? <div className="p-3"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div> : !q.data || busca !== termo.trim() ? <p className="flex items-center gap-2 px-4 py-3 text-sm text-texto-fraco"><Loader2 className="h-4 w-4 animate-spin" />Buscando...</p>
             : q.data.itens.length === 0 ? <div className="px-4 py-4 text-sm"><p className="text-texto-suave">Nenhum cliente encontrado{busca && ` para “${busca}”`}.</p>
               <Link href={`/clientes/novo${busca ? `?nome=${encodeURIComponent(busca)}` : ""}`} className="mt-2 inline-flex items-center gap-1.5 font-medium text-primaria hover:underline"><UserPlus className="h-4 w-4" />Cadastrar novo cliente</Link></div>
               : q.data.itens.map((c) => (
-                <button key={c.id} type="button" className="flex w-full items-center justify-between gap-3 border-b border-borda px-4 py-2.5 text-left last:border-0 hover:bg-slate-50"
+                <button key={c.id} type="button" data-opcao-cliente className="flex w-full items-center justify-between gap-3 border-b border-borda px-4 py-2.5 text-left last:border-0 hover:bg-slate-50"
                   onMouseDown={(e) => e.preventDefault()} onClick={() => { aoSelecionar({ id: c.id, nome: c.nome, tipoPessoa: c.tipoPessoa, documento: c.documento, contatoNome: null, contatoCargo: null, telefone: c.telefone, whatsApp: c.whatsApp, email: c.email, cidade: c.cidade }); setAberto(false); setTermo(""); }}>
                   <span><span className="block text-sm font-medium">{c.nome}</span><span className="numero text-xs text-texto-fraco">{documento(c.documento)}{c.cidade && ` · ${c.cidade}`}</span></span>
                   {c.ultimoOrcamento && <span className="numero text-xs text-texto-fraco">{numeroDocumento(c.ultimoOrcamento.numero)}</span>}
@@ -198,6 +207,9 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
           ? <Aviso tipo="erro" titulo="Adicione pelo menos um item ao orçamento antes de salvar.">O orçamento precisa de ao menos um produto com quantidade e valor.</Aviso>
           : <Aviso tipo="erro" titulo={Object.keys(erro.errors).length ? "Corrija os campos destacados para salvar." : erro.message}>{Object.keys(erro.errors).length > 0 && erro.message !== "Corrija os campos destacados." ? erro.message : null}</Aviso>)}
 
+        {(produtos.isError || opcoes.isError) && <ErroCarregamento mensagem="Não foi possível carregar os produtos e as opções do orçamento." aoTentar={() => { produtos.refetch(); opcoes.refetch(); }} />}
+        {(produtos.isPending || opcoes.isPending) && <p role="status" className="text-sm text-texto-fraco">Carregando produtos e opções…</p>}
+        {clienteInicial.isError && <ErroCarregamento mensagem="Não foi possível carregar o cliente indicado." aoTentar={() => clienteInicial.refetch()} />}
         <Cartao titulo="Cliente">
           {edicao ? <CartaoCliente cliente={orcamento!.cliente} /> : <SeletorCliente cliente={cliente} aoSelecionar={setCliente} erro={e("clienteId")} />}
           {!edicao && !cliente && <p className="mt-2 text-xs text-texto-fraco">O orçamento só pode ser criado para um cliente já cadastrado.</p>}
@@ -325,11 +337,12 @@ export function FormularioOrcamento({ orcamento }: { orcamento?: OrcamentoDetalh
           </dl>
           <p className="mt-3 text-xs text-texto-fraco">Valores calculados pelo sistema. {previsao ? `Entrega em ${previsao} dias úteis após a aprovação.` : ""}</p>
           <div className="mt-5 flex flex-col gap-2">
-            <Botao onClick={() => salvar.mutate()} carregando={salvar.isPending} disabled={enviando}>{enviando ? "Aguardando envio dos arquivos..." : edicao ? "Salvar alterações" : "Salvar orçamento"}</Botao>
+            <Botao onClick={() => salvar.mutate()} carregando={salvar.isPending} disabled={enviando || produtos.isPending || opcoes.isPending || produtos.isError || opcoes.isError || calculo.isError}>{enviando ? "Aguardando envio dos arquivos..." : edicao ? "Salvar alterações" : "Salvar orçamento"}</Botao>
             <Botao variante="secundaria" onClick={() => router.back()}>Cancelar</Botao>
           </div>
           {!edicao && <p className="mt-3 text-center text-xs text-texto-fraco">O orçamento será criado com status <b>Em Elaboração</b>.</p>}
         </Cartao>
+        {calculo.isError && <ErroCarregamento mensagem="Não foi possível calcular o total. Tente novamente antes de salvar." aoTentar={() => calculo.refetch()} />}
         <ResumoAnaliseInterna dados={analise.data} carregando={analisePendente} erro={analise.isError ? erroDaApi(analise.error).message : undefined} aoTentar={() => analise.refetch()} />
       </aside>
       <Modal aberto={!!produtoNovoEm} aoFechar={() => setProdutoNovoEm(null)} titulo="Novo produto para o orçamento" descricao="Ao salvar, o produto será selecionado neste item. Os demais dados do orçamento serão mantidos." largura="max-w-3xl">

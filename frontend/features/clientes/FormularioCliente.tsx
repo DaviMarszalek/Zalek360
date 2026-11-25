@@ -69,6 +69,7 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
   const [erro, setErro] = useState<ErroApi | null>(null);
   const [verificacao, setVerificacao] = useState<VerificacaoDocumento | null>(null);
   const [verificando, setVerificando] = useState(false);
+  const [erroVerificacao, setErroVerificacao] = useState(false);
   const [criarOrcamento, setCriarOrcamento] = useState(false);
   const [aba, setAba] = useState<"identificacao" | "contato" | "endereco" | "observacoes">("identificacao");
   const [cepAlterado, setCepAlterado] = useState(false);
@@ -110,8 +111,8 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
   async function verificarDocumento() {
     const d = somenteDigitos(f.documento);
     if (!d || !f.tipoPessoa) { setVerificacao(null); return; }
-    setVerificando(true);
-    try { setVerificacao(await clientesService.verificarDocumento(d, f.tipoPessoa, cliente?.id)); } catch { setVerificacao(null); } finally { setVerificando(false); }
+    setVerificando(true); setErroVerificacao(false);
+    try { setVerificacao(await clientesService.verificarDocumento(d, f.tipoPessoa, cliente?.id)); } catch { setVerificacao(null); setErroVerificacao(true); } finally { setVerificando(false); }
   }
 
   const salvar = useMutation({
@@ -160,6 +161,7 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
       </Aviso>}
       {erro && qtdErros === 0 && <Aviso tipo="erro">{erro.message}</Aviso>}
 
+      {erroVerificacao && <Aviso tipo="alerta">Não foi possível consultar o documento agora. Ele será validado ao salvar o cliente.</Aviso>}
       <div className="rounded-lg border border-borda bg-white p-1.5" role="tablist" aria-label="Seções do cadastro">
         {([
           ["identificacao", "Identificação"],
@@ -169,7 +171,13 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
         ] as [AbaFormulario, string][]).map(([id, rotulo]) => {
           const errosDaAba = contarErrosNaAba(id);
           return (
-          <button key={id} type="button" role="tab" aria-selected={aba === id}
+          <button key={id} type="button" role="tab" aria-selected={aba === id} tabIndex={aba === id ? 0 : -1}
+            onKeyDown={evento => {
+              const botoes = Array.from(evento.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+              const indice = botoes.indexOf(evento.currentTarget);
+              const alvo = evento.key === "ArrowRight" ? (indice + 1) % botoes.length : evento.key === "ArrowLeft" ? (indice - 1 + botoes.length) % botoes.length : evento.key === "Home" ? 0 : evento.key === "End" ? botoes.length - 1 : -1;
+              if (alvo >= 0) { evento.preventDefault(); botoes[alvo].click(); botoes[alvo].focus(); }
+            }}
             onClick={() => setAba(id)}
             className={cn("rounded-md px-4 py-2.5 text-sm font-medium transition-colors", aba === id ? "bg-primaria text-white" : "text-texto-suave hover:bg-slate-50")}>
             {rotulo}{errosDaAba > 0 && <span aria-label={`${errosDaAba} erros na aba ${rotulo}`} title={`${errosDaAba} erros`}

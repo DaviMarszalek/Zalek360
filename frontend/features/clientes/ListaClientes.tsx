@@ -51,6 +51,7 @@ export function ListaClientes() {
           {filtrando && <Botao variante="fantasma" onClick={() => { setBusca(""); setTipo(""); setCidade(""); setPagina(1); }}>Limpar filtros</Botao>}
         </div>
 
+        {cidades.isError && <div className="p-4"><ErroCarregamento mensagem="Não foi possível carregar as cidades." aoTentar={() => cidades.refetch()} /></div>}
         {q.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div>
           : !q.data ? <div className="space-y-2 p-4">{Array.from({ length: 6 }).map((_, i) => <Esqueleto key={i} className="h-12" />)}</div>
             : q.data.itens.length === 0 ? (filtrando

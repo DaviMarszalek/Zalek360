@@ -86,6 +86,7 @@ export function ListaPedidos() {
           {filtrando && <Botao variante="fantasma" onClick={limpar}>Limpar filtros</Botao>}
         </div>
         {dataReferencia === "Entrega" && <p className="px-4 py-2 text-xs text-texto-fraco">Período pela data da entrega: inclui somente pedidos entregues, no fuso da empresa.</p>}
+        {responsaveis.isError && <div className="p-4"><ErroCarregamento mensagem="Não foi possível carregar os responsáveis." aoTentar={() => responsaveis.refetch()} /></div>}
         {periodoInvalido ? <p role="alert" className="p-4 text-sm text-red-700">A data final deve ser igual ou posterior à inicial.</p> : q.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div>
           : !q.data ? <div className="space-y-2 p-4">{Array.from({ length: 6 }).map((_, i) => <Esqueleto key={i} className="h-11" />)}</div>
             : q.data.itens.length === 0 ? <EstadoVazio icone={<Package className="h-5 w-5" />} titulo="Nenhum pedido encontrado"

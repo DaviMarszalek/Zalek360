@@ -54,6 +54,7 @@ export function ListaOrcamentos() {
           <FiltroPeriodo valor={periodo} aoMudar={(p) => { setPeriodo(p); reiniciar(); }} />
           {filtrando && <Botao variante="fantasma" onClick={() => { setBusca(""); setResponsavelId(""); setPeriodo("todos"); setStatus(""); reiniciar(); }}>Limpar filtros</Botao>}
         </div>
+        {responsaveis.isError && <div className="p-4"><ErroCarregamento mensagem="Não foi possível carregar os responsáveis." aoTentar={() => responsaveis.refetch()} /></div>}
         {q.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} /></div>
           : !q.data ? <div className="space-y-2 p-4">{Array.from({ length: 6 }).map((_, i) => <Esqueleto key={i} className="h-11" />)}</div>
             : q.data.itens.length === 0 ? <EstadoVazio icone={<FileText className="h-5 w-5" />} titulo="Nenhum orçamento encontrado"

@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Package, Settings, Tags, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,8 +43,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     try { await authService.logout(); } finally { qc.clear(); router.replace("/login"); }
   }
 
+  useEffect(() => { if (isError) router.replace(`/login?redirect=${encodeURIComponent(caminho)}`); }, [isError, router, caminho]);
+
   if (isError) {
-    if (typeof window !== "undefined") router.replace(`/login?redirect=${encodeURIComponent(caminho)}`);
     return <Carregando texto="Redirecionando para o login..." />;
   }
 
@@ -75,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button onClick={sair} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-lateral-ativo hover:text-white">
           <LogOut className="h-4 w-4" />Sair
         </button>
-        <p className="mt-3 px-3 text-[11px] leading-snug text-slate-500">Zalek Personalizados · Ambiente interno · colaboradores</p>
+        <p className="mt-3 px-3 text-[11px] leading-snug text-slate-500">Zalek Personalizados · Uso interno</p>
       </div>
     </aside>
   );
@@ -83,15 +85,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <div className="sticky top-0 hidden h-screen shrink-0 lg:block">{lateral}</div>
-      {menuAberto && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-slate-950/50" onClick={() => setMenuAberto(false)} />
-          <div className="relative h-full w-60">{lateral}</div>
-        </div>
-      )}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-borda bg-white px-4 lg:hidden">
-          <button onClick={() => setMenuAberto(true)} aria-label="Abrir menu"><Menu className="h-5 w-5" /></button>
+          <DialogPrimitive.Root open={menuAberto} onOpenChange={setMenuAberto}>
+            <DialogPrimitive.Trigger asChild><button aria-label="Abrir menu"><Menu className="h-5 w-5" /></button></DialogPrimitive.Trigger>
+            <DialogPrimitive.Portal>
+              <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" />
+              <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 w-60 overflow-y-auto focus:outline-none lg:hidden" aria-describedby={undefined}>
+                <DialogPrimitive.Title className="sr-only">Menu de navegação</DialogPrimitive.Title>
+                {lateral}
+              </DialogPrimitive.Content>
+            </DialogPrimitive.Portal>
+          </DialogPrimitive.Root>
           <Marca clara={false} />
         </header>
         <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

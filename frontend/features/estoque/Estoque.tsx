@@ -73,7 +73,7 @@ export function Estoque() {
 
     <Cartao titulo="Pendências de materiais" className="mb-5">
       {pendencias.isError ? <ErroCarregamento mensagem={erroDaApi(pendencias.error).message} aoTentar={() => pendencias.refetch()} />
-        : pendencias.isLoading ? <p className="text-sm text-texto-fraco">Carregando pendências…</p>
+        : pendencias.isLoading ? <p role="status" className="text-sm text-texto-fraco">Carregando pendências…</p>
           : !pendencias.data?.length ? <p className="text-sm text-texto-fraco">Nenhuma pendência de materiais.</p>
             : <div className="space-y-2">{pendencias.data.map((p) => <div key={p.pedidoId} className="flex flex-wrap items-center justify-between gap-2 text-sm"><Link href={`/pedidos/${p.pedidoId}`} className="font-medium text-primaria hover:underline">Pedido #{p.pedidoNumero}</Link><span className="text-amber-800">{p.descricao}</span><span className="numero text-texto-fraco">{dataPt(p.prazoEntrega)}</span></div>)}</div>}
     </Cartao>
@@ -86,7 +86,7 @@ export function Estoque() {
       </div>
       {filtroEstoque === "reposicao" && <p className="border-b border-borda px-4 py-3 text-xs text-texto-suave">Sugestão: mínimo − saldo livre + pendências, limitada a zero. “Falta comprar” desconta as compras previstas a receber. Pedidos sem ficha técnica precisam de definição dos materiais na lista de pendências.</p>}
       {materias.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(materias.error).message} aoTentar={() => materias.refetch()} /></div>
-        : materias.isLoading ? <div className="p-8 text-center text-sm text-texto-fraco">Carregando estoque…</div>
+        : materias.isLoading ? <div role="status" className="p-8 text-center text-sm text-texto-fraco">Carregando estoque…</div>
           : itens.length === 0 ? <EstadoVazio icone={<ClipboardList className="h-5 w-5" />} titulo={filtroEstoque !== "todos" ? "Nenhuma matéria-prima neste filtro" : busca ? "Nenhum item encontrado" : "Nenhuma matéria-prima cadastrada"} descricao="Cadastre os materiais utilizados nas encomendas para acompanhar o que há disponível e o que precisa ser reposto." acao={<Botao icone={<Plus className="h-4 w-4" />} onClick={() => abrirMaterial()}>Cadastrar matéria-prima</Botao>} />
             : <div className="overflow-x-auto"><table className="tabela w-full min-w-[1080px] text-sm"><thead><tr><th>Matéria-prima</th><th className="text-right">Saldo físico</th><th className="text-right">Reservado</th><th className="text-right">Livre p/ pedidos</th><th className="text-right">Estoque mínimo</th><th className="text-right">Reposição sugerida</th><th className="text-right">A receber</th><th className="text-right">Falta comprar</th><th>Status</th><th className="w-36 text-right">Ações</th></tr></thead><tbody>
               {itens.map((m) => {
@@ -124,7 +124,7 @@ export function Estoque() {
       <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-base font-semibold text-texto">Compras previstas e pedidos</h2><p className="mt-0.5 text-sm text-texto-fraco">Os itens entram no saldo disponível quando forem marcados como recebidos.</p></div><Botao variante="secundaria" tamanho="sm" icone={<Plus className="h-3.5 w-3.5" />} onClick={() => abrirCompra()}>Adicionar compra</Botao></div>
       <Cartao semPadding>
         {compras.isError ? <div className="p-4"><ErroCarregamento mensagem={erroDaApi(compras.error).message} aoTentar={() => compras.refetch()} /></div>
-          : compras.isLoading ? <div className="p-6 text-center text-sm text-texto-fraco">Carregando compras…</div>
+          : compras.isLoading ? <div role="status" className="p-6 text-center text-sm text-texto-fraco">Carregando compras…</div>
             : comprasAbertas.length === 0 ? <EstadoVazio icone={<Truck className="h-5 w-5" />} titulo="Nenhuma compra a caminho" descricao="Planeje uma reposição para acompanhar quantidades e previsão de chegada." acao={<Botao variante="secundaria" onClick={() => abrirCompra()}>Planejar compra</Botao>} />
               : <div className="overflow-x-auto"><table className="tabela w-full min-w-[760px] text-sm"><thead><tr><th>Matéria-prima</th><th className="text-right">Quantidade</th><th>Fornecedor</th><th>Previsão</th><th>Situação</th><th className="text-right">Ações</th></tr></thead><tbody>
                 {comprasAbertas.map((c) => <tr key={c.id} className="group"><td className="font-medium">{c.materiaPrimaNome}</td><td className="numero text-right whitespace-nowrap">{numero(c.quantidade)} {c.unidade}</td><td className="text-texto-suave">{c.fornecedor || "—"}</td><td className="numero text-texto-suave"><span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{dataPt(c.dataPrevista)}</span></td><td><span className={`rounded-full px-2 py-1 text-xs ${c.situacao === "Pedido" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-700"}`}>{c.situacaoDescricao}</span></td><td><AcoesLinha acoes={c.situacoesPermitidas.map((opcao) => ({
@@ -161,7 +161,7 @@ export function Estoque() {
     </Modal>
     <Modal aberto={!!historicoMaterial} aoFechar={() => setHistoricoMaterial(null)} titulo={`Movimentações · ${historicoMaterial?.nome ?? ""}`} descricao="Entradas, saídas para pedidos e ajustes manuais de saldo." largura="max-w-2xl">
       {movimentos.isError ? <ErroCarregamento mensagem={erroDaApi(movimentos.error).message} aoTentar={() => movimentos.refetch()} />
-        : movimentos.isLoading ? <p className="text-sm text-texto-fraco">Carregando histórico…</p>
+        : movimentos.isLoading ? <p role="status" className="text-sm text-texto-fraco">Carregando histórico…</p>
           : movimentos.data?.length ? <div className="overflow-x-auto"><table className="tabela w-full min-w-[600px] text-sm"><thead><tr><th>Data</th><th>Movimento</th><th>Quantidade</th><th>Origem</th><th className="w-16 text-right">Ações</th></tr></thead><tbody>{movimentos.data.map((x) => <tr key={x.id} className="group"><td className="numero text-texto-suave">{new Date(x.criadoEm).toLocaleString("pt-BR")}</td><td>{x.tipoDescricao}{x.observacao && <p className="text-xs text-texto-fraco">{x.observacao}</p>}</td><td className={`numero font-medium ${x.variacao < 0 ? "text-red-700" : "text-emerald-700"}`}>{x.variacao > 0 ? "+" : ""}{numero(x.variacao)} {historicoMaterial?.unidade}</td><td>{x.pedidoId ? <Link href={`/pedidos/${x.pedidoId}`} className="text-primaria hover:underline">Pedido #{x.pedidoNumero}</Link> : "—"}</td><td><AcoesLinha acoes={x.pedidoId ? [{
             rotulo: `Ver pedido ${x.pedidoNumero ? numeroDocumento(x.pedidoNumero) : ""}`,
             icone: <History className="h-4 w-4" />,

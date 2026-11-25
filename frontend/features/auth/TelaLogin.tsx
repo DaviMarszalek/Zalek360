@@ -44,7 +44,7 @@ export function TelaLogin() {
           <h1 className="text-3xl font-semibold leading-tight tracking-tight text-white">Do orçamento ao pedido, tudo registrado em um só lugar.</h1>
           <p className="mt-4 text-[15px] leading-relaxed">Cadastre clientes, monte orçamentos com personalização, registre cada contato feito pelo WhatsApp, telefone ou e-mail e gere pedidos automaticamente na aprovação.</p>
         </div>
-        <p className="text-xs text-slate-500">Zalek Personalizados · Ambiente interno · uso exclusivo de colaboradores</p>
+        <p className="text-xs text-slate-500">Zalek Personalizados · Uso interno</p>
       </div>
       <div className="flex items-center justify-center px-6 py-12">
         <form onSubmit={entrar} className="w-full max-w-sm" noValidate>
