@@ -86,7 +86,7 @@ const baseBadge = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-fu
 export const BadgeOrcamento = ({ situacao }: { situacao: SituacaoOrcamento }) => {
   const rotulo = rotuloSituacaoOrcamento[situacao] ?? "Status não identificado";
   const estilo = estiloSituacaoOrcamento[situacao] ?? "bg-slate-100 text-slate-700 border-slate-200";
-  return <span className={cn(baseBadge, estilo)}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{rotulo}</span>;
+  return <span className={cn(baseBadge, "max-w-full whitespace-normal", estilo)}><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-70" />{rotulo}</span>;
 };
 const situacoesPedidoPorNumero: SituacaoPedido[] = [
   "Aberto",
