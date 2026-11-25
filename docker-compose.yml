@@ -1,8 +1,9 @@
 # Zalek360 — ambiente completo (PostgreSQL + API ASP.NET Core + Web Next.js)
-#   docker compose up --build
-#   Frontend  http://localhost:3000   ·   API  http://localhost:5000   ·   Swagger  http://localhost:5000/swagger
-# Os valores padrão abaixo servem para demonstração local. Para qualquer outro uso, copie .env.example para .env
-# e troque senha do banco e chave JWT.
+#   1) copie .env.example para .env e preencha JWT_CHAVE e POSTGRES_PASSWORD (obrigatórios, sem valor padrão);
+#   2) docker compose up --build
+#   Frontend http://localhost:3000 (rede) · API http://127.0.0.1:5000 (somente este computador)
+# Segurança: sem .env os comandos param com mensagem; a API recusa segredos curtos ou publicados.
+# Atualização do ambiente principal: docs/11-atualizar-ambiente-principal.md.
 name: zalek360
 
 services:
@@ -11,9 +12,9 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-zalek360}
       POSTGRES_USER: ${POSTGRES_USER:-zalek360}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zalek360}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env (veja docs/11-atualizar-ambiente-principal.md)}
     ports:
-      - "${POSTGRES_PORTA_HOST:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORTA_HOST:-5432}:5432"
     volumes:
       - dados-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -30,10 +31,11 @@ services:
       context: ./backend
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Zalek360: "Host=db;Port=5432;Database=${POSTGRES_DB:-zalek360};Username=${POSTGRES_USER:-zalek360};Password=${POSTGRES_PASSWORD:-zalek360}"
-      Jwt__Chave: ${JWT_CHAVE:-chave-local-docker-zalek360-somente-demonstracao-troque-no-env}
-      # HTTP local: o cookie de sessão não pode exigir HTTPS. Atrás de proxy com TLS, use true.
-      Autenticacao__CookieSegura: ${COOKIE_SEGURA:-false}
+      ConnectionStrings__Zalek360: "Host=db;Port=5432;Database=${POSTGRES_DB:-zalek360};Username=${POSTGRES_USER:-zalek360};Password=${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env (veja docs/11-atualizar-ambiente-principal.md)}"
+      Jwt__Chave: ${JWT_CHAVE:?Defina JWT_CHAVE no .env (veja docs/11-atualizar-ambiente-principal.md)}
+      # Cookie de sessão com Secure por padrão (HTTPS ou http://localhost). Acesso por http://IP da rede exige
+      # HTTPS ou COOKIE_SEGURA=false consciente (docs/11).
+      Autenticacao__CookieSegura: ${COOKIE_SEGURA:-true}
       Aplicacao__FusoHorario: America/Sao_Paulo
       Empresa__NomeFantasia: ${Empresa__NomeFantasia:-Zalek Personalizados}
       Empresa__RazaoSocial: ${Empresa__RazaoSocial:-}
@@ -52,11 +54,10 @@ services:
       Email__Senha: ${Email__Senha:-}
       Email__Remetente: ${Email__Remetente:-}
       Email__NomeRemetente: ${Email__NomeRemetente:-Zalek Personalizados}
-      Banco__ExecutarSeed: ${EXECUTAR_SEED:-true}
-      Banco__SenhaUsuariosDemo: ${SENHA_USUARIOS_DEMO:-Zalek@2026}
-      Swagger__Habilitado: ${SWAGGER_HABILITADO:-true}
+      Banco__ExecutarSeed: ${EXECUTAR_SEED:-false}
+      Banco__SenhaUsuariosDemo: ${SENHA_USUARIOS_DEMO:-}
     ports:
-      - "${BACKEND_PORTA_HOST:-5000}:8080"
+      - "127.0.0.1:${BACKEND_PORTA_HOST:-5000}:8080"
     volumes:
       - anexos:/app/data/uploads
       - identidade:/app/data/empresa:ro

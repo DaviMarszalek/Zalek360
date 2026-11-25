@@ -25,3 +25,8 @@ data/
 # Revisão do MVP: só o relatório é versionado; evidências, logs e scripts ficam locais
 revisao-mvp/*
 !revisao-mvp/RELATORIO-REVISAO-MVP.md
+
+# Arquivos de ambiente reais (inclui .env.anterior e .env.novo gerados pelos scripts)
+.env.*
+!.env.example
+!.env.revisao.example
