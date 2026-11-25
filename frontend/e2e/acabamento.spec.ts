@@ -118,16 +118,20 @@ test("R8: consultas principais mostram carregamento, erro, recuperação e vazio
 test("R8: falhas auxiliares e de gravação têm retorno e preservam o formulário", async ({ page }) => {
   test.setTimeout(120_000); await entrar(page, true);
   await page.route("**/api/auth/me", route => route.fulfill({ status: 503, json: falha }));
-  await page.goto("/produtos"); await expect(page.getByRole("alert").filter({ hasText: falha.message })).toBeVisible(); await expect(page).toHaveURL(/\/produtos$/);
+  const sessaoIndisponivel = page.waitForResponse(r => new URL(r.url()).pathname === "/api/auth/me" && r.status() === 503);
+  await page.goto("/produtos"); await sessaoIndisponivel; await expect(page.getByRole("alert").filter({ hasText: falha.message })).toBeVisible(); await expect(page).toHaveURL(/\/produtos$/);
   await page.unrouteAll({ behavior: "wait" }); await page.getByRole("button", { name: "Tentar novamente" }).click(); await expect(page.getByRole("heading", { name: "Produtos", exact: true })).toBeVisible();
   await page.route("**/api/usuarios/responsaveis", route => route.fulfill({ status: 503, json: falha }));
-  await page.goto("/pedidos"); await expect(page.getByText("Não foi possível carregar os responsáveis.", { exact: true })).toBeVisible();
+  const responsaveisIndisponiveis = page.waitForResponse(r => new URL(r.url()).pathname === "/api/usuarios/responsaveis" && r.status() === 503);
+  await page.goto("/pedidos"); await responsaveisIndisponiveis; await expect(page.getByText("Não foi possível carregar os responsáveis.", { exact: true })).toBeVisible();
   await page.unrouteAll({ behavior: "wait" });
   await page.route("**/api/clientes/cidades", route => route.fulfill({ status: 503, json: falha }));
-  await page.goto("/clientes"); await expect(page.getByText("Não foi possível carregar as cidades.", { exact: true })).toBeVisible();
+  const cidadesIndisponiveis = page.waitForResponse(r => new URL(r.url()).pathname === "/api/clientes/cidades" && r.status() === 503);
+  await page.goto("/clientes"); await cidadesIndisponiveis; await expect(page.getByText("Não foi possível carregar as cidades.", { exact: true })).toBeVisible();
   await page.unrouteAll({ behavior: "wait" });
   await page.route(u => u.pathname === "/api/produtos/opcoes", route => route.fulfill({ status: 503, json: falha }));
-  await page.goto("/orcamentos/novo"); await expect(page.getByText("Não foi possível carregar os produtos e as opções do orçamento.", { exact: true })).toBeVisible();
+  const opcoesIndisponiveis = page.waitForResponse(r => new URL(r.url()).pathname === "/api/produtos/opcoes" && r.status() === 503);
+  await page.goto("/orcamentos/novo"); await opcoesIndisponiveis; await expect(page.getByText("Não foi possível carregar os produtos e as opções do orçamento.", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Salvar orçamento", exact: true })).toBeDisabled();
   await page.unrouteAll({ behavior: "wait" });
   await page.goto("/produtos"); await page.getByRole("button", { name: "Novo produto", exact: true }).click();
