@@ -15,7 +15,7 @@ public sealed class OrcamentoDocumentoService(
     IGeradorDocumentoOrcamento gerador, EmpresaOptions empresa, IClock clock,
     IUsuarioAtual usuario, IUnitOfWork uow)
 {
-    public async Task<ArquivoDocumentoOrcamento> GerarAsync(Guid id, bool registrarExportacao, CancellationToken ct)
+    public async Task<ArquivoDocumentoOrcamento> GerarAsync(Guid id, bool registrarExportacao, CancellationToken ct, bool paraApresentacao = false)
     {
         // GET é estritamente de leitura. POST gera primeiro, e só confirma o evento se o PDF existir.
         await using var transacao = registrarExportacao ? await uow.IniciarTransacaoAsync(ct) : null;
@@ -26,6 +26,7 @@ public sealed class OrcamentoDocumentoService(
         var cliente = await clientes.ObterDetalheAsync(o.Cliente.Id, ct);
         var instante = clock.AgoraUtc;
         var dto = Montar(o, cliente, empresa, clock, instante);
+        if (paraApresentacao && dto.Rascunho) dto = dto with { Rascunho = false, Selo = null };
         var bytes = await gerador.GerarAsync(dto, ct);
         if (agregado is not null)
         {

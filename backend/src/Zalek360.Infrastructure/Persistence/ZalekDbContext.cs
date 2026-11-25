@@ -16,6 +16,8 @@ public sealed class ZalekDbContext : DbContext, IUnitOfWork
 {
     public ZalekDbContext(DbContextOptions<ZalekDbContext> options) : base(options) { }
 
+    public DbSet<ModeloMensagemProposta> ModelosMensagemProposta => Set<ModeloMensagemProposta>();
+    public DbSet<EnvioProposta> EnviosProposta => Set<EnvioProposta>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<ObservacaoCliente> ObservacoesCliente => Set<ObservacaoCliente>();
