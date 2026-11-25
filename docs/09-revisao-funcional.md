@@ -86,6 +86,21 @@ Implementação na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R
 - Nova tela/modal verificada em **360 px e 1280 px**, com confirmação alcançável pela rolagem interna e Escape, sem rolagem horizontal da página. Capturas em `data/revisao-fase4` ficam ignoradas pelo Git. A captura visual aguarda o toast expirar para não fechar o modal ao clicar fora.
 - Revisão restaurada à configuração padrão, sem SMTP direto; capturador local permanece disponível em `http://localhost:5180`, sem relay externo. Configurar conta/provedor real e senha de aplicativo continua sob responsabilidade do ambiente seguro; nenhum segredo foi exibido ou versionado.
 
+## Atualização — Fase 5: estoque mínimo e vendas (25/11/2026)
+
+- Branch `revisao/fase-5-estoque-vendas`, criada de `main` em `35ce777`, após o merge autorizado do PR #7 e a autorização da Fase 5.
+- Reposição usa `máximo(0, mínimo − saldo livre + pendências de reservas ativas)`. A sugestão bruta fica separada da falta líquida de compra, que desconta compras planejadas/pedidas a receber. Canceladas/recebidas e reservas liberadas/consumidas não são somadas novamente.
+- Cartão **Repor estoque** no dashboard, lista dedicada e filtro **Abaixo do mínimo**. Apenas materiais ativos; abaixo do mínimo é estrito, sem incluir igualdade ou mínimo zero com saldo zero.
+- Planejar compra do item preenche a falta líquida e permite revisão antes de salvar; na lista de reposição, a ação fica desabilitada quando compras previstas já cobrem a necessidade. Pedidos sem ficha permanecem na lista de pendências, sem quantidade de material inventada.
+- Dashboard mostra quantidade e valor de pedidos **Entregue** no mês, pela data da entrega no fuso da empresa. Os dois atalhos de orçamento ficam agrupados sob **Orçamentos em aberto**, mantendo suas ações separadas.
+- Pedidos oferece seletor de cliente com busca/teclado, status, responsável, período predefinido/personalizado e referência de data do pedido ou entrega. O link do dashboard usa o mesmo mês por entrega. Datas inclusivas, período invertido rejeitado e contagens/paginação respeitam os demais filtros.
+- Backend **139 aprovados, 0 falhas, 0 ignorados**, incluindo PostgreSQL real, limites do mês, cliente/status/paginação, compras previstas e cancelamento. Os cenários criam clientes próprios para não depender dos pedidos do seed.
+- `npm ci`, typecheck, Vitest **8/8**, build local e Compose padrão aprovados. Atualização preservou hashes/contagens de **30 produtos, 39 orçamentos, 54 itens, 13 pedidos e 11 matérias-primas**, antes dos E2E.
+- Edge **15/15**: regressões das Fases 1–4 e cenários de reposição/compra/cancelamento/recebimento/entrega para ambos os perfis, incluindo sugestão bruta versus falta líquida, compra predefinida, ausência de nova reposição após recebimento e baixa única ao iniciar produção.
+- Dashboard, reposição e pedidos verificados em **360 px/1280 px**, sem rolagem horizontal da página; tabelas mantêm rolagem interna. Seletor de cliente usado por teclado e período inválido validado. Capturas locais ignoradas em `data/revisao-fase5`.
+- Sem migration ou alteração de modelo/esquema nesta fase. Comparador não reexecutado porque não houve migration. Permissões seguem `Operacao`; configuração administrativa e envio não foram alterados. A captura SMTP adicional continua sendo a validação da Fase 4.
+- Permanecem pendentes o cenário Homem-Aranha completo e o acabamento geral da Fase 6; conta/provedor real de e-mail não verificados.
+
 ## Limitações da execução ponta a ponta
 
 O cenário Homem-Aranha completo permanece pendente para a fase prevista. Na auditoria inicial, a tentativa manual com `curl.exe` não preservou as aspas JSON no PowerShell; o 500 observado não era evidência de falha de credenciais. O login com JSON válido foi confirmado e o teste de navegador passou para os dois perfis após as correções da Fase 0.
@@ -143,18 +158,18 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R5.6 Bloqueio de pendência ao iniciar | Atende | API retorna 409 se houver pendência/falta de controle. | Preservar e deixar mensagem e ação de reposição visíveis no frontend. | P | Alto |
 | R5.7 Cancelamento libera reservas | Atende | Status cancelado libera reservas ainda ativas e registra movimento. | Preservar confirmação e motivo. | P | Alto |
 | R5.8 Ordem de Serviço por etapas não é usada | Parcial | Não há OS ativa no fluxo atual; a documentação declara 2.2 futura. O código não deve ser removido sem aprovação. | Registrar no docs/08 na implementação aprovada que OS foi substituída; não apagar entidades/endpoints legados nesta fase. | P/M | Alto |
-| R6.1 Alerta no dashboard com cartão “Repor estoque” | Não atende | Dashboard não consulta estoque mínimo nem renderiza cartão de reposição. | Adicionar indicador/card derivado da API sem adicionar valor fixo no frontend. | M | Médio |
-| R6.2 Filtro “Abaixo do mínimo” no estoque | Não atende | Estoque possui indicador, busca e mostrar inativos, mas não filtro abaixo do mínimo. | Adicionar toggle/filtro “Abaixo do mínimo” sobre os dados já calculados pela API. | P | Médio |
-| R6.3 Quantidade sugerida = mínimo - disponível + pendências | Parcial | Existe `faltaComprar`, mas a fórmula precisa da composição da pendência e não está refletida em uma lista específica de reposição. | Expor lista com quantidade sugerida calculada pelo backend e incluir pendências do pedido. | M | Alto |
-| R6.4 Ações de reposição visíveis | Parcial | A tela permite planejar compra por matéria-prima. | Criar uma visão única “Repor estoque” mostrando ordem sugerida e falta. | M | Médio |
+| R6.1 Alerta no dashboard com cartão “Repor estoque” | Atende na Fase 5 | Contagem derivada da lista de reposição da API, com link para a mesma visão em Estoque. | Preservar. | M | Médio |
+| R6.2 Filtro “Abaixo do mínimo” no estoque | Atende na Fase 5 | Filtro usa comparação estrita do saldo livre com o mínimo, calculada na API, somente para ativos. | Preservar distinção de igualdade. | P | Médio |
+| R6.3 Quantidade sugerida = mínimo - disponível + pendências | Atende na Fase 5 | API separa sugestão bruta e falta líquida descontando compras a receber; exclui reservas liberadas/consumidas. | Preservar; pedidos sem ficha exigem definição dos materiais. | M | Alto |
+| R6.4 Ações de reposição visíveis | Atende na Fase 5 | Visão Repor estoque mostra saldo livre, mínimo, sugestão, a receber e falta comprar; ação preenche compra editável. | Preservar. | M | Médio |
 | R7.1 Histórico por cliente | Atende | Cliente possui visão geral, orçamentos, pedidos e histórico consolidado em endpoints. | Melhorar apresentação de linha do tempo se houver ruído. | P | Médio |
-| R7.2 Filtros de pedidos por período | Atende | Lista possui período, status, responsável e busca. | Adicionar filtro explícito de cliente ao lado dos demais, se não vier pela busca. | P | Baixo |
-| R7.3 Filtros por cliente | Parcial | Busca aceita nome/CPF/CNPJ e endpoint aceita `clienteId`, mas a UI não oferece seletor de cliente claro. | Adicionar seletor de cliente na lista de pedidos. | P | Médio |
+| R7.2 Filtros de pedidos por período | Atende na Fase 5 | Períodos predefinidos/personalizados, pela data do pedido ou entrega, com datas inclusivas e validação. | Preservar. | P | Baixo |
+| R7.3 Filtros por cliente | Atende na Fase 5 | Seletor com busca e teclado envia clienteId exato à API; compõe status, responsável e período. | Preservar. | P | Médio |
 | R7.4 Filtros por status | Atende | Abas e enum permitem todos os estados. | Preservar. | P | Baixo |
-| R7.5 Vendas do mês entregues em quantidade e valor | Não atende | Dashboard só conta pedidos concluídos e usa a lista de orçamentos aprovados no mês como `valorAprovadoNoMes`. | Trocar por pedidos `Entregue` no período e somar valor entregue do pedido no backend. | M | Alto |
-| R7.6 Orçamentos em aberto | Parcial | Dashboard conta elaboração e aguardando retorno separadamente. | Padronizar como “Orçamentos em aberto” ou manter os dois indicadores se forem usados como próximos passos. | P | Baixo |
+| R7.5 Vendas do mês entregues em quantidade e valor | Atende na Fase 5 | Conta e soma pedidos Entregue pelo instante da entrega no mês local; link usa o mesmo intervalo. | Preservar cálculo no backend. | M | Alto |
+| R7.6 Orçamentos em aberto | Atende na Fase 5 | Título agrupa elaboração e aguardando retorno, com contagens e próximos passos separados. | Preservar atalhos operacionais. | P | Baixo |
 | R7.7 Pedidos em andamento | Atende | Conta Aberto, Em produção e Pronto no dashboard. | Preservar; adicionar filtro linkado a cada status se necessário. | P | Baixo |
-| R7.8 Alertas de estoque no dashboard | Não atende | Não há alerta de estoque mínimo no dashboard. | Reusar lista/contagem calculada pelo backend. | M | Médio |
+| R7.8 Alertas de estoque no dashboard | Atende na Fase 5 | Cartão usa a mesma lista/contagem da reposição, sem fórmula no frontend. | Preservar. | M | Médio |
 | R8.1 Textos portugueses e consistência | Parcial | Maioria em português, mas ainda há “colaboradores”, perfis legados e termos técnicos como “Aguardando retorno”. | Padronizar Gestor/Administrador e revisar termos operacionais. | P/M | Médio |
 | R8.2 Estados de carregamento | Parcial | Carregamentos e erros do formulário inicial foram verificados; não houve revisão visual completa das demais telas. | Continuar revisão de estados de todas as telas nas fases restantes. | M | Médio |
 | R8.3 Estados vazios | Atende | Telas principais possuem estados vazios ou mensagens. | Preservar e revisar 360 px. | P | Baixo |
@@ -214,8 +229,8 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 7. **Duplicar produto — resolvido na Fase 2**
 8. **Preço sugerido — resolvido na Fase 3, com aviso e restauração**
 9. **Disponibilidade da ficha no orçamento — resolvido na Fase 3, como informação sem bloqueio**
-10. **Dashboard não possui vendas entregues nem reposição**
-11. **Estoque não possui filtro dedicado abaixo do mínimo**
+10. **Vendas entregues e reposição no dashboard — resolvido na Fase 5**
+11. **Filtro dedicado abaixo do mínimo — resolvido na Fase 5**
 12. **Revisão de responsividade e teclado incompleta**
    - A cobertura E2E atual não verifica todas as rotas a 360/1280 px nem todos os modais.
 
