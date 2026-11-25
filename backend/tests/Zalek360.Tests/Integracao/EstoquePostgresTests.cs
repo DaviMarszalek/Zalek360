@@ -43,7 +43,7 @@ public class EstoquePostgresTests
             var banco = new Banco(Environment.GetEnvironmentVariable("ZALEK_TEST_POSTGRES")!);
             await using var conn = new NpgsqlConnection(banco._administracao);
             await conn.OpenAsync();
-            await using var comando = new NpgsqlCommand($"""CREATE DATABASE "{banco._nome}" """, conn);
+            await using var comando = new NpgsqlCommand($"""CREATE DATABASE "{banco._nome}" """, conn) { CommandTimeout = 120 };
             await comando.ExecuteNonQueryAsync();
             await using var db = banco.Contexto();
             await db.GetService<IMigrator>().MigrateAsync(migration);
@@ -60,7 +60,7 @@ public class EstoquePostgresTests
             await using var conn = new NpgsqlConnection(_administracao);
             await conn.OpenAsync();
             // Nome gerado internamente, com prefixo exclusivo do teste; nunca usa o banco da conexão de administração.
-            await using var comando = new NpgsqlCommand($"""DROP DATABASE IF EXISTS "{_nome}" WITH (FORCE)""", conn);
+            await using var comando = new NpgsqlCommand($"""DROP DATABASE IF EXISTS "{_nome}" WITH (FORCE)""", conn) { CommandTimeout = 120 };
             await comando.ExecuteNonQueryAsync();
         }
     }

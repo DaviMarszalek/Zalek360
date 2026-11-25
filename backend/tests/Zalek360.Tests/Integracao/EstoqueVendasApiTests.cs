@@ -129,14 +129,14 @@ public sealed class EstoqueVendasApiTests
     {
         var admin = Environment.GetEnvironmentVariable("ZALEK_TEST_POSTGRES")!; var nome = "vendas_test_" + Guid.NewGuid().ToString("N");
         await using var conexao = new NpgsqlConnection(admin); await conexao.OpenAsync();
-        await using (var cmd = new NpgsqlCommand($"CREATE DATABASE {nome}", conexao)) await cmd.ExecuteNonQueryAsync();
+        await using (var cmd = new NpgsqlCommand($"CREATE DATABASE {nome}", conexao) { CommandTimeout = 120 }) await cmd.ExecuteNonQueryAsync();
         try
         {
             var cs = new NpgsqlConnectionStringBuilder(admin) { Database = nome }.ConnectionString;
             await using (var db = new ZalekDbContext(new DbContextOptionsBuilder<ZalekDbContext>().UseNpgsql(cs).Options)) await db.Database.MigrateAsync();
             await using var f = new ApiPdfFactory(postgres: cs); await VerificarVendas(f);
         }
-        finally { await using var cmd = new NpgsqlCommand($"DROP DATABASE {nome} WITH (FORCE)", conexao); await cmd.ExecuteNonQueryAsync(); }
+        finally { await using var cmd = new NpgsqlCommand($"DROP DATABASE {nome} WITH (FORCE)", conexao) { CommandTimeout = 120 }; await cmd.ExecuteNonQueryAsync(); }
     }
 
     [Theory, InlineData(PerfilUsuario.Atendente), InlineData(PerfilUsuario.Operador)]

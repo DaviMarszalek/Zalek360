@@ -112,7 +112,10 @@ for (const admin of [false, true]) {
     for (const status of ["Em produção", "Pronto", "Entregue"]) {
       await page.getByRole("button", { name: "Atualizar status", exact: true }).click();
       modal = page.getByRole("dialog", { name: /Atualizar status do pedido/ });
-      await modal.getByRole("button", { name: `Mover para ${status}`, exact: true }).click(); await expect(modal).toHaveCount(0);
+      // Espera a resposta da API (baixa de estoque sob lock) antes de verificar o fechamento do modal.
+      const atualizando = page.waitForResponse(r => r.url().endsWith(`/api/pedidos/${pedido.id}/status`) && r.request().method() === "PATCH");
+      await modal.getByRole("button", { name: `Mover para ${status}`, exact: true }).click();
+      expect((await atualizando).status()).toBe(200); await expect(modal).toHaveCount(0);
       expect(await saldo()).toEqual(expect.arrayContaining([expect.objectContaining({ id: materiais[0].id, quantidadeDisponivel: 3, quantidadeReservada: 0 }), expect.objectContaining({ id: materiais[1].id, quantidadeDisponivel: 2, quantidadeReservada: 0 })]));
     }
     await expect(page.getByText("Fluxo concluído.", { exact: false })).toBeVisible();
