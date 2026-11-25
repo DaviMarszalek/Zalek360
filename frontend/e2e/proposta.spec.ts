@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -17,6 +17,14 @@ async function criar(page: Page) {
   const validade = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
   const resposta = await page.request.post("/api/orcamentos", { data: { clienteId: clientes.itens[0].id, validade, prazoEstimadoDiasUteis: 10, desconto: 0, itens: [{ produtoId: produtos[0].id, quantidade: 2, valorUnitario: 40, valorPersonalizacaoUnitario: 5, tipoPersonalizacao: opcoes.tiposPersonalizacao[0], corPeca: "Preta", anexoIds: [] }] } });
   expect(resposta.status()).toBe(201); return resposta.json();
+}
+
+// Espera a resposta da confirmação (fonte da verdade) antes de verificar o fechamento do modal.
+async function confirmarApresentacao(page: Page, modal: Locator, orcamentoId: string) {
+  const confirmando = page.waitForResponse(r => r.url().endsWith(`/api/orcamentos/${orcamentoId}/proposta/confirmacao`) && r.request().method() === "POST");
+  await modal.getByRole("button", { name: "Confirmar apresentação" }).click();
+  expect((await confirmando).status()).toBe(200);
+  await expect(modal).toHaveCount(0);
 }
 
 for (const admin of [false, true]) {
@@ -46,8 +54,7 @@ for (const admin of [false, true]) {
       expect((await baixando).suggestedFilename()).toMatch(/\.pdf$/);
       expect((await (await page.request.get(`/api/orcamentos/${o.id}`)).json()).situacao).toBe("EmElaboracao");
       await modal.getByRole("checkbox", { name: "Já enviei a mensagem e anexei o PDF ao cliente." }).check();
-      await modal.getByRole("button", { name: "Confirmar apresentação" }).click();
-      await expect(modal).toHaveCount(0);
+      await confirmarApresentacao(page, modal, o.id);
       expect((await (await page.request.get(`/api/orcamentos/${o.id}`)).json()).situacao).toBe("AguardandoRetorno");
     } else {
       const enviando = page.waitForResponse(r => r.url().endsWith(`/api/orcamentos/${o.id}/proposta/email`) && r.request().method() === "POST");
@@ -96,8 +103,7 @@ for (const admin of [false, true]) {
       await expect(modal.getByRole("button", { name: "Confirmar apresentação" })).toBeInViewport();
     }
     await modal.getByRole("checkbox", { name: "Já enviei a mensagem e anexei o PDF ao cliente." }).check();
-    await modal.getByRole("button", { name: "Confirmar apresentação" }).click();
-    await expect(modal).toHaveCount(0);
+    await confirmarApresentacao(page, modal, o.id);
     const contatos = await (await page.request.get(`/api/orcamentos/${o.id}/contatos`)).json();
     expect(contatos).toHaveLength(antes.length + 1); expect(contatos.some((c: { tipo: string }) => c.tipo === "WhatsApp")).toBe(true);
     expect(erros).toEqual([]);
@@ -108,19 +114,23 @@ test("Administrador edita modelos; Gestor recebe 403 e campos internos são reje
   await entrar(page, true);
   const resposta = await page.request.get("/api/configuracoes/modelos-proposta"); expect(resposta.status()).toBe(200);
   const original = (await resposta.json()).modelos.find((m: { canal: string }) => m.canal === "Email");
-  await page.goto("/configuracoes");
-  await page.getByRole("button", { name: "Editar modelo de e-mail" }).click();
-  const modal = page.getByRole("dialog", { name: "Editar modelo de mensagem" });
-  await modal.getByLabel("Texto do modelo").fill("Valor interno {custo}");
-  await modal.getByRole("button", { name: "Salvar modelo" }).click();
-  await expect(modal.getByRole("alert")).toContainText("Use somente os campos disponíveis");
-  await modal.getByLabel("Assunto do modelo").fill("Proposta {numero}");
-  await modal.getByLabel("Texto do modelo").fill("Olá {cliente}, total {valorTotal}. {empresa}");
-  await modal.getByRole("button", { name: "Salvar modelo" }).click(); await expect(modal).toHaveCount(0);
-  const o = await criar(page); const previa = await (await page.request.get(`/api/orcamentos/${o.id}/proposta`)).json();
-  expect(previa.assunto).toBe(`Proposta ${String(o.numero).padStart(6, "0")}`); expect(previa.mensagemEmail).not.toContain("{");
-  const atual = (await (await page.request.get("/api/configuracoes/modelos-proposta")).json()).modelos.find((m: { id: string }) => m.id === original.id);
-  expect((await page.request.put(`/api/configuracoes/modelos-proposta/${original.id}`, { data: { assunto: original.assunto, mensagem: original.mensagem, versao: atual.versao } })).status()).toBe(200);
+  // O modelo de e-mail é global: restaura o texto original mesmo se uma asserção falhar no meio.
+  try {
+    await page.goto("/configuracoes");
+    await page.getByRole("button", { name: "Editar modelo de e-mail" }).click();
+    const modal = page.getByRole("dialog", { name: "Editar modelo de mensagem" });
+    await modal.getByLabel("Texto do modelo").fill("Valor interno {custo}");
+    await modal.getByRole("button", { name: "Salvar modelo" }).click();
+    await expect(modal.getByRole("alert")).toContainText("Use somente os campos disponíveis");
+    await modal.getByLabel("Assunto do modelo").fill("Proposta {numero}");
+    await modal.getByLabel("Texto do modelo").fill("Olá {cliente}, total {valorTotal}. {empresa}");
+    await modal.getByRole("button", { name: "Salvar modelo" }).click(); await expect(modal).toHaveCount(0);
+    const o = await criar(page); const previa = await (await page.request.get(`/api/orcamentos/${o.id}/proposta`)).json();
+    expect(previa.assunto).toBe(`Proposta ${String(o.numero).padStart(6, "0")}`); expect(previa.mensagemEmail).not.toContain("{");
+  } finally {
+    const atual = (await (await page.request.get("/api/configuracoes/modelos-proposta")).json()).modelos.find((m: { id: string }) => m.id === original.id);
+    expect((await page.request.put(`/api/configuracoes/modelos-proposta/${original.id}`, { data: { assunto: original.assunto, mensagem: original.mensagem, versao: atual.versao } })).status()).toBe(200);
+  }
   await page.request.post("/api/auth/logout"); await entrar(page);
   expect((await page.request.get("/api/configuracoes/modelos-proposta")).status()).toBe(403);
   expect((await page.request.put(`/api/configuracoes/modelos-proposta/${original.id}`, { data: {} })).status()).toBe(403);
