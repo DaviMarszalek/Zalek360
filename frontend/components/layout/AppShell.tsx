@@ -1,13 +1,16 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Package, Settings, Tags, Users, X } from "lucide-react";
+import { erroDaApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useUsuarioAtual } from "@/hooks";
 import { authService } from "@/services";
-import { Carregando } from "@/components/ui";
+import { useToast } from "@/components/ui/toast";
+import { Aviso, Carregando, ErroCarregamento } from "@/components/ui";
 
 const menu = [
   { href: "/dashboard", rotulo: "Dashboard", icone: LayoutDashboard },
@@ -35,17 +38,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const caminho = usePathname();
   const router = useRouter();
   const qc = useQueryClient();
-  const { data: usuario, isLoading, isError } = useUsuarioAtual();
+  const { data: usuario, isLoading, isError, error, refetch } = useUsuarioAtual();
+  const semSessao = isError && erroDaApi(error).status === 401;
   const [menuAberto, setMenuAberto] = useState(false);
+  const [saindo, setSaindo] = useState(false);
+  const toast = useToast();
 
   async function sair() {
-    try { await authService.logout(); } finally { qc.clear(); router.replace("/login"); }
+    setSaindo(true);
+    try { await authService.logout(); qc.clear(); router.replace("/login"); }
+    catch (erro) { toast("erro", `Não foi possível sair. ${erroDaApi(erro).message}`); }
+    finally { setSaindo(false); }
   }
 
-  if (isError) {
-    if (typeof window !== "undefined") router.replace(`/login?redirect=${encodeURIComponent(caminho)}`);
+  useEffect(() => { if (semSessao) router.replace(`/login?redirect=${encodeURIComponent(caminho)}`); }, [semSessao, router, caminho]);
+  useEffect(() => {
+    const telaGrande = window.matchMedia("(min-width: 1024px)");
+    const fecharNoDesktop = () => { if (telaGrande.matches) setMenuAberto(false); };
+    telaGrande.addEventListener("change", fecharNoDesktop);
+    return () => telaGrande.removeEventListener("change", fecharNoDesktop);
+  }, []);
+
+  if (semSessao) {
     return <Carregando texto="Redirecionando para o login..." />;
   }
+
+  if (isError && !usuario) return <ErroCarregamento mensagem={erroDaApi(error).message} aoTentar={() => refetch()} />;
 
   const lateral = (
     <aside className="flex h-full w-60 flex-col bg-lateral text-lateral-texto">
@@ -72,10 +90,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="min-w-0 leading-tight"><p className="truncate text-[13px] font-medium text-white">{usuario.nome}</p><p className="text-[11px]">{usuario.perfil}</p></div>
           </div>
         )}
-        <button onClick={sair} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-lateral-ativo hover:text-white">
-          <LogOut className="h-4 w-4" />Sair
+        <button onClick={sair} disabled={saindo} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-lateral-ativo hover:text-white">
+          <LogOut className="h-4 w-4" />{saindo ? "Saindo…" : "Sair"}
         </button>
-        <p className="mt-3 px-3 text-[11px] leading-snug text-slate-500">Zalek Personalizados · Ambiente interno · colaboradores</p>
+        <p className="mt-3 px-3 text-[11px] leading-snug text-slate-500">Zalek Personalizados · Uso interno</p>
       </div>
     </aside>
   );
@@ -83,18 +101,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <div className="sticky top-0 hidden h-screen shrink-0 lg:block">{lateral}</div>
-      {menuAberto && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-slate-950/50" onClick={() => setMenuAberto(false)} />
-          <div className="relative h-full w-60">{lateral}</div>
-        </div>
-      )}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-borda bg-white px-4 lg:hidden">
-          <button onClick={() => setMenuAberto(true)} aria-label="Abrir menu"><Menu className="h-5 w-5" /></button>
+          <DialogPrimitive.Root open={menuAberto} onOpenChange={setMenuAberto}>
+            <DialogPrimitive.Trigger asChild><button aria-label="Abrir menu"><Menu className="h-5 w-5" /></button></DialogPrimitive.Trigger>
+            <DialogPrimitive.Portal>
+              <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" />
+              <DialogPrimitive.Content onCloseAutoFocus={evento => { if (window.matchMedia("(min-width: 1024px)").matches) { evento.preventDefault(); document.querySelector<HTMLElement>("main h1")?.focus(); } }} className="fixed inset-y-0 left-0 z-50 w-60 overflow-y-auto focus:outline-none lg:hidden" aria-describedby={undefined}>
+                <DialogPrimitive.Title className="sr-only">Menu de navegação</DialogPrimitive.Title>
+                {lateral}
+              </DialogPrimitive.Content>
+            </DialogPrimitive.Portal>
+          </DialogPrimitive.Root>
           <Marca clara={false} />
         </header>
         <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          {isError && <Aviso tipo="erro" className="mb-4" acao={<button onClick={() => refetch()}>Tentar novamente</button>}>Não foi possível atualizar a sessão. Tente novamente.</Aviso>}
           {isLoading ? <Carregando /> : children}
         </main>
       </div>

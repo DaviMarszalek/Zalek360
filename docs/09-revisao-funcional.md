@@ -101,9 +101,24 @@ Implementação na branch `revisao/fase-1-perfis`. Esta fase atualiza os itens R
 - Sem migration ou alteração de modelo/esquema nesta fase. Comparador não reexecutado porque não houve migration. Permissões seguem `Operacao`; configuração administrativa e envio não foram alterados. A captura SMTP adicional continua sendo a validação da Fase 4.
 - Permanecem pendentes o cenário Homem-Aranha completo e o acabamento geral da Fase 6; conta/provedor real de e-mail não verificados.
 
+## Atualização — Fase 6: cenário completo e acabamento (25/11/2026)
+
+- [PR #9](https://github.com/DaviMarszalek/Zalek360/pull/9), branch `revisao/fase-6-cenario-acabamento`, criada de `main` em `2da907d`, após o merge autorizado do PR #8. O usuário autorizou executar e encerrar as fases restantes enquanto estiver ausente; esta é a última fase definida no plano vigente.
+- Cenário Homem-Aranha completo para Gestor e Administrador no Edge: cadastro de camiseta preta GG e estampa, cliente, produto com dois materiais criado dentro do orçamento, imagem de referência, preço/custo internos, contato, PDF/WhatsApp com confirmação externa simulada, aprovação e reserva parcial, bloqueio de produção com falta, compra/recebimento integral, recálculo explícito da ficha, produção, entrega e segunda aprovação com cancelamento/liberação.
+- O teste confere os saldos físicos/reservados, a baixa única, os movimentos e a soma de quantidade/valor entregue no dashboard. Nenhuma mensagem é enviada a clientes reais. O PNG de referência é uma fixture local; a confirmação externa usa somente os dados fictícios da revisão.
+- Modais e menu móvel: foco inicial, Tab/Shift+Tab nos limites, Escape e retorno ao acionador; o menu fecha ao mudar para desktop. Quando a ação deixa de existir, o foco retorna ao título da página. A origem é mantida mesmo se uma consulta substituir a linha. O erro na aprovação abre somente seu diálogo, sem manter outro diálogo ativo/oculto para acessibilidade.
+- Campos simples associam automaticamente rótulo, controle e mensagem de erro/ajuda. Abas aceitam setas, Home e End. Formulários de cliente/orçamento têm título e retorno explícitos; avisos acomodam a ação de tentar novamente em 360 px.
+- Consultas principais, auxiliares, abas, detalhes, materiais, históricos, proposta e modelos foram revisados. Falha no histórico do orçamento agora oferece nova tentativa. Falhas de sessão não redirecionam indevidamente ao login; falha ao sair mantém a sessão e permite repetir. Gravação com erro mantém o formulário.
+- Suíte adicional força carregamento/503/vazio/recuperação nas listas e 503/recuperação nas abas e consultas subordinadas; confere gravação e saída com falha. Clientes próprios por execução evitam dependência de histórico/contagens do seed.
+- Rotas restantes e abas do cliente capturadas em 360/1280 px, complementando as inspeções das Fases 2–5. Não há rolagem horizontal da página; tabelas usam rolagem interna. Capturas ignoradas em `data/revisao-fase6`, com rolagem no topo e sem toasts cobrindo o conteúdo.
+- `docs/08-mvp2.md` registra que o fluxo simples substitui OS por etapas, preservando a referência técnica histórica. Código legado de OS, modelo de persistência, migrations e dependências foram preservados.
+- Backend **139 aprovados, 0 falhas e 0 ignorados**, com PostgreSQL real. `npm ci` sem vulnerabilidades, typecheck, Vitest **8/8**, build local e Compose padrão aprovados em sequência. Edge **24/24** na suíte completa.
+- Captura SMTP adicional repetida: **3/3** no smtp4dev, com destinatário, mensagem e PDF recebidos e chave repetida sem duplicação. Revisão restaurada sem SMTP direto. Antes dos cenários, o preparo E2E aguarda GET `/api/auth/me` retornar 401 pelo proxy sem cookies; `--wait` sozinho não verifica HTTP da API. Relatórios Playwright foram excluídos do contexto Docker.
+- Atualização do Compose preservou contagens/hashes de **46 produtos, 63 orçamentos, 82 itens, 29 pedidos e 25 matérias-primas** existentes antes dos E2E. Sem migration/modelo alterado; o comparador não foi reexecutado. Ambiente principal não foi acessado.
+
 ## Limitações da execução ponta a ponta
 
-O cenário Homem-Aranha completo permanece pendente para a fase prevista. Na auditoria inicial, a tentativa manual com `curl.exe` não preservou as aspas JSON no PowerShell; o 500 observado não era evidência de falha de credenciais. O login com JSON válido foi confirmado e o teste de navegador passou para os dois perfis após as correções da Fase 0.
+O cenário Homem-Aranha completo foi executado na Fase 6 para os dois perfis no ambiente PostgreSQL de revisão. Envio por conta/provedor SMTP real permanece não verificado. Na auditoria inicial, a tentativa manual com `curl.exe` não preservou as aspas JSON no PowerShell; o 500 observado não era evidência de falha de credenciais. O login com JSON válido foi confirmado e o teste de navegador passou para os dois perfis após as correções da Fase 0.
 
 ## Matriz funcional
 
@@ -116,7 +131,7 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R1.3 Administrador acessa pedidos/vendas e histórico | Atende | [PedidosController.cs](../backend/src/Zalek360.Api/Controllers/PedidosController.cs) e endpoints de consulta/histórico; alteração de status e cancelamento com motivo permitidos a Gestor e Administrador. | Preservar. | P | Baixo |
 | R1.4 Administrador acessa dashboard, produtos, matérias-primas e estoque | Atende | Consultas e operações de estoque/catálogo acessíveis; dashboard para Gestor e Administrador. Matriz API cobre 200/403. | Preservar. | P | Baixo |
 | R1.5 Gestor executa toda a operação diária | Atende nos fluxos existentes | Gestor opera dashboard, clientes, orçamentos (criação, edição, exportação, apresentação, contato e decisão), pedidos/status/materiais, catálogo, ficha técnica/composição, matérias-primas e compras; [EstoqueController.cs](../backend/src/Zalek360.Api/Controllers/EstoqueController.cs). | Preservar. | P | Baixo |
-| R1.6 Gestor opera clientes, orçamentos e pedidos | Atende | Consultas retornam 200; mutações comerciais, status/cancelamento com motivo e materiais usam `Operacao`. API testa os contratos de validação/404/422 sem bloqueio de perfil, e E2E cria cliente e cria/edita orçamento. GET/POST usuários retornam 403 ao Gestor. | Preservar; Configurações e sua matriz 403 ficam para a fase prevista. | P | Baixo |
+| R1.6 Gestor opera clientes, orçamentos e pedidos | Atende | Consultas retornam 200; mutações comerciais, status/cancelamento com motivo e materiais usam `Operacao`. API testa os contratos de validação/404/422 sem bloqueio de perfil, e E2E cria cliente e cria/edita orçamento. GET/POST usuários retornam 403 ao Gestor. | Preservar; matriz 403 de Configurações implementada na Fase 2. | P | Baixo |
 | R1.7 Administrador pode operar conforme R1 | Atende | Política `Operacao` permite Gestor e Administrador; operações restritas por perfil usam `Administracao`. Testes de autorização cobrem ambos. | Preservar e manter auditoria das ações existentes. | P | Baixo |
 | R1.8 Atendente e Operador retirados da interface | Atende | Menus e ações são filtrados por perfil; perfis legados continuam no enum e banco para compatibilidade. | Preservar dados e código legado. | P | Baixo |
 | R1.9 Menu por perfil | Atende | [AppShell.tsx](../frontend/components/layout/AppShell.tsx) mostra o mesmo menu operacional completo aos dois perfis, sem badge Consulta. | Configurações é exclusivo do Administrador na Fase 2. Tela de Usuários permanece pendente e terá a mesma restrição. | P | Baixo |
@@ -170,14 +185,14 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
 | R7.6 Orçamentos em aberto | Atende na Fase 5 | Título agrupa elaboração e aguardando retorno, com contagens e próximos passos separados. | Preservar atalhos operacionais. | P | Baixo |
 | R7.7 Pedidos em andamento | Atende | Conta Aberto, Em produção e Pronto no dashboard. | Preservar; adicionar filtro linkado a cada status se necessário. | P | Baixo |
 | R7.8 Alertas de estoque no dashboard | Atende na Fase 5 | Cartão usa a mesma lista/contagem da reposição, sem fórmula no frontend. | Preservar. | M | Médio |
-| R8.1 Textos portugueses e consistência | Parcial | Maioria em português, mas ainda há “colaboradores”, perfis legados e termos técnicos como “Aguardando retorno”. | Padronizar Gestor/Administrador e revisar termos operacionais. | P/M | Médio |
-| R8.2 Estados de carregamento | Parcial | Carregamentos e erros do formulário inicial foram verificados; não houve revisão visual completa das demais telas. | Continuar revisão de estados de todas as telas nas fases restantes. | M | Médio |
-| R8.3 Estados vazios | Atende | Telas principais possuem estados vazios ou mensagens. | Preservar e revisar 360 px. | P | Baixo |
-| R8.4 Estados de erro | Parcial | JSON malformado retorna 400 no envelope padrão e formulário de cliente navega à primeira aba inválida; faltam verificações de todas as consultas e ações. | Continuar revisão geral. | P/M | Médio |
+| R8.1 Textos portugueses e consistência | Atende | Perfis vigentes, títulos/retornos nos formulários e textos operacionais revisados; documentação do fluxo simples sincronizada. | Preservar. | P/M | Baixo |
+| R8.2 Estados de carregamento | Atende | Indicadores de carregamento nas consultas e bloqueio de ações em andamento; E2E retém respostas para verificar os estados. | Preservar. | M | Baixo |
+| R8.3 Estados vazios | Atende | Listas e abas com mensagens e ações; E2E verifica vazio após recuperação, incluindo 360 px. | Preservar. | P | Baixo |
+| R8.4 Estados de erro | Atende | Consultas com nova tentativa; histórico do orçamento e auxiliares corrigidos; E2E força 503, recupera e preserva formulário/sessão. API mantém envelope padrão. | Preservar. | P/M | Baixo |
 | R8.5 Ações com ícones/AcoesLinha | Atende | Componente `AcoesLinha` está presente e usado em várias listas; algumas ações ainda são botões. | Completar só nas listas relevantes, preservando clique de linha e teclado. | P/M | Baixo |
-| R8.6 Responsividade 360 px | Não verificável | Playwright funcional executado, mas sem validação visual no viewport 360 px; estoque contém tabela com rolagem horizontal. | Validar visualmente Playwright 360 px em fase posterior. | M | Alto |
-| R8.7 Responsividade 1280 px | Não verificável | E2E funcional executado, mas o layout não foi inspecionado visualmente em 1280 px. | Validar 1280 px em Playwright. | P/M | Médio |
-| R8.8 Navegação por teclado/modais | Parcial | Menus e fluxo de erro por abas exercitados no Edge; navegação por teclado de todos os modais não foi verificada. | Testar foco inicial, Escape, foco preso e retorno do foco em Playwright/Testing Library. | M | Médio |
+| R8.6 Responsividade 360 px | Atende | Edge verifica largura da página e captura rotas/abas; avisos, formulários e modais alcançáveis; tabelas com rolagem interna. | Preservar. | M | Baixo |
+| R8.7 Responsividade 1280 px | Atende | Capturas e verificação de largura em 1280 px, complementadas pelas Fases 2–5. | Preservar. | P/M | Baixo |
+| R8.8 Navegação por teclado/modais | Atende | Edge cobre variantes de diálogo e menu móvel: foco inicial, contenção, Escape e retorno. Abas e seletores usados por teclado. | Preservar. | M | Baixo |
 
 ## Evidências técnicas adicionais
 
@@ -274,7 +289,7 @@ Legenda: **Atende**, **Parcial** ou **Não atende**.
    - Decisão já tomada: o fluxo manual Aberto → Em produção → Pronto → Entregue substitui a OS por etapas. Não remover código legado de OS sem perguntar.
 
 7. **Miniaturas de referência**
-   - Confirmar se imagens devem ter miniatura real no orçamento e pedido; PDF deve continuar como link seguro.
+   - Miniaturas reais aprovadas e implementadas na Fase 3; PDF continua como download autenticado, sem link público.
 
 ## Plano de fases recomendado
 

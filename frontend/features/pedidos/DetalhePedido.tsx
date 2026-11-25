@@ -220,8 +220,8 @@ export function PedidoManualBloqueado() {
             <p className="text-base font-semibold">Pedido deve ser originado de um orçamento aprovado.</p>
             <p className="mt-2 text-texto-suave">No Zalek360 não existe cadastro manual de pedido. Abra um orçamento que esteja <b>Aguardando Retorno</b> e registre a aprovação do cliente — o pedido é gerado automaticamente com os itens, personalização, artes e valores do orçamento.</p>
             <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
-              <Link href="/orcamentos?status=AguardandoRetorno" className="block min-w-0"><Botao className="max-w-full whitespace-normal text-left sm:whitespace-nowrap">Ver orçamentos aguardando retorno</Botao></Link>
-              <Link href="/pedidos" className="block min-w-0"><Botao variante="secundaria" className="max-w-full whitespace-normal text-left sm:whitespace-nowrap">Voltar para pedidos</Botao></Link>
+              <Link href="/orcamentos?status=AguardandoRetorno" className="block min-w-0"><Botao className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-left sm:whitespace-nowrap">Ver orçamentos aguardando retorno</Botao></Link>
+              <Link href="/pedidos" className="block min-w-0"><Botao variante="secundaria" className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-left sm:whitespace-nowrap">Voltar para pedidos</Botao></Link>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AlertCircle, CheckCircle2, Info, Loader2, X } from "lucide-react";
+import { useOrigemFocoDialogo } from "./FocoDialogo";
 import { cn } from "@/lib/utils";
 import { estiloSituacaoOrcamento, estiloSituacaoPedido, rotuloSituacaoOrcamento, rotuloSituacaoPedido } from "@/lib/status";
 import type { SituacaoOrcamento, SituacaoPedido } from "@/types/api";
@@ -52,12 +53,18 @@ export const Selecao = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttri
 export function Campo({ rotulo, erro, ajuda, obrigatorio, children, className, htmlFor }: {
   rotulo?: string; erro?: string; ajuda?: React.ReactNode; obrigatorio?: boolean; children: React.ReactNode; className?: string; htmlFor?: string;
 }) {
+  const gerado = React.useId();
+  const filho = React.isValidElement<React.InputHTMLAttributes<HTMLInputElement>>(children) &&
+    [Entrada, AreaTexto, Selecao, "input", "textarea", "select"].some(tipo => children.type === tipo) ? children : null;
+  const controleId = htmlFor ?? filho?.props.id ?? gerado;
+  const mensagemId = `${controleId}-mensagem`;
+  const controle = filho ? React.cloneElement(filho, { id: controleId, "aria-describedby": [filho.props["aria-describedby"], (erro || ajuda) && mensagemId].filter(Boolean).join(" ") || undefined }) : children;
   return (
     <div className={className}>
-      {rotulo && <label htmlFor={htmlFor} className="rotulo">{rotulo}{obrigatorio && <span className="ml-0.5 text-red-600">*</span>}</label>}
-      {children}
-      {erro ? <p className="mt-1 flex items-center gap-1 text-xs text-red-600" role="alert"><AlertCircle className="h-3.5 w-3.5 shrink-0" />{erro}</p>
-        : ajuda ? <p className="mt-1 text-xs text-texto-fraco">{ajuda}</p> : null}
+      {rotulo && <label htmlFor={filho || htmlFor ? controleId : undefined} className="rotulo">{rotulo}{obrigatorio && <span className="ml-0.5 text-red-600">*</span>}</label>}
+      {controle}
+      {erro ? <p id={mensagemId} className="mt-1 flex items-center gap-1 text-xs text-red-600" role="alert"><AlertCircle className="h-3.5 w-3.5 shrink-0" />{erro}</p>
+        : ajuda ? <p id={mensagemId} className="mt-1 text-xs text-texto-fraco">{ajuda}</p> : null}
     </div>
   );
 }
@@ -66,7 +73,7 @@ export function Cartao({ titulo, acao, children, className, semPadding }: { titu
   return (
     <section className={cn("cartao", className)}>
       {(titulo || acao) && (
-        <header className="flex items-center justify-between gap-3 border-b border-borda px-5 py-3.5">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-borda px-5 py-3.5">
           <h2 className="text-sm font-semibold text-texto">{titulo}</h2>{acao}
         </header>
       )}
@@ -79,7 +86,7 @@ const baseBadge = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-fu
 export const BadgeOrcamento = ({ situacao }: { situacao: SituacaoOrcamento }) => {
   const rotulo = rotuloSituacaoOrcamento[situacao] ?? "Status não identificado";
   const estilo = estiloSituacaoOrcamento[situacao] ?? "bg-slate-100 text-slate-700 border-slate-200";
-  return <span className={cn(baseBadge, estilo)}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />{rotulo}</span>;
+  return <span className={cn(baseBadge, "max-w-full whitespace-normal", estilo)}><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-70" />{rotulo}</span>;
 };
 const situacoesPedidoPorNumero: SituacaoPedido[] = [
   "Aberto",
@@ -124,20 +131,20 @@ const estilosAviso: Record<TipoAviso, string> = {
 export function Aviso({ tipo = "info", titulo, children, acao, className }: { tipo?: TipoAviso; titulo?: React.ReactNode; children?: React.ReactNode; acao?: React.ReactNode; className?: string }) {
   const Icone = tipo === "sucesso" ? CheckCircle2 : tipo === "info" ? Info : AlertCircle;
   return (
-    <div role={tipo === "erro" ? "alert" : "status"} className={cn("flex items-start gap-3 rounded-lg border px-4 py-3 text-sm", estilosAviso[tipo], className)}>
+    <div role={tipo === "erro" ? "alert" : "status"} className={cn("grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-lg border px-4 py-3 text-sm sm:flex", estilosAviso[tipo], className)}>
       <Icone className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="min-w-0 flex-1">{titulo && <p className="font-medium">{titulo}</p>}{children && <div className={cn(titulo && "mt-0.5", "opacity-90")}>{children}</div>}</div>
-      {acao}
+      {acao && <div className="col-start-2 sm:shrink-0">{acao}</div>}
     </div>
   );
 }
 
 export function Esqueleto({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded bg-slate-200/70", className)} />;
+  return <div role="status" aria-label="Carregando dados" className={cn("animate-pulse rounded bg-slate-200/70", className)} />;
 }
 
 export function Carregando({ texto = "Carregando..." }: { texto?: string }) {
-  return <div className="flex items-center justify-center gap-2 py-16 text-sm text-texto-fraco"><Loader2 className="h-4 w-4 animate-spin" />{texto}</div>;
+  return <div role="status" className="flex items-center justify-center gap-2 py-16 text-sm text-texto-fraco"><Loader2 className="h-4 w-4 animate-spin" />{texto}</div>;
 }
 
 export function EstadoVazio({ icone, titulo, descricao, acao }: { icone?: React.ReactNode; titulo: string; descricao?: React.ReactNode; acao?: React.ReactNode }) {
@@ -162,21 +169,34 @@ export function ErroCarregamento({ mensagem, aoTentar }: { mensagem?: string; ao
 export function Modal({ aberto, aoFechar, titulo, descricao, children, rodape, largura = "max-w-lg" }: {
   aberto: boolean; aoFechar: () => void; titulo: React.ReactNode; descricao?: React.ReactNode; children?: React.ReactNode; rodape?: React.ReactNode; largura?: string;
 }) {
+  const focoAnterior = useOrigemFocoDialogo();
+  const origem = React.useRef<HTMLElement | null>(null);
+  const rotuloOrigem = React.useRef<string | null>(null);
   return (
     <DialogPrimitive.Root open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-[1px]" />
-        <DialogPrimitive.Content className={cn("fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-borda bg-white shadow-modal focus:outline-none", largura)}>
-          <div className="flex items-start justify-between gap-4 border-b border-borda px-6 py-4">
-            <div>
+        <DialogPrimitive.Content onOpenAutoFocus={() => { origem.current = focoAnterior?.current?.elemento ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null); rotuloOrigem.current = focoAnterior?.current?.rotulo ?? origem.current?.getAttribute("aria-label") ?? null; }}
+          onCloseAutoFocus={evento => {
+            evento.preventDefault();
+            // Outro diálogo pode ter sido aberto na sequência da confirmação.
+            if (document.querySelector('[role="dialog"][data-state="open"]')) return;
+            // Uma consulta pode substituir o botão da linha enquanto o diálogo está aberto.
+            const destino = origem.current?.isConnected ? origem.current : rotuloOrigem.current
+              ? document.querySelector<HTMLElement>(`[aria-label="${CSS.escape(rotuloOrigem.current)}"]`) : null;
+            if (destino && !destino.closest('[aria-hidden="true"]')) destino.focus();
+            else document.querySelector<HTMLElement>("main h1")?.focus();
+          }} className={cn("fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-borda bg-white shadow-modal focus:outline-none", largura)}>
+          <div className="flex shrink-0 items-start justify-between gap-4 border-b border-borda px-6 py-4">
+            <div className="min-w-0 break-words">
               <DialogPrimitive.Title className="text-base font-semibold text-texto">{titulo}</DialogPrimitive.Title>
               {descricao ? <DialogPrimitive.Description className="mt-1 text-sm text-texto-fraco">{descricao}</DialogPrimitive.Description>
                 : <DialogPrimitive.Description className="sr-only">Janela de diálogo</DialogPrimitive.Description>}
             </div>
             <DialogPrimitive.Close className="rounded p-1 text-texto-fraco hover:bg-slate-100" aria-label="Fechar"><X className="h-4 w-4" /></DialogPrimitive.Close>
           </div>
-          <div className="overflow-y-auto px-6 py-5">{children}</div>
-          {rodape && <div className="flex flex-wrap justify-end gap-2 border-t border-borda bg-slate-50/60 px-6 py-3.5">{rodape}</div>}
+          <div className="min-h-0 overflow-y-auto px-6 py-5">{children}</div>
+          {rodape && <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-borda bg-slate-50/60 px-6 py-3.5">{rodape}</div>}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
@@ -187,7 +207,15 @@ export function Abas<T extends string>({ abas, ativa, aoMudar }: { abas: { id: T
   return (
     <div className="flex gap-1 overflow-x-auto border-b border-borda" role="tablist">
       {abas.map((a) => (
-        <button key={a.id} role="tab" aria-selected={a.id === ativa} onClick={() => aoMudar(a.id)}
+        <button key={a.id} role="tab" aria-selected={a.id === ativa} tabIndex={a.id === ativa ? 0 : -1}
+          onKeyDown={evento => {
+            const indice = abas.findIndex(aba => aba.id === a.id);
+            const proximo = evento.key === "ArrowRight" ? (indice + 1) % abas.length : evento.key === "ArrowLeft" ? (indice - 1 + abas.length) % abas.length : evento.key === "Home" ? 0 : evento.key === "End" ? abas.length - 1 : -1;
+            if (proximo < 0) return;
+            evento.preventDefault();
+            aoMudar(abas[proximo].id);
+            evento.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[proximo]?.focus();
+          }} onClick={() => aoMudar(a.id)}
           className={cn("-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
             a.id === ativa ? "border-primaria text-primaria" : "border-transparent text-texto-fraco hover:text-texto")}>
           {a.rotulo}
@@ -220,7 +248,7 @@ export function CabecalhoPagina({ titulo, subtitulo, acoes, voltar }: { titulo: 
     <div className="mb-6">
       {voltar && <div className="mb-2 text-[13px]">{voltar}</div>}
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0"><h1 className="text-xl font-semibold tracking-tight text-texto">{titulo}</h1>{subtitulo && <div className="mt-1 text-sm text-texto-fraco">{subtitulo}</div>}</div>
+        <div className="min-w-0"><h1 tabIndex={-1} className="break-words text-xl font-semibold tracking-tight text-texto">{titulo}</h1>{subtitulo && <div className="mt-1 text-sm text-texto-fraco">{subtitulo}</div>}</div>
         {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
       </div>
     </div>

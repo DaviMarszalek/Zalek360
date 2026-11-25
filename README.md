@@ -27,7 +27,7 @@ docker compose up --build
 
 Na primeira subida, a API:
 1. espera o PostgreSQL aceitar conexões;
-2. aplica as migrations pendentes (sete na Fase 2.0);
+2. aplica as migrations pendentes;
 3. confere se todas as colunas do modelo existem no banco;
 4. grava os dados de demonstração.
 
@@ -120,13 +120,13 @@ $env:E2E_BASE_URL = "http://localhost:3100"
 npm run e2e
 ```
 
-O comando não inicia nem altera dados automaticamente; a URL deve apontar para um ambiente descartável.
+O comando não inicia o Compose. Antes de executar os cenários, aguarda a API responder pelo proxy do frontend. A suíte cria e modifica dados de teste; use exclusivamente o ambiente descartável `zalek360-revisao` em `http://localhost:3100`.
 
 ## 3. Roteiro de demonstração (segue os protótipos)
 
 Os dados de demonstração usam **datas relativas**: o "hoje" do protótipo (24/09/2026) corresponde ao dia em que o sistema é iniciado. Por isso validades, prazos e o indicador "vencem em 3 dias" do dashboard fazem sentido em qualquer data.
 
-1. **Login** com Maria Silva. O **Dashboard** mostra orçamentos por situação, os aguardando retorno e os pedidos em andamento.
+1. **Login** como Gestor (`gestao@zalekpersonalizados.com.br`). Use Administrador somente para configurar. O **Dashboard** mostra orçamentos por situação, os aguardando retorno e os pedidos em andamento.
 2. **Clientes → pesquisar "Academia Movimento"**: nenhum resultado. O cliente é propositalmente ausente do seed, para demonstrar o fluxo "pesquise antes de cadastrar".
 3. **Novo cliente (PJ) com CNPJ `38.221.907/0001-53`.**
    - Salve sem preencher os obrigatórios para ver a validação campo a campo.
@@ -137,7 +137,7 @@ Os dados de demonstração usam **datas relativas**: o "hoje" do protótipo (24/
    - Adicione "Camiseta Dry Fit", 100 un., R$ 32,00 + R$ 10,00 de personalização, "Serigrafia (frente) + DTF (costas)", e anexe as artes. Os totais são calculados pela API.
    - Salve: nasce o **#000124 — Em Elaboração**.
 5. **Apresentar ao cliente**: o orçamento passa a Aguardando Retorno.
-   - Use **Exportar PDF para enviar ao cliente** no modal de sucesso. No cabeçalho também há **Exportar PDF** e **Abrir em nova aba**. Confira total, validade e prazo antes de enviar pelo WhatsApp/e-mail fora do sistema.
+   - Revise destinatário, mensagem e PDF em **Apresentar ao cliente**. E-mail direto exige SMTP configurado; no fluxo externo de WhatsApp/e-mail, baixe o PDF, envie-o manualmente e confirme a apresentação. Também é possível registrar por outro meio.
 6. **Registrar contato** (WhatsApp) e depois ajuste a quantidade para 80. O contato **não** altera o status, e as duas ações entram no histórico.
 7. **Registrar decisão → Aprovado**, informando o meio de contato e a data/hora. Depois confirme **"Aprovar orçamento e gerar pedido?"**.
    - Na mesma transação, o orçamento vira Aprovado e o **pedido #000057 — Aberto** é criado.
@@ -145,7 +145,7 @@ Os dados de demonstração usam **datas relativas**: o "hoje" do protótipo (24/
 8. **Pedidos → #000057**: na Fase 2.0, configure fichas e saldo em **Estoque** antes de iniciar produção; ausência de ficha ou saldo mantém a aprovação e gera pendência. Pedidos legados com controle_materiais=false conservam o fluxo manual. No detalhe: faixa de origem com link para o orçamento, **Atualizar status** (Aberto → Em produção → Pronto → Entregue, uma etapa por vez) e **Cancelar pedido** (com motivo obrigatório).
 9. **Cliente Metalúrgica Horizonte**: veja as abas Visão geral, Orçamentos, Pedidos, Observações e Histórico (6 orçamentos e 3 pedidos, como no protótipo). Filtre Orçamentos por período e por "Aprovado".
 10. Outros exemplos:
-    - #000116 **Expirado**: expiração automática, sem ação do atendente;
+    - #000116 **Expirado**: expiração automática, sem ação do Gestor;
     - um orçamento **Recusado**, com motivo;
     - `/pedidos/novo`: a criação manual é bloqueada. `POST /api/pedidos` retorna 422 `PEDIDO_CRIACAO_DIRETA_NAO_PERMITIDA`.
 
@@ -261,13 +261,19 @@ Compras planejadas/pedidas aparecem separadamente em **A receber**. Compras canc
 
 API: `GET /api/estoque/reposicao`, `GET /api/estoque/materias-primas?abaixoDoMinimo=true` e `GET /api/pedidos?clienteId=...&dataReferencia=Entrega&de=AAAA-MM-DD&ate=AAAA-MM-DD`, todos sob `Operacao`. Esta fase altera consultas/contratos e interface, sem migration ou mudança de esquema.
 
+### Cenário completo e acabamento — Fase 6
+
+O cenário Homem-Aranha percorre cadastro de cliente/materiais, produto com composição dentro do orçamento, referência, proposta, aprovação com falta, compra, recebimento, produção, entrega e cancelamento de outra reserva. A baixa ocorre uma vez ao iniciar produção; após receber material, recarregue a ficha no pedido para completar a reserva.
+
+Modais e menu móvel oferecem foco inicial, contenção, Escape e retorno; abas aceitam setas, Home e End. Falhas de consultas mostram nova tentativa, e os formulários mantêm os dados quando a gravação falha. A decisão de usar o fluxo simples no lugar de OS por etapas está em [docs/08-mvp2.md](docs/08-mvp2.md). Pendências sem fase definida estão em [docs/10-contexto-e-proximos-passos.md](docs/10-contexto-e-proximos-passos.md).
+
 ## 6. Testes
 
 ```bash
 cd backend && ./scripts/testar.sh      # equivalente a: dotnet test Zalek360.sln
 ```
 
-Na validação da Fase 5, **139 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **8/8** e Edge **15/15** na suíte completa. A captura SMTP adicional permanece validada na Fase 4 (**3/3**); o envio não foi alterado nesta fase. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
+Na validação da Fase 6, **139 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **8/8** e Edge **24/24** na suíte completa. A captura SMTP adicional foi repetida na Fase 6 (**3/3**); conta/provedor real não foram verificados. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
 
 - **27 de domínio:** cliente, CPF/CNPJ, cálculo, ciclo do orçamento, expiração e pedido.
 - **14 de casos de uso**, com repositórios em memória:

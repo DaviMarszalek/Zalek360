@@ -31,6 +31,8 @@ export function Dashboard() {
   const d = q.data;
   const hoje = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
 
+  if (q.isError && !d) return <ErroCarregamento mensagem={erroDaApi(q.error).message} aoTentar={() => q.refetch()} />;
+
   return (
     <>
       <CabecalhoPagina titulo={`${saudacao()}${usuario ? `, ${usuario.nome.split(" ")[0]}` : ""}`} subtitulo={<span className="capitalize">{hoje}</span>}

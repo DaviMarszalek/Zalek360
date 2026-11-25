@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
-import { AreaTexto, Aviso, Botao, Campo, Entrada, ErroCarregamento, Selecao } from "@/components/ui";
+import { AreaTexto, Aviso, Botao, Campo, Carregando, Entrada, ErroCarregamento, Selecao } from "@/components/ui";
 import { catalogoService, estoqueService } from "@/services";
 import { erroCampo, erroDaApi } from "@/lib/api";
 import type { Produto } from "@/types/api";
@@ -28,6 +28,7 @@ export function FormularioProduto({ produto, aoSalvar }: { produto?: Produto; ao
   }, onSuccess: aoSalvar });
   const erro = salvar.isError ? erroDaApi(salvar.error) : null;
   const e = (campo: string) => erroCampo(erro, campo);
+  if (opcoes.isPending || materias.isPending) return <Carregando texto="Carregando categorias e matérias-primas…" />;
   if (opcoes.isError || materias.isError) return <ErroCarregamento mensagem="Não foi possível carregar categorias e matérias-primas." aoTentar={() => { opcoes.refetch(); materias.refetch(); }} />;
   const categorias = [...new Set([...(opcoes.data ?? []).filter(x => x.tipo === "CategoriaProduto").map(x => x.nome), ...(produto?.categoria ? [produto.categoria] : [])])];
   return <form className="space-y-5" onSubmit={async ev => { ev.preventDefault(); setErroLocal(""); try { await salvar.mutateAsync(); } catch (err) { if (err instanceof Error && !("isAxiosError" in err)) setErroLocal(err.message); } }}>

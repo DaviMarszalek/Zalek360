@@ -62,7 +62,7 @@ function Faixa({ o }: { o: OrcamentoDetalhe }) {
 function SeletorMeio({ valor, aoMudar, erro }: { valor: MeioContato | null; aoMudar: (m: MeioContato) => void; erro?: string }) {
   return (
     <div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="radiogroup">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="radiogroup" aria-label="Meio de contato">
         {meiosContato.map((m) => (
           <button key={m} type="button" role="radio" aria-checked={valor === m} onClick={() => aoMudar(m)}
             className={cn("flex items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-[13px] font-medium transition-colors",
@@ -173,7 +173,7 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
   const opcoesResultado: ResultadoDecisao[] = somenteCancelar ? ["Cancelado"] : ["Aprovado", "Recusado", "Cancelado"];
   return (
     <>
-      <Modal aberto={aberto && !confirmar} aoFechar={aoFechar} titulo={somenteCancelar ? "Cancelar orçamento" : "Registrar decisão do cliente"} largura="max-w-xl"
+      <Modal aberto={aberto && !confirmar && !falhaAprovacao} aoFechar={aoFechar} titulo={somenteCancelar ? "Cancelar orçamento" : "Registrar decisão do cliente"} largura="max-w-xl"
         descricao={`Orçamento ${numeroDocumento(o.numero)} · ${o.cliente.nome} · ${moeda(o.resumo.valorTotal)}`}
         rodape={<><Botao variante="secundaria" onClick={aoFechar}>Voltar</Botao>
           <Botao variante={resultado === "Aprovado" ? "sucesso" : resultado ? "perigo" : "primaria"} disabled={!resultado} carregando={m.isPending} onClick={avancar}>
@@ -181,7 +181,7 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
         <div className="space-y-4">
           {erro && <Aviso tipo="erro" titulo={erro.message} />}
           {!somenteCancelar && <Campo rotulo="Resultado da negociação" obrigatorio erro={erroCampo(erro, "resultado")}>
-            <div className="grid grid-cols-3 gap-2" role="radiogroup">
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Resultado da negociação">
               {opcoesResultado.map((r) => (
                 <button key={r} type="button" role="radio" aria-checked={resultado === r} onClick={() => setResultado(r)}
                   className={cn("flex flex-col items-center gap-1 rounded-lg border px-3 py-3 text-sm font-medium transition-colors",
@@ -192,6 +192,7 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
           </Campo>}
           <Campo rotulo="Meio de contato utilizado pelo cliente" obrigatorio><SeletorMeio valor={meio} aoMudar={setMeio} erro={erroCampo(erro, "meioContato")} /></Campo>
           <Campo rotulo="Data e hora da decisão" obrigatorio erro={erroCampo(erro, "dataHora")}><Entrada type="datetime-local" className="numero" value={quando} max={agoraLocalInput()} onChange={(e) => setQuando(e.target.value)} invalido={!!erroCampo(erro, "dataHora")} /></Campo>
+          {motivos.isError && (resultado === "Recusado" || resultado === "Cancelado") && <ErroCarregamento mensagem="Não foi possível carregar os motivos." aoTentar={() => motivos.refetch()} />}
           {(resultado === "Recusado" || resultado === "Cancelado") && <Campo rotulo="Motivo" erro={erroCampo(erro, "motivo")}>
             <Selecao value={motivo} onChange={(e) => setMotivo(e.target.value)}><option value="">Selecione (opcional)</option>{motivos.data?.map((x) => <option key={x}>{x}</option>)}</Selecao>
           </Campo>}
@@ -292,7 +293,7 @@ export function DetalheOrcamento() {
 
           <Cartao titulo="Histórico do orçamento">
             <div className="-mt-2 mb-4"><Abas ativa={aba} aoMudar={setAba} abas={[{ id: "", rotulo: "Tudo" }, { id: "alteracoes", rotulo: "Alterações e decisões" }, { id: "contatos", rotulo: "Contatos" }]} /></div>
-            {!historico.data ? <Carregando /> : <LinhaDoTempo eventos={historico.data} vazio={aba === "contatos" ? "Nenhum contato registrado ainda." : undefined} />}
+            {historico.isError ? <ErroCarregamento mensagem={erroDaApi(historico.error).message} aoTentar={() => historico.refetch()} /> : !historico.data ? <Carregando /> : <LinhaDoTempo eventos={historico.data} vazio={aba === "contatos" ? "Nenhum contato registrado ainda." : undefined} />}
           </Cartao>
         </div>
 

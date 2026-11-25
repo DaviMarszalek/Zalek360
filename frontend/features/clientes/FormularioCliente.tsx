@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Building2, CheckCircle2, Loader2, User } from "lucide-react";
-import { Aviso, Botao, Campo, Cartao, Entrada, AreaTexto, Selecao } from "@/components/ui";
+import { Aviso, Botao, CabecalhoPagina, Campo, Cartao, Entrada, AreaTexto, Selecao } from "@/components/ui";
+import { Voltar } from "@/features/comum";
 import { useToast } from "@/components/ui/toast";
 import { cepService, clientesService } from "@/services";
 import { useUsuarioAtual } from "@/hooks";
@@ -69,6 +70,7 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
   const [erro, setErro] = useState<ErroApi | null>(null);
   const [verificacao, setVerificacao] = useState<VerificacaoDocumento | null>(null);
   const [verificando, setVerificando] = useState(false);
+  const [erroVerificacao, setErroVerificacao] = useState(false);
   const [criarOrcamento, setCriarOrcamento] = useState(false);
   const [aba, setAba] = useState<"identificacao" | "contato" | "endereco" | "observacoes">("identificacao");
   const [cepAlterado, setCepAlterado] = useState(false);
@@ -110,8 +112,8 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
   async function verificarDocumento() {
     const d = somenteDigitos(f.documento);
     if (!d || !f.tipoPessoa) { setVerificacao(null); return; }
-    setVerificando(true);
-    try { setVerificacao(await clientesService.verificarDocumento(d, f.tipoPessoa, cliente?.id)); } catch { setVerificacao(null); } finally { setVerificando(false); }
+    setVerificando(true); setErroVerificacao(false);
+    try { setVerificacao(await clientesService.verificarDocumento(d, f.tipoPessoa, cliente?.id)); } catch { setVerificacao(null); setErroVerificacao(true); } finally { setVerificando(false); }
   }
 
   const salvar = useMutation({
@@ -154,12 +156,14 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
 
   return (
     <form onSubmit={(ev) => { ev.preventDefault(); setCriarOrcamento(false); salvar.mutate(); }} noValidate className="mx-auto w-full max-w-4xl space-y-5">
+      <CabecalhoPagina titulo={edicao ? "Editar cliente" : "Novo cliente"} voltar={<Voltar href={cliente ? `/clientes/${cliente.id}` : "/clientes"}>Clientes</Voltar>} />
       {erro && qtdErros > 0 && !(verificacao?.clienteExistente) && <Aviso tipo="erro"
         titulo={abaPrimeiroErro && mensagemPrimeiroErro ? `${rotuloAba[abaPrimeiroErro]}: ${mensagemPrimeiroErro}` : "Corrija os campos destacados para salvar o cliente."}>
         {qtdErros} {qtdErros === 1 ? "campo precisa" : "campos precisam"} de atenção.
       </Aviso>}
       {erro && qtdErros === 0 && <Aviso tipo="erro">{erro.message}</Aviso>}
 
+      {erroVerificacao && <Aviso tipo="alerta">Não foi possível consultar o documento agora. Ele será validado ao salvar o cliente.</Aviso>}
       <div className="rounded-lg border border-borda bg-white p-1.5" role="tablist" aria-label="Seções do cadastro">
         {([
           ["identificacao", "Identificação"],
@@ -169,7 +173,13 @@ export function FormularioCliente({ cliente }: { cliente?: ClienteDetalhe }) {
         ] as [AbaFormulario, string][]).map(([id, rotulo]) => {
           const errosDaAba = contarErrosNaAba(id);
           return (
-          <button key={id} type="button" role="tab" aria-selected={aba === id}
+          <button key={id} type="button" role="tab" aria-selected={aba === id} tabIndex={aba === id ? 0 : -1}
+            onKeyDown={evento => {
+              const botoes = Array.from(evento.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+              const indice = botoes.indexOf(evento.currentTarget);
+              const alvo = evento.key === "ArrowRight" ? (indice + 1) % botoes.length : evento.key === "ArrowLeft" ? (indice - 1 + botoes.length) % botoes.length : evento.key === "Home" ? 0 : evento.key === "End" ? botoes.length - 1 : -1;
+              if (alvo >= 0) { evento.preventDefault(); botoes[alvo].click(); botoes[alvo].focus(); }
+            }}
             onClick={() => setAba(id)}
             className={cn("rounded-md px-4 py-2.5 text-sm font-medium transition-colors", aba === id ? "bg-primaria text-white" : "text-texto-suave hover:bg-slate-50")}>
             {rotulo}{errosDaAba > 0 && <span aria-label={`${errosDaAba} erros na aba ${rotulo}`} title={`${errosDaAba} erros`}
