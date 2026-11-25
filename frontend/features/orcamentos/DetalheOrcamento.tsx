@@ -8,6 +8,7 @@ import { useExportarOrcamento } from "@/hooks/useExportarOrcamento";
 import { useUsuarioAtual } from "@/hooks";
 import { Abas, AreaTexto, Aviso, BadgeOrcamento, Botao, CabecalhoPagina, Campo, Cartao, Carregando, Entrada, ErroCarregamento, Info2, Modal, Selecao } from "@/components/ui";
 import { ReferenciaAnexo } from "@/components/ui/ReferenciaAnexo";
+import { ModalProposta } from "./ModalProposta";
 import { DisponibilidadeItem, ResumoAnaliseInterna } from "./AnaliseInterna";
 import { useToast } from "@/components/ui/toast";
 import { CartaoCliente, IconeMeio, LinhaDoTempo, Voltar } from "@/features/comum";
@@ -230,7 +231,7 @@ export function DetalheOrcamento() {
   const analise = useQuery({ queryKey: ["orcamento", id, "analise-interna"], queryFn: ({ signal }) => orcamentosService.analiseInterna(id, signal), enabled: !!q.data && podeEditar });
   const [aba, setAba] = useState<"" | "alteracoes" | "contatos">("");
   const historico = useQuery({ queryKey: ["orcamento", id, "historico", aba], queryFn: () => orcamentosService.historico(id, aba || undefined), enabled: !!q.data });
-  const [modal, setModal] = useState<"contato" | "apresentar" | "decisao" | "cancelar" | null>(null);
+  const [modal, setModal] = useState<"contato" | "apresentar" | "envio" | "decisao" | "cancelar" | null>(null);
   const [pedidoGerado, setPedidoGerado] = useState<PedidoVinculado | null>(null);
   const [materiaisGerados, setMateriaisGerados] = useState<MateriaisPedido | null>(null);
   const aoAprovado = (p: PedidoVinculado, materiais: MateriaisPedido | null) => { setPedidoGerado(p); setMateriaisGerados(materiais); };
@@ -253,7 +254,8 @@ export function DetalheOrcamento() {
             {aberto && <Link href={`/orcamentos/${o.id}/editar`}><Botao variante="secundaria" icone={<Pencil className="h-4 w-4" />}>Editar</Botao></Link>}
             {aberto && <Botao variante="secundaria" icone={<MessageSquarePlus className="h-4 w-4" />} onClick={() => setModal("contato")}>Registrar contato</Botao>}
             {o.situacao === "EmElaboracao" && <Botao variante="fantasma" className="text-red-700" onClick={() => setModal("cancelar")}>Cancelar orçamento</Botao>}
-            {o.situacao === "EmElaboracao" && <Botao icone={<Send className="h-4 w-4" />} onClick={() => setModal("apresentar")}>Apresentar ao cliente</Botao>}
+            {o.situacao === "EmElaboracao" && <Botao icone={<Send className="h-4 w-4" />} onClick={() => setModal("envio")}>Apresentar ao cliente</Botao>}
+            {o.situacao === "AguardandoRetorno" && <Botao variante="secundaria" onClick={() => setModal("envio")}>Enviar proposta</Botao>}
             {o.situacao === "AguardandoRetorno" && <Botao icone={<Gavel className="h-4 w-4" />} onClick={() => setModal("decisao")}>Registrar decisão</Botao>}
           </>}
           {o.pedido && <Link href={`/pedidos/${o.pedido.id}`}><Botao icone={<Package className="h-4 w-4" />}>Ver pedido {numeroDocumento(o.pedido.numero)}</Botao></Link>}
@@ -320,6 +322,7 @@ export function DetalheOrcamento() {
       </div>
 
       {podeEditar && <>
+        {modal === "envio" && <ModalProposta o={o} aoFechar={() => setModal(null)} aoOutro={() => setModal("apresentar")} />}
         <ModalContato o={o} aberto={modal === "contato"} aoFechar={() => setModal(null)} />
         <ModalApresentar o={o} aberto={modal === "apresentar"} aoFechar={() => setModal(null)} />
         <ModalDecisao key={`d-${o.versao}`} o={o} aberto={modal === "decisao"} aoFechar={() => setModal(null)} aoAprovado={aoAprovado} />

@@ -29,6 +29,12 @@
 - `.env.revisao` contém configuração local e nunca deve ser commitado, exibido ou copiado para logs. Use `.env.revisao.example` como modelo quando disponível. O arquivo já está ignorado em `main` após o merge do PR #3; confira `git status` e nunca adicione esse arquivo.
 - Não execute `docker compose down -v` sem autorização explícita. Não compartilhe volumes, redes ou bancos entre o ambiente principal e o de revisão.
 
+### Captura de e-mail na revisão
+
+- A validação adicional de SMTP usa `docker compose -p zalek360-revisao --env-file .env.revisao -f docker-compose.yml -f docker-compose.email-teste.yml --profile teste-email up --build -d --wait`.
+- O override aponta somente para smtp4dev na rede de revisão, sem credenciais externas nem relay; interface local em `http://localhost:5180`. Nunca use esse override no projeto principal. O comando padrão de validação continua obrigatório.
+- E2E da captura usa `E2E_SMTP_TESTE=true`; sem a variável, testa o fluxo sem SMTP. Execute somente com o capturador isolado quando essa variável estiver ativa.
+
 ## Banco e migrations
 
 - Migrations novas somente via `dotnet ef migrations add`, usando o `ModelSnapshot` existente.

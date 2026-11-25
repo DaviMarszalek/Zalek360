@@ -36,6 +36,9 @@ public static class DependencyInjection
                 "Empresa:Cnpj deve ser um CNPJ válido ou ficar vazio.")
             .ValidateOnStart();
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<EmpresaOptions>>().Value);
+        services.Configure<EmailOptions>(configuration.GetSection("Email"));
+        services.AddScoped<IPropostaRepository, PropostaRepository>();
+        services.AddScoped<IEmailPropostaSender, EmailPropostaSender>();
         services.AddSingleton<IGeradorDocumentoOrcamento, GeradorDocumentoOrcamento>();
 
         var conexao = configuration.GetConnectionString("Zalek360")

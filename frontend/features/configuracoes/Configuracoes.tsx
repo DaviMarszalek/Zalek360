@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus } from "lucide-react";
 import { AcoesLinha, Aviso, Botao, CabecalhoPagina, Campo, Carregando, Cartao, Entrada, ErroCarregamento, Modal, Selecao } from "@/components/ui";
+import { ModelosProposta } from "./ModelosProposta";
 import { useUsuarioAtual } from "@/hooks";
 import { configuracoesService } from "@/services";
 import { erroDaApi } from "@/lib/api";
@@ -47,6 +48,7 @@ export function Configuracoes() {
         {q.data.filter(x => x.tipo === tipo).map(x => <div key={x.id} className="group flex items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="break-words font-medium">{x.nome}</p><p className="text-xs text-texto-fraco">Ordem {x.ordem} · {x.ativo ? "Ativa" : "Inativa"}</p></div><AcoesLinha acoes={[{ rotulo: `Editar ${x.nome}`, icone: <Pencil className="h-4 w-4" />, aoAcionar: () => setEdicao(x) }]} /></div>)}
       </div>}
     </Cartao>
+    <ModelosProposta />
     <Modal aberto={!!edicao} aoFechar={() => setEdicao(null)} titulo={edicao === "nova" ? "Nova opção" : "Editar opção"} descricao={tipos[tipo]}>
       {edicao && <FormularioOpcao key={edicao === "nova" ? `nova-${tipo}` : `${edicao.id}-${edicao.versao}`} opcao={edicao === "nova" ? undefined : edicao} tipo={tipo} aoSalvar={async () => { await Promise.all([qc.invalidateQueries({ queryKey: ["configuracoes"] }), qc.invalidateQueries({ queryKey: ["catalogo"] }), qc.invalidateQueries({ queryKey: ["motivos-decisao"] })]); setEdicao(null); }} />}
     </Modal>

@@ -255,8 +255,8 @@ public class Orcamento : RaizAgregado
             TipoEventoHistorico.OrcamentoStatusAlterado,
             "Orçamento passou para Aguardando Retorno",
             meioApresentacao is { } meio
-                ? $"Proposta apresentada ao cliente via {Rotulos.De(meio)} (fora do sistema)"
-                : "Proposta apresentada ao cliente (fora do sistema)",
+                ? $"Proposta apresentada ao cliente via {Rotulos.De(meio)}"
+                : "Proposta apresentada ao cliente",
             agoraUtc, agoraUtc, usuarioId, Rotulos.De(anterior), Rotulos.De(Situacao), meioApresentacao));
     }
 
@@ -380,6 +380,13 @@ public class Orcamento : RaizAgregado
     public void RegistrarExportacaoPdf(DateTime agoraUtc, Guid usuarioId) =>
         RegistrarHistorico(Evento(TipoEventoHistorico.OrcamentoExportadoPdf,
             "Orçamento exportado em PDF", null, agoraUtc, agoraUtc, usuarioId));
+
+    public void RegistrarEnvioProposta(MeioContato meio, string descricao, DateOnly hoje, DateTime agora, Guid usuarioId)
+    {
+        if (Situacao == SituacaoOrcamento.EmElaboracao) MarcarAguardandoRetorno(meio, hoje, agora, usuarioId);
+        else IncrementarVersao();
+        RegistrarContato(meio, agora, hoje, descricao, agora, usuarioId);
+    }
 
     // ------------------------------------------------------------------ internos
 

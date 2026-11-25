@@ -59,12 +59,15 @@ public sealed class ApiPdfFactory : WebApplicationFactory<Program>
     private readonly SqliteConnection _conexao = new("DataSource=:memory:");
     private readonly IGeradorDocumentoOrcamento? _gerador;
     private readonly INumeradorDocumentos? _numerador;
+    private readonly IEmailPropostaSender? _email;
+    private readonly string? _postgres;
     public RelogioFixo Relogio { get; } = new() { Agora = DateTime.UtcNow };
 
-    public ApiPdfFactory(IGeradorDocumentoOrcamento? gerador = null, INumeradorDocumentos? numerador = null)
+    public ApiPdfFactory(IGeradorDocumentoOrcamento? gerador = null, INumeradorDocumentos? numerador = null, IEmailPropostaSender? email = null, string? postgres = null)
     {
         _gerador = gerador;
         _numerador = numerador;
+        _email = email; _postgres = postgres;
         _conexao.Open();
     }
 
@@ -76,7 +79,7 @@ public sealed class ApiPdfFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<ZalekDbContext>>();
             services.RemoveAll<ZalekDbContext>();
-            services.AddDbContext<ZalekDbContext>(o => o.UseSqlite(_conexao));
+            services.AddDbContext<ZalekDbContext>(o => { if (_postgres is null) o.UseSqlite(_conexao); else o.UseNpgsql(_postgres); });
             services.PostConfigure<BancoOptions>(o =>
             {
                 o.AplicarMigrationsNaInicializacao = false; o.VerificarEsquema = false; o.ExecutarSeed = false;
@@ -84,6 +87,7 @@ public sealed class ApiPdfFactory : WebApplicationFactory<Program>
             services.PostConfigure<RotinasOptions>(o => { o.ExpiracaoHabilitada = false; o.LimpezaAnexosHabilitada = false; });
             services.RemoveAll<IClock>();
             services.AddSingleton<IClock>(Relogio);
+            if (_email is not null) { services.RemoveAll<IEmailPropostaSender>(); services.AddSingleton(_email); }
             if (_gerador is not null)
             {
                 services.RemoveAll<IGeradorDocumentoOrcamento>();

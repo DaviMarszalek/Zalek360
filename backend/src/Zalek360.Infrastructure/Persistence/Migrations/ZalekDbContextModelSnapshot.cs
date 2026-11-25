@@ -393,6 +393,58 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                     b.ToTable("decisoes_orcamento", (string)null);
                 });
 
+            modelBuilder.Entity("Zalek360.Domain.Entities.EnvioProposta", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Assunto")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("assunto");
+
+                    b.Property<DateTime?>("ConcluidoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("concluido_em");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<string>("Destinatario")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("destinatario");
+
+                    b.Property<Guid>("OrcamentoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("orcamento_id");
+
+                    b.Property<string>("Situacao")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("situacao");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_envios_proposta");
+
+                    b.HasIndex("UsuarioId")
+                        .HasDatabaseName("ix_envios_proposta_usuario_id");
+
+                    b.HasIndex("OrcamentoId", "CriadoEm")
+                        .HasDatabaseName("ix_envios_proposta_orcamento_id_criado_em");
+
+                    b.ToTable("envios_proposta", (string)null);
+                });
+
             modelBuilder.Entity("Zalek360.Domain.Entities.FichaTecnicaMaterial", b =>
                 {
                     b.Property<Guid>("Id")
@@ -800,6 +852,63 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_materias_primas_quantidades", "quantidade_disponivel >= 0 AND estoque_minimo >= 0 AND quantidade_disponivel = CAST(quantidade_disponivel AS INTEGER) AND estoque_minimo = CAST(estoque_minimo AS INTEGER) AND saldo_reservado = CAST(saldo_reservado AS INTEGER)");
 
                             t.HasCheckConstraint("ck_materias_primas_reservado", "CAST(saldo_reservado AS NUMERIC) >= 0 AND CAST(saldo_reservado AS NUMERIC) <= CAST(quantidade_disponivel AS NUMERIC)");
+                        });
+                });
+
+            modelBuilder.Entity("Zalek360.Domain.Entities.ModeloMensagemProposta", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Assunto")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("assunto");
+
+                    b.Property<string>("Canal")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("canal");
+
+                    b.Property<string>("Mensagem")
+                        .IsRequired()
+                        .HasMaxLength(6000)
+                        .HasColumnType("character varying(6000)")
+                        .HasColumnName("mensagem");
+
+                    b.Property<int>("Versao")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("versao");
+
+                    b.HasKey("Id")
+                        .HasName("pk_modelos_mensagem_proposta");
+
+                    b.HasIndex("Canal")
+                        .IsUnique()
+                        .HasDatabaseName("ux_modelos_mensagem_proposta_canal");
+
+                    b.ToTable("modelos_mensagem_proposta", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("d0000000-0000-0000-0000-000000000001"),
+                            Assunto = "Proposta {numero} — {empresa}",
+                            Canal = "Email",
+                            Mensagem = "Olá, {cliente}!\n\nSegue em anexo a proposta {numero}, no valor de {valorTotal}, válida até {validade}. Prazo estimado: {prazo} dias úteis após a aprovação.\n\nFicamos à disposição.\n{empresa}",
+                            Versao = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("d0000000-0000-0000-0000-000000000002"),
+                            Assunto = "",
+                            Canal = "WhatsApp",
+                            Mensagem = "Olá, {cliente}! Segue a proposta {numero}, no valor de {valorTotal}, válida até {validade}. Prazo estimado: {prazo} dias úteis após a aprovação.\n{empresa}",
+                            Versao = 1
                         });
                 });
 
@@ -1748,6 +1857,23 @@ namespace Zalek360.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_decisoes_orcamento_registrado_por_id");
 
                     b.Navigation("RegistradoPor");
+                });
+
+            modelBuilder.Entity("Zalek360.Domain.Entities.EnvioProposta", b =>
+                {
+                    b.HasOne("Zalek360.Domain.Entities.Orcamento", null)
+                        .WithMany()
+                        .HasForeignKey("OrcamentoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_envios_proposta_orcamento_id");
+
+                    b.HasOne("Zalek360.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_envios_proposta_usuario_id");
                 });
 
             modelBuilder.Entity("Zalek360.Domain.Entities.FichaTecnicaMaterial", b =>

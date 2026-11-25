@@ -217,7 +217,32 @@ A **Análise interna** mostra custo e margem para Gestor e Administrador. Margem
 
 Cada item mostra a necessidade de matérias-primas, o saldo disponível e a falta, distribuindo saldo na ordem dos itens e considerando reservas do próprio pedido. É uma consulta da posição atual, sem reservar materiais ou bloquear orçamento por falta. As referências de imagem têm miniaturas no formulário, no detalhe e no pedido, com acesso autenticado; outros formatos mantêm links.
 
-Análise interna usa `POST /api/orcamentos/analise-interna` (prévia) e `GET /api/orcamentos/{id}/analise-interna` (registrado), ambos sob `Operacao`. Custo e margem não integram o DTO da proposta nem o PDF ou mensagens ao cliente. O envio da proposta permanece na Fase 4.
+Análise interna usa `POST /api/orcamentos/analise-interna` (prévia) e `GET /api/orcamentos/{id}/analise-interna` (registrado), ambos sob `Operacao`. Custo e margem não integram o DTO da proposta nem o PDF ou mensagens ao cliente. O envio da proposta está descrito na Fase 4 abaixo.
+
+### Envio da proposta — Fase 4
+
+Gestor e Administrador usam **Apresentar ao cliente** (ou **Enviar proposta** quando já aguarda retorno). Escolhem e-mail/WhatsApp, conferem o destinatário e revisam a mensagem. **Registrar por outro meio** preserva a apresentação por telefone/presencial.
+
+- **E-mail com SMTP:** **Enviar e-mail com PDF** anexa automaticamente o PDF da proposta. A aceitação pelo servidor registra contato/exportação e passa a Aguardando Retorno. Aceitação SMTP não confirma entrega ou leitura pelo destinatário.
+- **Sem SMTP:** baixar o PDF, abrir o aplicativo de e-mail por `mailto` e anexar o arquivo manualmente. Abrir o aplicativo/copiar texto/baixar PDF não registra apresentação. Marcar “Já enviei...” e **Confirmar apresentação** somente depois do envio.
+- **WhatsApp:** copiar o texto ou abrir `wa.me`, anexar o PDF manualmente e confirmar depois de enviar. Nenhum link público do PDF é criado.
+- O PDF preparado para apresentação não leva o selo de rascunho, sem alterar o status por esta preparação. Custos e margens continuam fora do documento e dos modelos.
+
+**Configurações → Mensagens de proposta**, exclusiva do Administrador, edita os modelos. Campos disponíveis: `{cliente}`, `{numero}`, `{valorTotal}`, `{validade}`, `{prazo}` e `{empresa}`. A API rejeita campos desconhecidos, incluindo custo/margem. Modelos não alteram mensagens já enviadas.
+
+SMTP usa [MailKit 5.0.0](https://www.nuget.org/packages/MailKit/5.0.0), com configuração `Email__Host`, `Email__Porta` (587 por padrão), `Email__Seguranca` (`StartTls` ou `SslOnConnect` para 465), `Email__Usuario`, `Email__Senha`, `Email__Remetente` e `Email__NomeRemetente`. Host/remetente ausentes ou configuração incompleta desabilitam envio direto; a operação continua pelo aplicativo de e-mail. Segredos ficam somente no ambiente local/seguro; não são retornados à interface. `None` é destinado ao servidor isolado de testes.
+
+Cada tentativa tem uma chave persistida antes de chamar SMTP. Repetir uma chave confirmada retorna o recibo sem reenviar. Falhas/queda do processo/confirmação incerta não geram reenvio automático: consultar o resultado e conferir a caixa de enviados antes de preparar outra tentativa. Banco e SMTP não formam uma transação única; uma queda após a aceitação pode deixar a tentativa sem confirmação. O orçamento é bloqueado durante o envio; uma segunda tentativa para a mesma versão recebe conflito.
+
+API operacional: `GET /api/orcamentos/{id}/proposta`, `POST .../proposta/email`, `GET .../proposta/email/{chave}`, `POST .../proposta/pdf` e `POST .../proposta/confirmacao`. Modelos usam `GET /api/configuracoes/modelos-proposta` e `PUT /api/configuracoes/modelos-proposta/{id}`, sob `Administracao`.
+
+Para capturar e-mails sem conta externa, use somente a revisão:
+
+```powershell
+docker compose -p zalek360-revisao --env-file .env.revisao -f docker-compose.yml -f docker-compose.email-teste.yml --profile teste-email up --build -d --wait
+```
+
+O [smtp4dev](https://github.com/rnwood/smtp4dev) fica em `http://localhost:5180`, acessível apenas localmente, sem relay configurado; SMTP é interno à rede da revisão. Os E2E usam destinatários `example.test`; o override fixa remetente `propostas@example.test`, autenticação vazia e conexão ao capturador. Não use o override no ambiente principal. A validação padrão continua usando o comando de revisão do `AGENTS.md`; a captura SMTP é uma verificação adicional.
 
 ## 6. Testes
 
@@ -225,7 +250,7 @@ Análise interna usa `POST /api/orcamentos/analise-interna` (prévia) e `GET /ap
 cd backend && ./scripts/testar.sh      # equivalente a: dotnet test Zalek360.sln
 ```
 
-Na validação da Fase 3, **124 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **8/8** e Edge **10/10**. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
+Na validação da Fase 4, **133 testes backend passaram, com 0 falhas e 0 ignorados** em PostgreSQL real; Vitest **8/8** e Edge **13/13** na suíte completa, mais **3/3** na captura SMTP isolada. `npm ci`, typecheck, build e Compose foram aprovados. Os detalhes estão em [docs/09-revisao-funcional.md](docs/09-revisao-funcional.md). No Windows, execute os testes em container .NET 8 com PostgreSQL real conforme [AGENTS.md](AGENTS.md); não aceite testes ignorados. A cobertura original abaixo é histórica, complementada por autenticação, contrato HTTP/PDF, estoque, catálogo, permissões e upgrade de banco.
 
 - **27 de domínio:** cliente, CPF/CNPJ, cálculo, ciclo do orçamento, expiração e pedido.
 - **14 de casos de uso**, com repositórios em memória:
@@ -278,7 +303,7 @@ Depois, siga o roteiro da seção 3. Os stubs verificam tipos e assinaturas, mas
 
 As cinco migrations publicadas foram preservadas. A linha atual acrescenta 20261112120000_AlinharEsquemaComModelo (manual aprovada) e 20261113031917_EstabilizarReservasMateriais (gerada por EF e revisada com backfill). O ZalekDbContextModelSnapshot foi adotado sem recriar a migration inicial.
 
-Após a Fase 3, o banco tem 19 tabelas de negócio, 222 colunas e duas sequências. A migration `20261124231443_CustoInternoNoItemOrcamento`, gerada via EF, adiciona somente `itens_orcamento.custo_unitario_interno` opcional, sem preencher custos antigos. Na Fase 2 de catálogo, havia 221 colunas. A migration `20261124220121_CatalogoProdutosEOpcoes`, gerada por EF com o snapshot existente, adiciona preço/custo opcionais, versão do produto e opções gerenciáveis; os produtos antigos permanecem com valores não informados e suas categorias são incorporadas sem reescrever o histórico. A API aplica migrations e verifica a presença das colunas; o comparador verifica também tipos, defaults, PKs, FKs, índices e checks.
+Após a Fase 4, o banco tem 21 tabelas de negócio, 235 colunas e duas sequências. A migration `20261125001901_ModelosEEnviosProposta` cria modelos com sementes de e-mail/WhatsApp e recibos de tentativas, sem alterar tabelas/dados comerciais existentes. Na Fase 3, havia 19 tabelas e 222 colunas. A migration `20261124231443_CustoInternoNoItemOrcamento`, gerada via EF, adiciona somente `itens_orcamento.custo_unitario_interno` opcional, sem preencher custos antigos. Na Fase 2 de catálogo, havia 221 colunas. A migration `20261124220121_CatalogoProdutosEOpcoes`, gerada por EF com o snapshot existente, adiciona preço/custo opcionais, versão do produto e opções gerenciáveis; os produtos antigos permanecem com valores não informados e suas categorias são incorporadas sem reescrever o histórico. A API aplica migrations e verifica a presença das colunas; o comparador verifica também tipos, defaults, PKs, FKs, índices e checks.
 
 Antes de qualquer migration futura:
 

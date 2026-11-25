@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 import axios from "axios";
 import type {
-  AnaliseOrcamento, AnaliseOrcamentoRequest, OpcaoCatalogo, OpcaoCatalogoRequisicao, Anexo, Calculo, ClienteDetalhe, ClienteListaItem, ClienteRequisicao, ClienteVisaoGeral, Contato, Dashboard, DecisaoResultado,
+  CanalProposta, EnvioProposta, ModeloProposta, PreparacaoProposta, EnviarPropostaRequest, AnaliseOrcamento, AnaliseOrcamentoRequest, OpcaoCatalogo, OpcaoCatalogoRequisicao, Anexo, Calculo, ClienteDetalhe, ClienteListaItem, ClienteRequisicao, ClienteVisaoGeral, Contato, Dashboard, DecisaoResultado,
   HistoricoEvento, ItemDetalhe, ListaComContagem, ListaFiltrada, LoginResposta, MeioContato, ObservacaoCliente, OpcoesOrcamento,
   OrcamentoDetalhe, OrcamentoListaItem, OrcamentoRequisicao, OrcamentoResumo, Pagina, PedidoDetalhe, PedidoListaItem, PedidoResumo,
   CompraMateriaPrima, FichaTecnica, MateriaPrima, MateriaisPedido, PendenciaEstoquePedido, MovimentoMateriaPrima, Produto, ProdutoFichaTecnica, ProdutoRequisicao, ResultadoDecisao, SituacaoCompraMateriaPrima, SituacaoOrcamento, SituacaoPedido, TipoPessoa, Usuario, VerificacaoDocumento,
@@ -163,4 +163,17 @@ export const estoqueService = {
   reservasPedido: (pedidoId: string) => api.get<MateriaisPedido>(`/pedidos/${pedidoId}/materiais`).then((r) => r.data),
   aplicarFichaPedido: (pedidoId: string) => api.post<MateriaisPedido>(`/pedidos/${pedidoId}/materiais/ficha-tecnica`).then((r) => r.data),
   atualizarMateriaisPedido: (pedidoId: string, materiais: { materiaPrimaId: string; quantidade: number }[]) => api.put<MateriaisPedido>(`/pedidos/${pedidoId}/materiais`, materiais).then((r) => r.data),
+};
+
+export const propostaService = {
+  preparar: (id: string) => api.get<PreparacaoProposta>(`/orcamentos/${id}/proposta`).then(r => r.data),
+  enviar: (id: string, dados: EnviarPropostaRequest) => api.post<{ envio: EnvioProposta; orcamento: OrcamentoDetalhe }>(`/orcamentos/${id}/proposta/email`, dados).then(r => r.data),
+  consultar: (id: string, chave: string) => api.get<EnvioProposta>(`/orcamentos/${id}/proposta/email/${chave}`).then(r => r.data),
+  confirmar: (id: string, canal: CanalProposta, versao: number) => api.post<OrcamentoDetalhe>(`/orcamentos/${id}/proposta/confirmacao`, { canal, versao }).then(r => r.data),
+  pdf: async (id: string) => {
+    try { return (await api.post<Blob>(`/orcamentos/${id}/proposta/pdf`, null, { responseType: "blob" })).data; }
+    catch (erro) { if (axios.isAxiosError(erro) && erro.response?.data instanceof Blob) { try { erro.response.data = JSON.parse(await erro.response.data.text()); } catch { } } throw erro; }
+  },
+  modelos: () => api.get<{ emailDisponivel: boolean; modelos: ModeloProposta[] }>("/configuracoes/modelos-proposta").then(r => r.data),
+  salvarModelo: (id: string, dados: { assunto: string; mensagem: string; versao: number }) => api.put<ModeloProposta>(`/configuracoes/modelos-proposta/${id}`, dados).then(r => r.data),
 };

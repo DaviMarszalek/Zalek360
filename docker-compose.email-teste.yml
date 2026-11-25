@@ -1,0 +1,11 @@
+# Uso exclusivo em zalek360-revisao. Sem relay ou credenciais externas.
+services:
+  backend:
+    environment:
+      Email__Host: smtp4dev
+      Email__Porta: 25
+      Email__Seguranca: None
+      Email__Usuario: ""
+      Email__Senha: ""
+      Email__Remetente: propostas@example.test
+      Email__NomeRemetente: Zalek Revisão
