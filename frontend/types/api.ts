@@ -158,3 +158,9 @@ export interface Dashboard {
   aguardandoRetorno: { id: string; numero: number; cliente: string; valorTotal: number; apresentadoEm: string | null; validade: string; diasParaVencer: number }[];
   totalAguardandoRetorno: number;
 }
+
+export type CanalProposta = "Email" | "WhatsApp";
+export interface ModeloProposta { id: string; canal: CanalProposta; assunto: string; mensagem: string; versao: number }
+export interface EnvioProposta { id: string; situacao: "EmProcessamento" | "Enviado" | "NaoConfirmado"; destinatario: string; assunto: string; criadoEm: string; concluidoEm: string | null }
+export interface PreparacaoProposta { emailDisponivel: boolean; email: string | null; whatsApp: string | null; assunto: string; mensagemEmail: string; mensagemWhatsApp: string; versao: number; ultimoEnvio: EnvioProposta | null }
+export interface EnviarPropostaRequest { chaveEnvio: string; destinatario: string; assunto: string; mensagem: string; versao: number }
