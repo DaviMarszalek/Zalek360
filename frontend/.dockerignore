@@ -6,3 +6,7 @@ npm-debug.log*
 Dockerfile
 .dockerignore
 tsconfig.tsbuildinfo
+
+# Resultados de navegador são locais e não devem invalidar o build.
+test-results
+playwright-report
