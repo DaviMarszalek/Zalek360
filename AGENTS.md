@@ -26,7 +26,8 @@
   ```
 
   Portas de revisão: frontend 3100, API 5100 e PostgreSQL 55432. Confirme que o Docker Desktop está aberto e com o Engine running.
-- `.env.revisao` contém configuração local e nunca deve ser commitado, exibido ou copiado para logs. Use `.env.revisao.example` como modelo quando disponível. O arquivo já está ignorado em `main` após o merge do PR #3; confira `git status` e nunca adicione esse arquivo.
+- `.env.revisao` contém configuração local e nunca deve ser commitado, exibido ou copiado para logs. Use `.env.revisao.example` como modelo. O arquivo está ignorado (assim como `.env.*.anterior`/`.novo`); confira `git status` e nunca adicione esse arquivo.
+- Desde a Fase 7.1 o Compose não tem segredos padrão: `.env.revisao` precisa de `JWT_CHAVE` (≥ 32 caracteres) e `POSTGRES_PASSWORD` (≥ 16), além de `EXECUTAR_SEED=true` e `SENHA_USUARIOS_DEMO` com a senha de demonstração para o seed de banco novo. Gere/troque os segredos somente com `infra/implantacao/preparar-segredos.ps1` (nunca exiba os valores). A atualização do ambiente principal é feita pelo usuário, seguindo `docs/11-atualizar-ambiente-principal.md`.
 - Não execute `docker compose down -v` sem autorização explícita. Não compartilhe volumes, redes ou bancos entre o ambiente principal e o de revisão.
 
 ### Captura de e-mail na revisão
@@ -89,6 +90,6 @@ O teste PostgreSQL cria e remove bancos de teste com prefixo próprio dentro do 
 
 ## Documentação e escopo
 
-- Documentação viva: `README.md`, `docs/08-mvp2.md`, `docs/09-revisao-funcional.md` (matriz R1–R8) e `docs/10-contexto-e-proximos-passos.md`.
+- Documentação viva: `README.md`, `docs/08-mvp2.md`, `docs/09-revisao-funcional.md` (matriz R1–R8), `docs/10-contexto-e-proximos-passos.md` e `docs/11-atualizar-ambiente-principal.md`.
 - Atualize a documentação diretamente relacionada ao trabalho de cada fase.
 - Respeite as decisões de negócio e as pendências descritas em `docs/10-contexto-e-proximos-passos.md`; não implemente fases futuras sem autorização.

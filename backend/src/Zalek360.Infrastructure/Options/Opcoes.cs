@@ -28,9 +28,11 @@ public sealed class BancoOptions
 {
     public const string Secao = "Banco";
     public bool AplicarMigrationsNaInicializacao { get; set; } = true;
-    public bool ExecutarSeed { get; set; } = true;
+    /// <summary>Dados e usuários de demonstração em banco vazio. Desligado por padrão; ligue só em desenvolvimento/revisão.</summary>
+    public bool ExecutarSeed { get; set; }
     public bool VerificarEsquema { get; set; } = true;
-    public string SenhaUsuariosDemo { get; set; } = "Zalek@2026";
+    /// <summary>Senha dos usuários de demonstração; obrigatória quando ExecutarSeed está ligado. Sem valor padrão.</summary>
+    public string SenhaUsuariosDemo { get; set; } = string.Empty;
 }
 
 public sealed class RotinasOptions
