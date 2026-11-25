@@ -17,7 +17,7 @@ public sealed class PropostaPostgresTests
         var nome = "proposta_test_" + Guid.NewGuid().ToString("N");
         var admin = Environment.GetEnvironmentVariable("ZALEK_TEST_POSTGRES")!;
         await using var conexao = new NpgsqlConnection(admin); await conexao.OpenAsync();
-        await using (var cmd = new NpgsqlCommand($"CREATE DATABASE {nome}", conexao)) await cmd.ExecuteNonQueryAsync();
+        await using (var cmd = new NpgsqlCommand($"CREATE DATABASE {nome}", conexao) { CommandTimeout = 120 }) await cmd.ExecuteNonQueryAsync();
         var liberar = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         try
         {
@@ -60,7 +60,7 @@ public sealed class PropostaPostgresTests
         finally
         {
             liberar.TrySetResult();
-            await using var remover = new NpgsqlCommand($"DROP DATABASE {nome} WITH (FORCE)", conexao); await remover.ExecuteNonQueryAsync();
+            await using var remover = new NpgsqlCommand($"DROP DATABASE {nome} WITH (FORCE)", conexao) { CommandTimeout = 120 }; await remover.ExecuteNonQueryAsync();
         }
     }
 }

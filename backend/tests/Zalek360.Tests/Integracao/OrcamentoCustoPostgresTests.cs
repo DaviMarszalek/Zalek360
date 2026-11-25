@@ -18,7 +18,7 @@ public sealed class OrcamentoCustoPostgresTests
         var nome = "orcamento_test_" + Guid.NewGuid().ToString("N");
         await using var conexao = new NpgsqlConnection(administracao);
         await conexao.OpenAsync();
-        await using (var criar = new NpgsqlCommand($"CREATE DATABASE {nome}", conexao)) await criar.ExecuteNonQueryAsync();
+        await using (var criar = new NpgsqlCommand($"CREATE DATABASE {nome}", conexao) { CommandTimeout = 120 }) await criar.ExecuteNonQueryAsync();
         try
         {
             var cs = new NpgsqlConnectionStringBuilder(administracao) { Database = nome }.ConnectionString;
@@ -49,7 +49,7 @@ public sealed class OrcamentoCustoPostgresTests
         }
         finally
         {
-            await using var remover = new NpgsqlCommand($"DROP DATABASE {nome} WITH (FORCE)", conexao);
+            await using var remover = new NpgsqlCommand($"DROP DATABASE {nome} WITH (FORCE)", conexao) { CommandTimeout = 120 };
             await remover.ExecuteNonQueryAsync();
         }
     }
