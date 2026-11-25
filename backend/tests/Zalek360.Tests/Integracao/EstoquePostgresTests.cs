@@ -88,7 +88,7 @@ public class EstoquePostgresTests
         var pedidos = new PedidoRepository(db);
         var produtos = new ProdutoRepository(db);
         var estoque = new EstoqueService(new EstoqueRepository(db), db, clock, produtos, new CatalogoQueries(db),
-            pedidos, new PedidoQueries(db), new UsuarioAtualFake());
+            pedidos, new PedidoQueries(db, clock), new UsuarioAtualFake());
         return new(new OrcamentoRepository(db), pedidos, new ClienteRepository(db), new UsuarioRepository(db), produtos,
             new AnexoRepository(db), new OrcamentoQueries(db, clock), new NumeradorPostgres(db), db, clock, new UsuarioAtualFake(), estoque);
     }

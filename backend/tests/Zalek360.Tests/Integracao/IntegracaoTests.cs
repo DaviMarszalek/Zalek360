@@ -46,7 +46,7 @@ public sealed class BancoSqlite : IAsyncDisposable
         new ProdutoRepository(db), new AnexoRepository(db), new OrcamentoQueries(db, Relogio), Numerador, db, Relogio, new UsuarioAtualFake(),
         Estoque(db));
 
-    public EstoqueService Estoque(ZalekDbContext db) => new(new EstoqueRepository(db), db, Relogio, new ProdutoRepository(db), new CatalogoQueries(db), new PedidoRepository(db), new PedidoQueries(db), new UsuarioAtualFake());
+    public EstoqueService Estoque(ZalekDbContext db) => new(new EstoqueRepository(db), db, Relogio, new ProdutoRepository(db), new CatalogoQueries(db), new PedidoRepository(db), new PedidoQueries(db, Relogio), new UsuarioAtualFake());
 
     public async Task<OrcamentoDetalheDto> OrcamentoAguardandoAsync(params Guid[] anexos)
     {
