@@ -117,13 +117,23 @@ public sealed class CatalogoFase2ApiTests
 
     [Theory]
     [InlineData(-1, 1)]
-    [InlineData(10.001, 1)]
     [InlineData(10, -1)]
+    [InlineData(-0.005, 1)]
     public async Task Preco_e_custo_invalidos_nao_sao_persistidos(decimal preco, decimal custo)
     {
         await using var f = new ApiPdfFactory(); await f.PrepararSeedAsync(); using var c = Cliente(f, PerfilUsuario.Gestor);
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/produtos", new ProdutoRequest("Inválido", "Caneca", null, preco, custo))).StatusCode);
         Assert.Empty(await Ler<List<ProdutoDto>>(await c.GetAsync("/api/produtos/catalogo?busca=Inválido")));
+    }
+
+    /// <summary>Fase 7.3: regra única de dinheiro — mais de 2 casas são arredondadas (ponto médio afastando de zero).</summary>
+    [Fact]
+    public async Task Preco_e_custo_com_mais_de_duas_casas_sao_arredondados()
+    {
+        await using var f = new ApiPdfFactory(); await f.PrepararSeedAsync(); using var c = Cliente(f, PerfilUsuario.Gestor);
+        var criado = await Ler<ProdutoDto>(await c.PostAsJsonAsync("/api/produtos", new ProdutoRequest("Arredondado", "Caneca", null, 10.555m, 2.344m)));
+        Assert.Equal(10.56m, criado.PrecoVenda);
+        Assert.Equal(2.34m, criado.Custo);
     }
 
     [Fact]

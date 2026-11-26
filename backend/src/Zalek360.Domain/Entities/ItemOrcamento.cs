@@ -63,9 +63,13 @@ public class ItemOrcamento : Entidade
         if (d.ProdutoId == Guid.Empty) e.Adicionar("produtoId", "Selecione o produto.");
         if (d.Quantidade <= 0) e.Adicionar("quantidade", "Informe a quantidade.");
         else if (d.Quantidade > 1_000_000) e.Adicionar("quantidade", "Quantidade acima do limite permitido.");
-        if (d.ValorUnitario <= 0) e.Adicionar("valorUnitario", "Informe o valor unitário.");
-        if (d.ValorPersonalizacaoUnitario < 0) e.Adicionar("valorPersonalizacaoUnitario", "O valor de personalização não pode ser negativo.");
-        if (d.Quantidade > 0 && d.Quantidade * (Math.Max(0, d.ValorUnitario) + Math.Max(0, d.ValorPersonalizacaoUnitario)) > ValorMaximo)
+        // Valores com mais de 2 casas são arredondados (ponto médio afastando de zero) antes de validar,
+        // como no cálculo e na gravação: 0,004 vira 0,00 e é recusado, em vez de gravar um item sem valor.
+        var unitario = Dinheiro.Arredondar(d.ValorUnitario);
+        var personalizacaoUnitaria = Dinheiro.Arredondar(d.ValorPersonalizacaoUnitario);
+        if (unitario <= 0) e.Adicionar("valorUnitario", "Informe o valor unitário (mínimo R$ 0,01).");
+        if (personalizacaoUnitaria < 0) e.Adicionar("valorPersonalizacaoUnitario", "O valor de personalização não pode ser negativo.");
+        if (d.Quantidade > 0 && d.Quantidade * (Math.Max(0, unitario) + Math.Max(0, personalizacaoUnitaria)) > ValorMaximo)
             e.Adicionar("quantidade", "O valor total do item excede o limite permitido.");
         if ((d.Descricao?.Trim().Length ?? 0) > 500) e.Adicionar("descricao", "Use no máximo 500 caracteres.");
 

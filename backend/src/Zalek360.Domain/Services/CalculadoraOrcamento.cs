@@ -30,8 +30,10 @@ public static class CalculadoraOrcamento
         foreach (var l in linhas)
         {
             var qtd = Math.Max(0, l.Quantidade);
-            var subtotal = Dinheiro.Arredondar(qtd * Math.Max(0, l.ValorUnitario));
-            var personalizacao = Dinheiro.Arredondar(qtd * Math.Max(0, l.ValorPersonalizacaoUnitario));
+            // Regra única de dinheiro: valores unitários são arredondados para 2 casas ANTES do cálculo,
+            // para que prévia, validação e valor gravado (ItemOrcamento) sejam sempre iguais.
+            var subtotal = Dinheiro.Arredondar(qtd * Dinheiro.Arredondar(Math.Max(0, l.ValorUnitario)));
+            var personalizacao = Dinheiro.Arredondar(qtd * Dinheiro.Arredondar(Math.Max(0, l.ValorPersonalizacaoUnitario)));
             resultados.Add(new ResultadoLinha(subtotal, personalizacao, subtotal + personalizacao));
             unidades += qtd;
         }
