@@ -8,6 +8,7 @@ import { Marca } from "@/components/layout/AppShell";
 import { authService } from "@/services";
 import { erroCampo, erroDaApi } from "@/lib/api";
 import type { ErroApi } from "@/types/api";
+import { destinoInterno } from "@/utils/navegacao";
 
 export function TelaLogin() {
   const router = useRouter();
@@ -27,8 +28,8 @@ export function TelaLogin() {
     try {
       const r = await authService.login(email, senha, manter);
       qc.setQueryData(["auth", "me"], r.usuario);
-      const destino = params.get("redirect");
-      router.replace(destino && destino.startsWith("/") && !destino.startsWith("//") ? destino : "/dashboard");
+      // Só caminhos internos: bloqueia redirecionamento aberto (ex.: ?redirect=/\site-externo).
+      router.replace(destinoInterno(params.get("redirect"), window.location.origin));
     } catch (ex) {
       setErro(erroDaApi(ex));
     } finally {

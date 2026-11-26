@@ -16,6 +16,14 @@ export const opcoesPeriodo: { id: Periodo; rotulo: string }[] = [
   { id: "mes", rotulo: "Este mês" }, { id: "todos", rotulo: "Todo o período" },
 ];
 
+/** Lê o período da URL com segurança: valores desconhecidos (ex.: ?periodo=abc) são ignorados em vez de quebrar a tela. */
+export function periodoDaUrl(valor: string | null): Periodo | null;
+export function periodoDaUrl(valor: string | null, permitirPersonalizado: true): Periodo | "personalizado" | null;
+export function periodoDaUrl(valor: string | null, permitirPersonalizado = false): Periodo | "personalizado" | null {
+  if (permitirPersonalizado && valor === "personalizado") return "personalizado";
+  return opcoesPeriodo.some(o => o.id === valor) ? (valor as Periodo) : null;
+}
+
 export function intervaloDoPeriodo(p: Periodo): { de?: string; ate?: string } {
   const hoje = hojeIso();
   if (p === "todos") return {};

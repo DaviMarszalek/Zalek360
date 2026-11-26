@@ -5,7 +5,7 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, Info, Package, Search } from "lucide-react";
 import { AcoesLinha, Abas, BadgePedido, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Etiqueta, Paginacao, Selecao } from "@/components/ui";
-import { intervaloDoPeriodo, opcoesPeriodo, Periodo } from "@/features/comum";
+import { intervaloDoPeriodo, opcoesPeriodo, Periodo, periodoDaUrl } from "@/features/comum";
 import { pedidosService } from "@/services";
 import { FiltroCliente } from "./FiltroCliente";
 import { useDebounce, useResponsaveis } from "@/hooks";
@@ -33,7 +33,7 @@ export function ListaPedidos() {
   const router = useRouter();
   const [status, setStatus] = useState<SituacaoPedido | "">((params.get("status") as SituacaoPedido) ?? "");
   // Protótipo: período padrão "Últimos 30 dias"; ao chegar filtrando por status (ex.: dashboard), mostra todo o período.
-  const [periodo, setPeriodo] = useState<Periodo | "personalizado">((params.get("periodo") as Periodo | "personalizado") ?? (params.get("status") ? "todos" : "30"));
+  const [periodo, setPeriodo] = useState<Periodo | "personalizado">(periodoDaUrl(params.get("periodo"), true) ?? (params.get("status") ? "todos" : "30"));
   const [clienteId, setClienteId] = useState(params.get("clienteId") ?? "");
   const [dataReferencia, setDataReferencia] = useState<"Criacao" | "Entrega">(params.get("dataReferencia") === "Entrega" ? "Entrega" : "Criacao");
   const [de, setDe] = useState(params.get("de") ?? "");

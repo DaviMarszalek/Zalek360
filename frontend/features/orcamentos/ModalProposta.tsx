@@ -38,7 +38,7 @@ function FormularioProposta({ o, dados, aoFechar, aoOutro, aoOcupado }: { o: Orc
     // A preparação (["proposta", id]) usa gcTime 0 e é descartada quando o modal fecha.
     toast("sucesso", mensagem); aoFechar();
   }
-  const enviar = useMutation({ mutationFn: () => propostaService.enviar(o.id, { chaveEnvio: chave, destinatario: destino, assunto, mensagem: mensagemEmail, versao: dados.versao }), retry: false,
+  const enviar = useMutation({ mutationFn: () => propostaService.enviar(o.id, { chaveEnvio: chave, destinatario: destino.trim(), assunto, mensagem: mensagemEmail, versao: dados.versao }), retry: false,
     onMutate: () => { aoOcupado(true); setTentou(true); setAviso(""); }, onSettled: () => aoOcupado(false), onSuccess: r => concluir(r.orcamento, "Proposta aceita pelo servidor de e-mail e apresentação registrada.") });
   const consultar = useMutation({ mutationFn: () => propostaService.consultar(o.id, chave), retry: false, onSuccess: r => {
     if (r.situacao === "Enviado") concluir(null, "O envio foi confirmado e já está registrado.");
