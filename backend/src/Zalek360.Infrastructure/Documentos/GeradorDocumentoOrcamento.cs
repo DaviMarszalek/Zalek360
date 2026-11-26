@@ -28,6 +28,8 @@ public sealed class GeradorDocumentoOrcamento : IGeradorDocumentoOrcamento
     {
         ct.ThrowIfCancellationRequested();
         _ = Fontes.Value;
+        // Emoji ou caracteres sem glifo nas fontes embutidas fariam o QuestPDF lançar exceção (HTTP 500).
+        d = TextoPdf.Sanitizar(d);
         var logo = LerLogo(d.CaminhoLogo);
         var documento = Document.Create(doc => doc.Page(p =>
         {
