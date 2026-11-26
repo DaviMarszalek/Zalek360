@@ -13,8 +13,16 @@ public sealed class ProdutoService(IProdutoRepository produtos, IGestaoCatalogoR
     public async Task<ProdutoDto> ObterAsync(Guid id, CancellationToken ct) =>
         (await gestao.ListarAsync(null, true, ct, id)).FirstOrDefault() ?? throw new NaoEncontradoException("Produto");
 
+    /// <summary>Regra única de dinheiro: valores com mais de 2 casas são arredondados (ponto médio afastando de zero).</summary>
+    private static ProdutoRequest ArredondarValores(ProdutoRequest r) => r with
+    {
+        PrecoVenda = r.PrecoVenda.HasValue ? Dinheiro.Arredondar(r.PrecoVenda.Value) : null,
+        Custo = r.Custo.HasValue ? Dinheiro.Arredondar(r.Custo.Value) : null
+    };
+
     public async Task<ProdutoDto> CriarAsync(ProdutoRequest r, CancellationToken ct)
     {
+        r = ArredondarValores(r);
         await using var tx = await uow.IniciarTransacaoAsync(ct);
         await ValidarAsync(r, null, ct);
         var p = Produto.Criar(r.Nome!, r.Categoria!, r.DescricaoBase);
@@ -27,6 +35,7 @@ public sealed class ProdutoService(IProdutoRepository produtos, IGestaoCatalogoR
     }
     public async Task<ProdutoDto> AtualizarAsync(Guid id, ProdutoRequest r, CancellationToken ct)
     {
+        r = ArredondarValores(r);
         await using var tx = await uow.IniciarTransacaoAsync(ct);
         var p = await gestao.ObterAsync(id, ct) ?? throw new NaoEncontradoException("Produto");
         Concorrencia.VerificarVersao(p.Versao, r.Versao);
@@ -70,8 +79,8 @@ public sealed class ProdutoService(IProdutoRepository produtos, IGestaoCatalogoR
         if (string.IsNullOrWhiteSpace(r.Categoria) || r.Categoria.Trim().Length > 50) e["categoria"] = ["Informe uma categoria com até 50 caracteres."];
         if (r.DescricaoBase?.Trim().Length > 500) e["descricaoBase"] = ["Use até 500 caracteres."];
         foreach (var (valor, campo) in new[] { (r.PrecoVenda, "precoVenda"), (r.Custo, "custo") })
-            if (valor.HasValue && (valor < 0 || valor > 9999999999.99m || decimal.Round(valor.Value, 2) != valor))
-                e[campo] = ["Informe um valor não negativo, com até 2 casas decimais e no máximo 9.999.999.999,99."];
+            if (valor.HasValue && (valor < 0 || valor > 9999999999.99m))
+                e[campo] = ["Informe um valor não negativo e no máximo 9.999.999.999,99."];
         if (e.Count > 0) throw new ValidacaoException(CodigosErro.Validacao, "Corrija os campos destacados.", e);
         if (atual?.Categoria != r.Categoria!.Trim() && !(await configuracoes.NomesAsync(TipoOpcaoCatalogo.CategoriaProduto, ct)).Contains(r.Categoria.Trim()))
             throw new ValidacaoException(CodigosErro.Validacao, "Selecione uma categoria ativa nas Configurações.", new Dictionary<string, string[]> { ["categoria"] = ["Categoria inativa ou não cadastrada."] });

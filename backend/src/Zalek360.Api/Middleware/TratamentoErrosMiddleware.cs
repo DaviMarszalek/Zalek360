@@ -78,6 +78,10 @@ public sealed class TratamentoErrosMiddleware
                         new Dictionary<string, string[]> { ["documento"] = new[] { "Este CPF/CNPJ já está cadastrado." } }, null, traceId)
                     : new ErroResposta(StatusCodes.Status409Conflict, CodigosErro.RegistroDuplicado,
                         "Já existe um registro com estes dados.", SemErros, null, traceId),
+            // Última barreira: uma restrição CHECK do banco nunca deve virar erro 500 para o usuário.
+            DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.CheckViolation } } =>
+                new ErroResposta(StatusCodes.Status422UnprocessableEntity, CodigosErro.Validacao,
+                    "Os valores informados não são válidos. Revise quantidades, valores e descontos.", SemErros, null, traceId),
             DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation } } =>
                 new ErroResposta(StatusCodes.Status409Conflict, CodigosErro.RegistroRelacionado,
                     "Operação não permitida: existe um registro relacionado.", SemErros, null, traceId),
