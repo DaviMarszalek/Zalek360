@@ -221,6 +221,8 @@ API do catálogo: `GET /api/produtos/catalogo?busca=...&incluirInativos=true`, `
 
 ### Orçamento — Fase 3
 
+**Valores:** o campo aceita vírgula ou ponto decimal ("40,50" ou "40.50"); valores com mais de 2 casas são arredondados para 2 casas (ponto médio afastando de zero) no backend, igual na prévia, na gravação e no produto. O PDF remove emoji e troca por `?` caracteres sem glifo nas fontes (o cadastro não muda).
+
 Ao selecionar um produto, o orçamento aplica seu preço de venda. É possível alterar o valor; um aviso mostra a diferença e **Restaurar preço cadastrado** reaplica a sugestão. Produto sem preço exige valor manual. Abrir uma edição preserva os preços registrados.
 
 **Novo produto neste item** abre o mesmo formulário de catálogo, incluindo custo e composição. Ao salvar, seleciona o produto sem perder cliente, outros itens, desconto, personalização ou anexos; descrição e preço já preenchidos no item são mantidos.

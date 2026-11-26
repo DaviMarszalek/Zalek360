@@ -667,5 +667,8 @@ Atualizado a cada PR da Fase 7. Status: **corrigido** (mesclado em `main`), **em
 | C1 — chave JWT padrão versionada | corrigido no código (PR #11); **ambiente principal pendente do docs/11** | Fase 7.1: segredos obrigatórios; API recusa chaves publicadas ou curtas fora de Development |
 | A1 — padrões inseguros do compose | corrigido no código (PR #11); ambiente principal pendente do docs/11 | Fase 7.1: senha do banco obrigatória; banco e API em 127.0.0.1; Swagger só em Development; cookie Secure e seed desligado por padrão |
 | Senhas de demonstração em ambiente real | ferramenta pronta (PR #11); troca pendente no ambiente principal | Fase 7.1: `backend/tools/redefinir-senha` e `docs/11` |
-| A2 — sem backup e restauração | em PR | Fase 7.2: `infra/backup/*.ps1` e `docs/12`; restauração testada em banco temporário |
-| A3, M1, M2 e demais | pendente | Fase 7.3 e seguintes |
+| A2 — sem backup e restauração | corrigido (PR #12) | Fase 7.2: `infra/backup/*.ps1` e `docs/12`; restauração testada em banco temporário |
+| A3 — PDF 500 com emoji | em PR | Fase 7.3: `TextoPdf` filtra caracteres sem glifo |
+| M1 — "40.50" vira 4050 | em PR | Fase 7.3: `paraNumero` com ponto decimal + Vitest |
+| M2 — mais de 2 casas grava zero ou 500 | em PR | Fase 7.3: arredondamento único na entrada; CHECK → 422 |
+| Demais Médios/Baixos | pendente | após a Fase 7.3 |

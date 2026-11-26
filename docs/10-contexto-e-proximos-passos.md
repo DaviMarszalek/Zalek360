@@ -99,6 +99,11 @@ A revisão completa do MVP (`revisao-mvp/RELATORIO-REVISAO-MVP.md`, commit revis
   - `docs/12-backup-e-restauracao.md`: rotina recomendada (diária, 7 diários + 4 semanais, cópia externa, teste mensal), agendamento no Windows, restauração de emergência sem apagar o banco atual (renomeia) e o que o backup não cobre (`.env`, logo).
   - Teste na revisão (25/11/2026): backup em 8 s (dump de 428 KB, 71 anexos); restauração em banco temporário com 22 tabelas e a última migration idênticas ao banco de origem; 71/71 anexos; temporário removido. Sintaxe da troca de nomes do banco validada com bancos descartáveis.
   - Decisões provisórias: retenção e frequência recomendadas, não automatizadas pelo script (agendamento e limpeza documentados); restauração de emergência manual, com o banco anterior preservado por renomeação.
+  - Mesclada no [PR #12](https://github.com/DaviMarszalek/Zalek360/pull/12).
+- **7.3 — PDF e valores (achados A3, M1 e M2):**
+  - PDF nunca falha por emoji ou caractere sem glifo: antes de renderizar, todos os textos passam por `TextoPdf` (NFC; mantém a lista explícita de caracteres cobertos por IBM Plex Sans/Lato — ASCII, Latin-1, Latin Extended-A e pontuação comum; descarta emoji, ZWJ, seletores de variação e símbolos; espaços especiais viram espaço; o resto vira `?`). O cadastro não é alterado. Teste real renderiza todos os caracteres aceitos.
+  - Frontend: `paraNumero` aceita ponto decimal ("40.50" → 40,5) mantendo o padrão pt-BR ("1.234,56"; "1.234" = milhar). Formatos ambíguos ficam inválidos. Testes Vitest incluídos (`utils/formatos.test.ts`).
+  - Regra única de dinheiro (decisão provisória): valores com mais de 2 casas são **arredondados para 2 casas, ponto médio afastando de zero**, na entrada do cálculo — prévia, validação e gravação do orçamento e preço/custo do produto (que antes recusava). Unitário que arredonda para zero é recusado (400); violação de CHECK do banco nunca vira 500 (422 no envelope).
 
 ### Ambiente
 
