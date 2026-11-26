@@ -100,11 +100,27 @@ export function tamanhoArquivo(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
 }
 
-/** Converte texto digitado em pt-BR ("1.234,50") para número. */
+/**
+ * Converte texto digitado para número, aceitando o padrão pt-BR e o ponto decimal:
+ * - com vírgula: vírgula é o decimal e pontos são milhares ("1.234,50" → 1234.5; "40,50" → 40.5);
+ * - sem vírgula, só com grupos de três dígitos após cada ponto: milhares ("1.234" → 1234; "1.234.567" → 1234567);
+ * - sem vírgula, com um único ponto: ponto decimal ("40.50" → 40.5; "1.5" → 1.5).
+ * Formatos ambíguos (duas vírgulas, vários pontos fora do padrão de milhares) retornam null.
+ */
 export function paraNumero(texto: string): number | null {
-  const limpo = texto.replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
+  const limpo = texto.replace(/[^\d,.-]/g, "");
   if (limpo === "" || limpo === "-") return null;
-  const n = Number(limpo);
+  let normal: string;
+  if (limpo.includes(",")) {
+    if ((limpo.match(/,/g) ?? []).length > 1) return null;
+    normal = limpo.replace(/\./g, "").replace(",", ".");
+  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(limpo)) {
+    normal = limpo.replace(/\./g, "");
+  } else {
+    if ((limpo.match(/\./g) ?? []).length > 1) return null;
+    normal = limpo;
+  }
+  const n = Number(normal);
   return Number.isFinite(n) ? n : null;
 }
 
