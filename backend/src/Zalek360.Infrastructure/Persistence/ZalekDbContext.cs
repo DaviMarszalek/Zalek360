@@ -69,6 +69,8 @@ public sealed class ZalekDbContext : DbContext, IUnitOfWork
     {
         if (ChangeTracker.Entries<MovimentoMateriaPrima>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
             throw new InvalidOperationException("Movimentos de estoque são imutáveis; registre um novo movimento para corrigir o saldo.");
+        if (ChangeTracker.Entries<HistoricoEvento>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("O histórico é imutável; registre um novo evento em vez de alterar ou excluir.");
         var agregados = ChangeTracker.Entries()
             .Select(e => e.Entity)
             .OfType<IPossuiHistorico>()
