@@ -668,7 +668,10 @@ Atualizado a cada PR da Fase 7. Status: **corrigido** (mesclado em `main`), **em
 | A1 — padrões inseguros do compose | corrigido no código (PR #11); ambiente principal pendente do docs/11 | Fase 7.1: senha do banco obrigatória; banco e API em 127.0.0.1; Swagger só em Development; cookie Secure e seed desligado por padrão |
 | Senhas de demonstração em ambiente real | ferramenta pronta (PR #11); troca pendente no ambiente principal | Fase 7.1: `backend/tools/redefinir-senha` e `docs/11` |
 | A2 — sem backup e restauração | corrigido (PR #12) | Fase 7.2: `infra/backup/*.ps1` e `docs/12`; restauração testada em banco temporário |
-| A3 — PDF 500 com emoji | em PR | Fase 7.3: `TextoPdf` filtra caracteres sem glifo |
-| M1 — "40.50" vira 4050 | em PR | Fase 7.3: `paraNumero` com ponto decimal + Vitest |
-| M2 — mais de 2 casas grava zero ou 500 | em PR | Fase 7.3: arredondamento único na entrada; CHECK → 422 |
-| Demais Médios/Baixos | pendente | após a Fase 7.3 |
+| A3 — PDF 500 com emoji | corrigido (PR #13) | Fase 7.3: `TextoPdf` filtra caracteres sem glifo |
+| M1 — "40.50" vira 4050 | corrigido (PR #13) | Fase 7.3: `paraNumero` com ponto decimal + Vitest |
+| M2 — mais de 2 casas grava zero ou 500 | corrigido (PR #13) | Fase 7.3: arredondamento único na entrada; CHECK → 422 |
+| M3 — sem limite de tentativas de login | em PR | Fase 7.4: 5 falhas por conta em 15 min → 429 |
+| M5 — open redirect pós-login | em PR | Fase 7.4: `destinoInterno` |
+| B1, B2, B4, B7 e menores (data dos modais, trim, retry) | em PR | Fase 7.4 |
+| M4, M6, M8, B3, B5, B6, B8, B9, B12, B13, CS (POSTs sem corpo) | pendente | dependem de decisão ou de esforço maior |
