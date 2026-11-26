@@ -92,6 +92,13 @@ A revisão completa do MVP (`revisao-mvp/RELATORIO-REVISAO-MVP.md`, commit revis
   - `backend/tools/redefinir-senha`: redefine a senha de um usuário pelo e-mail, executando `dotnet Zalek360.Api.dll redefinir-senha <e-mail>` no container; senha lida sem eco, nunca por argumento. Mesma política (12+ caracteres) e mesmo BCrypt. Sem endpoint nem tela (a tela de Usuários continua na seção F).
   - `docs/11-atualizar-ambiente-principal.md`: passo a passo para o usuário aplicar no ambiente principal (backup → `ALTER ROLE` → `.env` → recriar só a API → conferir → senhas demo). Procedimento testado no ambiente de revisão em 25/11/2026.
   - Decisões provisórias: nomes das opções mantidos (`EXECUTAR_SEED`, `COOKIE_SEGURA`, agora com padrão seguro); mínimo de 16 caracteres para a senha do banco; API e banco em `127.0.0.1` (o comparador continua usando a porta 55432 da revisão).
+  - Mesclada no [PR #11](https://github.com/DaviMarszalek/Zalek360/pull/11). O ambiente principal **ainda precisa** ser atualizado pelo usuário com o `docs/11`.
+- **7.2 — Backup e restauração (achado A2):**
+  - `infra/backup/backup.ps1`: `pg_dump -Fc` dentro do container do banco (sem senha) e pacote do volume de anexos montado somente leitura; manifesto com tamanhos e SHA-256; confere o dump com `pg_restore --list` antes de declarar sucesso. Não para serviços nem cria/remove volumes.
+  - `infra/backup/restaurar.ps1`: restaura em banco **temporário** `<banco>_restauracao_<data>`, compara linhas por tabela e a última migration com o banco atual (somente leitura), remove o temporário e extrai os anexos numa pasta, comparando a quantidade de arquivos com o volume.
+  - `docs/12-backup-e-restauracao.md`: rotina recomendada (diária, 7 diários + 4 semanais, cópia externa, teste mensal), agendamento no Windows, restauração de emergência sem apagar o banco atual (renomeia) e o que o backup não cobre (`.env`, logo).
+  - Teste na revisão (25/11/2026): backup em 8 s (dump de 428 KB, 71 anexos); restauração em banco temporário com 22 tabelas e a última migration idênticas ao banco de origem; 71/71 anexos; temporário removido. Sintaxe da troca de nomes do banco validada com bancos descartáveis.
+  - Decisões provisórias: retenção e frequência recomendadas, não automatizadas pelo script (agendamento e limpeza documentados); restauração de emergência manual, com o banco anterior preservado por renomeação.
 
 ### Ambiente
 

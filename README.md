@@ -44,7 +44,8 @@ Quando o log mostrar `Now listening on: http://[::]:8080`, abra http://localhost
 - **Recomeçar do zero:** `docker compose down -v` apaga os volumes (e todos os dados).
 - **Portas:** o frontend é publicado na rede; API e PostgreSQL só em `127.0.0.1`. Se 3000, 5000 ou 5432 estiverem em uso, altere `FRONTEND_PORTA_HOST`, `BACKEND_PORTA_HOST` ou `POSTGRES_PORTA_HOST` no `.env`.
 - **Cookie seguro:** `COOKIE_SEGURA` vale `true` por padrão; o login só se mantém em HTTPS ou `http://localhost`. Para acesso por `http://IP` na rede local sem HTTPS, configure HTTPS (`infra/nginx/`) ou use `COOKIE_SEGURA=false` conscientemente.
-- **Backup e atualização do ambiente principal:** `docs/11-atualizar-ambiente-principal.md`.
+- **Backup e restauração:** `infra/backup/backup.ps1` e `infra/backup/restaurar.ps1` (teste em banco temporário); rotina em `docs/12-backup-e-restauracao.md`.
+- **Atualização do ambiente principal:** `docs/11-atualizar-ambiente-principal.md`.
 
 ### Ambiente isolado de revisão e testes
 
