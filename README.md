@@ -304,6 +304,10 @@ Na validação da Fase 6, **139 testes backend passaram, com 0 falhas e 0 ignora
   - uma falha na numeração do pedido desfaz a aprovação no banco (rollback real);
   - o histórico do cliente filtra por tipo.
 
+### Suíte Selenium (Python + pytest)
+
+A pasta [testes-selenium/](testes-selenium/README.md) tem uma suíte independente de testes de interface: login, bloqueio por tentativas, controle de acesso por perfil e cadastro de clientes. Ela roda contra o ambiente de revisão (porta 3100) e gera um relatório HTML. A suíte não substitui o E2E Playwright exigido em cada entrega.
+
 ## 7. O que foi verificado nesta entrega (transparência)
 
 **Registro histórico da entrega inicial.** A verificação atual da exportação, realizada em 28/10/2026 com NuGet e Docker, está na seção 10. Os stubs offline originais não cobrem QuestPDF nem WebApplicationFactory e não validam a entrega atual.
