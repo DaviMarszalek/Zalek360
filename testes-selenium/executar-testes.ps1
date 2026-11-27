@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Cria o ambiente virtual (se preciso), instala as dependências fixadas e executa a suíte Selenium.
 

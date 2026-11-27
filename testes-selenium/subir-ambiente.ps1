@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Sobe o ambiente de revisão do Zalek360 (frontend 3100, API 5100, PostgreSQL 55432) para a suíte Selenium.
 
