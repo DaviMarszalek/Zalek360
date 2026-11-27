@@ -12,6 +12,16 @@ São 8 cenários e 9 execuções, porque o CT05 roda uma vez por perfil. O plane
 | Microsoft Edge ou Google Chrome | atual | O Selenium Manager baixa o driver sozinho; não é preciso instalar chromedriver/msedgedriver |
 | Docker Desktop | 29.x | Necessário para subir o Zalek360 localmente |
 
+## Versão do sistema
+
+A suíte depende da Fase 7.4 do Zalek360: o limite de tentativas de login (CT03) e a volta ao destino após o login (CT04). Ela precisa rodar a partir desta branch (`testes/selenium-avaliacao`) ou da `main` depois que a Fase 7.4 e esta suíte forem mescladas. Contra uma versão anterior, o CT03 falha.
+
+Para gerar um pacote com apenas os arquivos versionados, sem `.env.revisao` nem `.venv`, execute na raiz do repositório:
+
+```powershell
+git archive --format=zip -o ..\Zalek360-selenium.zip HEAD
+```
+
 ## Passo a passo (Windows, PowerShell)
 
 Todos os comandos partem da **raiz do repositório**, a pasta que contém `docker-compose.yml`.
@@ -63,10 +73,10 @@ No VS Code, selecione o interpretador da `.venv`: `Ctrl+Shift+P` → **Python: S
 
 - **Terminal:** lista cada teste com `PASSED` ou `FAILED` e o total no final.
 - **`relatorios/relatorio.html`:** relatório autocontido; basta abrir no navegador. Para cada teste mostra o cenário, a duração, a URL final e um screenshot da tela no fim do teste. No topo aparecem o navegador, a URL e a ferramenta usados.
-- **`relatorios/junit.xml`:** o mesmo resultado em formato JUnit.
+- **`relatorios/junit.xml`:** o mesmo resultado em formato JUnit, gerado a cada execução e não versionado.
 - **`relatorios/capturas/`:** screenshot de cada teste que falhar (criada somente quando há falha).
 
-A execução que serve de evidência da entrega está versionada em `relatorios/`. Uma nova execução sobrescreve esses arquivos.
+A execução que serve de evidência da entrega está versionada em `relatorios/relatorio.html` (Edge com janela visível, 9/9 aprovados). Uma nova execução sobrescreve esse arquivo.
 
 ## Opções úteis
 
