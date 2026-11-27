@@ -30,7 +30,6 @@ class FormularioCliente(PaginaBase):
         return self
 
     def informar_cpf(self, cpf: str):
-        # A validação do documento acontece ao sair do campo (blur).
         self.digitar(self.DOCUMENTO, cpf).send_keys(Keys.TAB)
         return self
 

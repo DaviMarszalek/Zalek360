@@ -72,7 +72,7 @@ No VS Code, selecione o interpretador da `.venv`: `Ctrl+Shift+P` → **Python: S
 ### 3. Ver o resultado
 
 - **Terminal:** lista cada teste com `PASSED` ou `FAILED` e o total no final.
-- **`relatorios/relatorio.html`:** relatório autocontido; basta abrir no navegador. Para cada teste mostra o cenário, a duração, a URL final e um screenshot da tela no fim do teste. No topo aparecem o navegador, a URL e a ferramenta usados.
+- **`relatorios/relatorio.html`:** relatório autocontido; basta abrir no navegador. Para cada teste mostra o nome (com o ID do cenário, por exemplo `test_ct01_...`), a duração, a URL final e um screenshot da tela no fim do teste. No topo aparecem o navegador, a URL e a ferramenta usados.
 - **`relatorios/junit.xml`:** o mesmo resultado em formato JUnit, gerado a cada execução e não versionado.
 - **`relatorios/capturas/`:** screenshot de cada teste que falhar (criada somente quando há falha).
 

@@ -1,6 +1,3 @@
-"""Configuração da suíte: opções de linha de comando, navegador (setup/teardown),
-pré-condição do ambiente e evidências no relatório HTML."""
-import html
 import os
 import re
 import urllib.error
@@ -44,21 +41,16 @@ def pytest_html_report_title(report):
     report.title = "Zalek360 — suíte Selenium"
 
 
-# ---------- pré-condição: o sistema precisa estar no ar ----------
-
 @pytest.fixture(scope="session")
 def url_base(pytestconfig) -> str:
     url = pytestconfig.getoption("--url").rstrip("/")
     try:
         urllib.request.urlopen(url + "/login", timeout=10)
     except (urllib.error.URLError, OSError) as erro:
-        # Sem o sistema no ar os testes não podem ser concluídos: é bloqueio, não falha.
         pytest.exit(f"BLOQUEADO: o Zalek360 não respondeu em {url} ({erro}). "
                     "Suba o ambiente de revisão antes de executar a suíte (veja o README).", returncode=4)
     return url
 
-
-# ---------- setup e teardown do navegador ----------
 
 def _criar_driver(nome: str, headless: bool):
     if nome == "firefox":
@@ -73,7 +65,6 @@ def _criar_driver(nome: str, headless: bool):
     if headless:
         opcoes.add_argument("--headless=new")
     opcoes.add_argument("--window-size=1366,900")
-    # Evita que o gerenciador de senhas abra pop-ups por cima da página durante o login.
     opcoes.add_experimental_option("prefs", {
         "credentials_enable_service": False,
         "profile.password_manager_enabled": False,
@@ -91,7 +82,6 @@ def driver(pytestconfig, url_base):
 
 @pytest.fixture
 def entrar(driver, url_base):
-    """Faz login com um dos perfis de demonstração e devolve a página de login usada."""
     def _entrar(perfil: str = "Gestor"):
         pagina = PaginaLogin(driver, url_base)
         pagina.entrar(USUARIOS[perfil], SENHA_DEMO)
@@ -99,14 +89,10 @@ def entrar(driver, url_base):
     return _entrar
 
 
-# ---------- evidências no relatório ----------
-
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     resultado = yield
     relatorio = resultado.get_result()
-    doc = (item.function.__doc__ or "").strip().splitlines()
-    relatorio.cenario = doc[0] if doc else ""
     if relatorio.when != "call":
         return
     driver = item.funcargs.get("driver")
@@ -115,7 +101,7 @@ def pytest_runtest_makereport(item, call):
         return
     try:
         imagem = driver.get_screenshot_as_base64()
-    except Exception:  # o navegador pode ter caído junto com o teste
+    except Exception:
         return
     extras = getattr(relatorio, "extras", [])
     extras.append(plugin_html.extras.url(driver.current_url, name="URL no fim do teste"))
@@ -125,11 +111,3 @@ def pytest_runtest_makereport(item, call):
         PASTA_CAPTURAS.mkdir(parents=True, exist_ok=True)
         nome = re.sub(r"[^\w.-]+", "_", item.nodeid)
         driver.save_screenshot(str(PASTA_CAPTURAS / f"{nome}.png"))
-
-
-def pytest_html_results_table_header(cells):
-    cells.insert(2, "<th>Cenário</th>")
-
-
-def pytest_html_results_table_row(report, cells):
-    cells.insert(2, f"<td>{html.escape(getattr(report, 'cenario', ''))}</td>")

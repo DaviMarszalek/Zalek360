@@ -1,9 +1,3 @@
-"""Massa de dados da suíte.
-
-Os usuários de demonstração são criados pelo seed de banco novo do Zalek360.
-CPF e e-mail são gerados a cada execução para que a suíte possa ser repetida
-quantas vezes for preciso sem conflito de cadastro.
-"""
 import os
 import random
 import time
@@ -21,9 +15,8 @@ def sufixo_unico() -> str:
 
 
 def cpf_valido() -> str:
-    """CPF com dígitos verificadores corretos (11 dígitos, sem máscara)."""
     base = [random.randint(0, 9) for _ in range(9)]
-    while len(set(base)) == 1:  # 111.111.111-xx é recusado por regra
+    while len(set(base)) == 1:
         base = [random.randint(0, 9) for _ in range(9)]
     for peso_inicial in (10, 11):
         soma = sum(d * p for d, p in zip(base, range(peso_inicial, 1, -1)))
@@ -33,7 +26,6 @@ def cpf_valido() -> str:
 
 
 def cpf_com_digito_invalido() -> str:
-    """Mesmo formato de um CPF válido, mas com o último dígito verificador trocado."""
     cpf = cpf_valido()
     ultimo = (int(cpf[-1]) + 1) % 10
     return cpf[:-1] + str(ultimo)

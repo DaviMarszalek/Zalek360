@@ -21,16 +21,10 @@ class PaginaLogin(PaginaBase):
         self.clicavel(self.ENTRAR).click()
 
     def entrar(self, email: str, senha: str):
-        """Login completo: só retorna depois que o sistema sair da tela de login."""
         self.abrir().preencher(email, senha).enviar()
         self.espera.until(lambda d: "/login" not in d.current_url)
 
     def tentar_e_ler_erro(self, email: str, senha: str) -> str:
-        """Envia credenciais que devem ser recusadas e devolve o texto do aviso exibido.
-
-        Se já houver um aviso na tela (tentativa anterior), espera ele sumir antes de
-        ler o novo, para não confundir a mensagem antiga com a resposta atual.
-        """
         anteriores = self.driver.find_elements(*self.AVISO_ERRO)
         self.preencher(email, senha).enviar()
         if anteriores:
