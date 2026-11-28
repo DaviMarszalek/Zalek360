@@ -39,4 +39,5 @@ public static class CodigosErro
     public const string AnexoVazio = "ANEXO_VAZIO";
     public const string AnexoConteudoInvalido = "ANEXO_CONTEUDO_INVALIDO";
     public const string AnexoIndisponivel = "ANEXO_INDISPONIVEL";
+    public const string MuitasTentativas = "MUITAS_TENTATIVAS";
 }

@@ -43,7 +43,7 @@ public static class ConfiguracaoServicos
         services.AddControllers()
             .AddJsonOptions(o =>
             {
-                o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                o.JsonSerializerOptions.Converters.Add(new ConversorEnumValidado());
                 o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.Never;
             })
             .ConfigureApiBehaviorOptions(o =>
@@ -66,9 +66,11 @@ public static class ConfiguracaoServicos
                     return new BadRequestObjectResult(resposta);
                 };
             });
-        services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+        services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new ConversorEnumValidado()));
 
         services.Configure<OpcoesCookieAuth>(configuration.GetSection(OpcoesCookieAuth.Secao));
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<LimitadorTentativasLogin>();
         var jwt = configuration.GetSection(JwtOptions.Secao).Get<JwtOptions>() ?? new JwtOptions();
         var nomeCookie = configuration.GetSection(OpcoesCookieAuth.Secao).Get<OpcoesCookieAuth>()?.NomeCookie ?? "zalek360_token";
 
@@ -108,6 +110,11 @@ public static class ConfiguracaoServicos
                     },
                     OnForbidden = async contexto =>
                     {
+                        // Evento de segurança: perfil sem permissão tentando uma operação.
+                        contexto.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Zalek360.Seguranca")
+                            .LogWarning("Acesso negado (403) ao usuário {UsuarioId} com perfil {Perfil} em {Metodo} {Caminho}.",
+                                contexto.Principal?.FindFirst("sub")?.Value, contexto.Principal?.FindFirst("role")?.Value,
+                                contexto.Request.Method, contexto.Request.Path);
                         contexto.Response.StatusCode = StatusCodes.Status403Forbidden;
                         await contexto.Response.WriteAsJsonAsync(new ErroResposta(403, CodigosErro.AcessoNegado,
                             "Seu perfil não tem permissão para esta operação.",

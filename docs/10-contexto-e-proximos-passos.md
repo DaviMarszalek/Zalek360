@@ -104,6 +104,16 @@ A revisão completa do MVP (`revisao-mvp/RELATORIO-REVISAO-MVP.md`, commit revis
   - PDF nunca falha por emoji ou caractere sem glifo: antes de renderizar, todos os textos passam por `TextoPdf` (NFC; mantém a lista explícita de caracteres cobertos por IBM Plex Sans/Lato — ASCII, Latin-1, Latin Extended-A e pontuação comum; descarta emoji, ZWJ, seletores de variação e símbolos; espaços especiais viram espaço; o resto vira `?`). O cadastro não é alterado. Teste real renderiza todos os caracteres aceitos.
   - Frontend: `paraNumero` aceita ponto decimal ("40.50" → 40,5) mantendo o padrão pt-BR ("1.234,56"; "1.234" = milhar). Formatos ambíguos ficam inválidos. Testes Vitest incluídos (`utils/formatos.test.ts`).
   - Regra única de dinheiro (decisão provisória): valores com mais de 2 casas são **arredondados para 2 casas, ponto médio afastando de zero**, na entrada do cálculo — prévia, validação e gravação do orçamento e preço/custo do produto (que antes recusava). Unitário que arredonda para zero é recusado (400); violação de CHECK do banco nunca vira 500 (422 no envelope).
+  - Mesclada no [PR #13](https://github.com/DaviMarszalek/Zalek360/pull/13).
+- **7.4 — Ajustes técnicos da revisão (Médios/Baixos sem decisão de negócio):**
+  - M3: limite de tentativas de login falhas por conta (5 em 15 min → 429 `MUITAS_TENTATIVAS`, mesmo com a senha certa durante o bloqueio; sucesso zera). Por conta, não por IP, porque a API fica atrás do proxy do frontend.
+  - M5: redirecionamento pós-login só para caminhos internos da mesma origem (`utils/navegacao.ts`); `/\site` e similares voltam para o dashboard.
+  - B1: `?periodo=` desconhecido na URL é ignorado (`periodoDaUrl`) em vez de derrubar a tela de pedidos/orçamentos.
+  - B2: enums fora da lista no JSON (ex.: `"resultado": 99`) respondem 400 no envelope, não 500 (`ConversorEnumValidado`).
+  - B4: logs de segurança — login recusado ou bloqueado (e-mail mascarado e IP) e acesso negado 403 (usuário, perfil e rota).
+  - B7: `historico_eventos` protegido contra alteração/exclusão no `SaveChanges`, como os movimentos de estoque.
+  - Menores: data/hora sugerida dos modais de contato e decisão renovada a cada abertura; destinatário do e-mail com `trim`; consultas repetem uma vez só em falha de rede ou 5xx (não em 400/401/403/404).
+  - Fora desta fase (dependem de decisão ou de esforço maior): revogação de sessão (M4), decisão manual "Expirado" (B3), WhatsApp internacional (B12), CSP/HSTS (B5), proxies confiáveis (B6), miniaturas (B13), paginação/consulta de reposição (M8), atualização do Next 16.4.6, CI (M6).
 
 ### Ambiente
 

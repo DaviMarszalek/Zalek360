@@ -5,7 +5,7 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Eye, FileText, Pencil, Plus, Search } from "lucide-react";
 import { AcoesLinha, Abas, BadgeOrcamento, Botao, CabecalhoPagina, Cartao, Entrada, ErroCarregamento, Esqueleto, EstadoVazio, Paginacao, Selecao } from "@/components/ui";
-import { FiltroPeriodo, intervaloDoPeriodo, Periodo } from "@/features/comum";
+import { FiltroPeriodo, intervaloDoPeriodo, Periodo, periodoDaUrl } from "@/features/comum";
 import { orcamentosService } from "@/services";
 import { useDebounce, useResponsaveis, useUsuarioAtual } from "@/hooks";
 import { erroDaApi } from "@/lib/api";
@@ -17,7 +17,7 @@ export function ListaOrcamentos() {
   const params = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<SituacaoOrcamento | "">((params.get("status") as SituacaoOrcamento) ?? "");
-  const [periodo, setPeriodo] = useState<Periodo>((params.get("periodo") as Periodo) ?? (params.get("status") ? "todos" : "30"));
+  const [periodo, setPeriodo] = useState<Periodo>(periodoDaUrl(params.get("periodo")) ?? (params.get("status") ? "todos" : "30"));
   const [busca, setBusca] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [pagina, setPagina] = useState(1);

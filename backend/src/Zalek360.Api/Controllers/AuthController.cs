@@ -5,6 +5,9 @@ using Zalek360.Api.Seguranca;
 using Zalek360.Application.Dtos;
 using Zalek360.Application.Interfaces;
 using Zalek360.Application.Services;
+using Zalek360.Application.Common;
+using Zalek360.Domain.Common;
+using Zalek360.Domain.Entities;
 
 namespace Zalek360.Api.Controllers;
 
@@ -16,21 +19,46 @@ public sealed class AuthController : ControllerBase
     private readonly AuthService _auth;
     private readonly IUsuarioAtual _usuario;
     private readonly OpcoesCookieAuth _cookie;
+    private readonly LimitadorTentativasLogin _limitador;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(AuthService auth, IUsuarioAtual usuario, IOptions<OpcoesCookieAuth> cookie)
+    public AuthController(AuthService auth, IUsuarioAtual usuario, IOptions<OpcoesCookieAuth> cookie,
+        LimitadorTentativasLogin limitador, ILogger<AuthController> logger)
     {
         _auth = auth;
         _usuario = usuario;
         _cookie = cookie.Value;
+        _limitador = limitador;
+        _logger = logger;
     }
 
     /// <summary>Entra no sistema. Define o cookie httpOnly de sessão e também retorna o token (uso no Swagger).</summary>
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
-        var resposta = await _auth.EntrarAsync(request, ct);
+        var conta = string.IsNullOrWhiteSpace(request.Email) ? "" : Usuario.NormalizarEmail(request.Email);
+        if (_limitador.Bloqueio(conta) is { } restante)
+        {
+            _logger.LogWarning("Login bloqueado temporariamente para {Conta} (muitas tentativas falhas).", LimitadorTentativasLogin.Mascarar(conta));
+            throw new AppException(CodigosErro.MuitasTentativas,
+                $"Muitas tentativas de login sem sucesso. Aguarde {Math.Max(1, (int)Math.Ceiling(restante.TotalMinutes))} minuto(s) e tente de novo.", StatusCodes.Status429TooManyRequests);
+        }
+
+        LoginResponse resposta;
+        try
+        {
+            resposta = await _auth.EntrarAsync(request, ct);
+        }
+        catch (NaoAutenticadoException)
+        {
+            _limitador.RegistrarFalha(conta);
+            _logger.LogWarning("Login recusado para {Conta} a partir de {Ip}.", LimitadorTentativasLogin.Mascarar(conta), HttpContext.Connection.RemoteIpAddress);
+            throw;
+        }
+        _limitador.Limpar(conta);
         Response.Cookies.Append(_cookie.NomeCookie, resposta.AccessToken, new CookieOptions
         {
             HttpOnly = true,

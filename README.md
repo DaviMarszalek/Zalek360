@@ -197,7 +197,7 @@ Documentação interativa em `/swagger`, **somente com `ASPNETCORE_ENVIRONMENT=D
 
 | Recurso | Endpoints |
 |---|---|
-| Autenticação | `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` |
+| Autenticação | `POST /api/auth/login` (5 falhas seguidas na mesma conta → 429 por 15 min) · `POST /api/auth/logout` · `GET /api/auth/me` |
 | Clientes | `GET/POST /api/clientes` · `GET /api/clientes/cidades` · `GET /api/clientes/verificar-documento` · `GET/PUT /api/clientes/{id}` · `GET /api/clientes/{id}/visao-geral` · `/orcamentos` · `/pedidos` · `/historico` · `GET/POST /api/clientes/{id}/observacoes` |
 | Orçamentos | `GET/POST /api/orcamentos` · `POST /api/orcamentos/calculo` · `GET/PUT /api/orcamentos/{id}` · `/itens` · `/historico?categoria=` · `GET/POST /api/orcamentos/{id}/contatos` · `POST /api/orcamentos/{id}/aguardando-retorno` · `POST /api/orcamentos/{id}/decisao` · `GET /api/orcamentos/motivos-decisao` |
 | PDF do orçamento | `POST /api/orcamentos/{id}/exportacoes?inline=true` exporta e registra histórico · `GET /api/orcamentos/{id}/exportar-pdf?inline=true` pré-visualiza sem gravar. Omitir `inline` baixa o arquivo |

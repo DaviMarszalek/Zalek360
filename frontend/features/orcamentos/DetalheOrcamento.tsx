@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Ban, CheckCircle2, Download, ExternalLink, FileText, Gavel, MessageSquarePlus, Package, Pencil, Plus, Send } from "lucide-react";
 import { useExportarOrcamento } from "@/hooks/useExportarOrcamento";
@@ -80,6 +80,8 @@ function ModalContato({ o, aberto, aoFechar }: { o: OrcamentoDetalhe; aberto: bo
   const toast = useToast();
   const [tipo, setTipo] = useState<MeioContato | null>(null);
   const [quando, setQuando] = useState(agoraLocalInput());
+  // Os modais ficam montados: renova a data/hora sugerida a cada abertura (antes ficava a hora em que a página abriu).
+  useEffect(() => { if (aberto) setQuando(agoraLocalInput()); }, [aberto]);
   const [obs, setObs] = useState("");
   const [erro, setErro] = useState<ErroApi | null>(null);
   const m = useMutation({
@@ -135,6 +137,8 @@ function ModalDecisao({ o, aberto, aoFechar, somenteCancelar, aoAprovado }: { o:
   const [resultado, setResultado] = useState<ResultadoDecisao | null>(somenteCancelar ? "Cancelado" : null);
   const [meio, setMeio] = useState<MeioContato | null>(null);
   const [quando, setQuando] = useState(agoraLocalInput());
+  // Os modais ficam montados: renova a data/hora sugerida a cada abertura (antes ficava a hora em que a página abriu).
+  useEffect(() => { if (aberto) setQuando(agoraLocalInput()); }, [aberto]);
   const [motivo, setMotivo] = useState("");
   const [obs, setObs] = useState("");
   const [erro, setErro] = useState<ErroApi | null>(null);
