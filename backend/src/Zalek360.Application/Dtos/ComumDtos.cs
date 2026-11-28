@@ -37,7 +37,7 @@ public sealed record AnexoDto(Guid Id, string Nome, string Extensao, string Cont
 
 public sealed record ClienteCardDto(
     Guid Id, string Nome, TipoPessoa TipoPessoa, string Documento, string? ContatoNome, string? ContatoCargo,
-    string? Telefone, string? WhatsApp, string? Email, string? Cidade);
+    string? Telefone, string? WhatsApp, string? Email, string? Cidade, string? InscricaoEstadual = null);
 
 public sealed record PersonalizacaoDto(
     string TipoPersonalizacao, string CorPeca, string? CoresArte, string? Medidas,

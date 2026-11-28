@@ -14,7 +14,8 @@ internal static class Projecoes
         tipo == TipoPessoa.PessoaJuridica && !string.IsNullOrWhiteSpace(fantasia) ? fantasia! : razao;
 
     public static ClienteCardDto Card(Cliente c) => new(
-        c.Id, c.NomeExibicao, c.TipoPessoa, c.Documento, c.ContatoNome, c.ContatoCargo, c.Telefone, c.WhatsApp, c.Email, c.CidadeUf);
+        c.Id, c.NomeExibicao, c.TipoPessoa, c.Documento, c.ContatoNome, c.ContatoCargo, c.Telefone, c.WhatsApp, c.Email, c.CidadeUf,
+        c.TipoPessoa == TipoPessoa.PessoaJuridica ? c.InscricaoEstadual : null);
 
     public static PersonalizacaoDto Personalizacao(ItemOrcamento i) => new(
         i.TipoPersonalizacao, i.CorPeca, i.CoresArte, i.Medidas, i.LocalAplicacao, i.ReferenciaArte, i.ObservacoesTecnicas);
