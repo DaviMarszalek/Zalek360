@@ -118,6 +118,43 @@ public class AprovacaoTransacionalTests
     }
 }
 
+public class InscricaoEstadualClienteTests
+{
+    [Fact]
+    public async Task Detalhes_de_orcamento_e_pedido_trazem_a_ie_do_cliente_pj()
+    {
+        await using var banco = await BancoSqlite.CriarAsync();
+        await using (var db = banco.Contexto())
+        {
+            var cliente = await db.Clientes.SingleAsync(c => c.Id == banco.ClienteId);
+            cliente.Atualizar(Dados.ClientePj() with { InscricaoEstadual = "123.456.789" }, Dados.Agora, Dados.UsuarioId);
+            await db.SaveChangesAsync();
+        }
+        var o = await banco.OrcamentoAguardandoAsync();
+        Assert.Equal("123.456.789", o.Cliente.InscricaoEstadual);
+
+        await using (var db = banco.Contexto())
+            await banco.Orcamentos(db).RegistrarDecisaoAsync(o.Id, new DecisaoRequest(ResultadoDecisao.Aprovado, MeioContato.WhatsApp,
+                new DateTimeOffset(Dados.Agora), null, null, o.Versao), CancellationToken.None);
+
+        await using (var db = banco.Contexto())
+        {
+            Assert.Equal("123.456.789", (await new OrcamentoQueries(db, banco.Relogio).ObterDetalheAsync(o.Id, CancellationToken.None)).Cliente.InscricaoEstadual);
+            var pedidoId = await db.Pedidos.Select(p => p.Id).SingleAsync();
+            var pedido = await new PedidoQueries(db, banco.Relogio).ObterDetalheAsync(pedidoId, CancellationToken.None);
+            Assert.Equal("123.456.789", pedido.Cliente.InscricaoEstadual);
+        }
+    }
+
+    [Fact]
+    public async Task Cliente_pj_sem_ie_mantem_o_resumo_sem_ie()
+    {
+        await using var banco = await BancoSqlite.CriarAsync();
+        var o = await banco.OrcamentoAguardandoAsync();
+        Assert.Null(o.Cliente.InscricaoEstadual);
+    }
+}
+
 public class HistoricoConsultasTests
 {
     [Fact]
