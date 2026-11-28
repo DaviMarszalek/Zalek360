@@ -40,6 +40,14 @@ public sealed class ClientesController : ControllerBase
         [FromQuery] string? documento, [FromQuery] TipoPessoa? tipo, [FromQuery] Guid? excetoId, CancellationToken ct) =>
         _servico.VerificarDocumentoAsync(documento, tipo, excetoId, ct);
 
+    /// <summary>
+    /// Item 2 — consulta o CNPJ (com ou sem máscara) em bases públicas. CNPJ inválido: 400 CNPJ_INVALIDO.
+    /// Falha, limite ou não encontrado: 200 com encontrado=false e mensagem para cadastro manual.
+    /// </summary>
+    [HttpGet("cnpj/{**cnpj}")]
+    public Task<ConsultaCnpjDto> ConsultarCnpj(string? cnpj, [FromServices] ConsultaCnpjService consulta, CancellationToken ct) =>
+        consulta.ConsultarAsync(cnpj, ct);
+
     /// <summary>Cadastra cliente PF/PJ. CPF/CNPJ duplicado retorna 409 com o cliente existente em details.</summary>
     [HttpPost]
     [Authorize(Policy = Politicas.Operacao)]

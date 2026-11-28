@@ -23,6 +23,7 @@ public static class ConfiguracaoServicos
         services.AddScoped<AuthService>();
         services.AddScoped<UsuarioService>();
         services.AddScoped<ClienteService>();
+        services.AddScoped<ConsultaCnpjService>();
         services.AddScoped<ProdutoService>();
         services.AddScoped<ConfiguracaoCatalogoService>();
         services.AddScoped<EstoqueService>();

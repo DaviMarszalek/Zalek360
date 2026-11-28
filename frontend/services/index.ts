@@ -6,6 +6,7 @@ import type {
   OrcamentoDetalhe, OrcamentoListaItem, OrcamentoRequisicao, OrcamentoResumo, Pagina, PedidoDetalhe, PedidoListaItem, PedidoResumo,
   CompraMateriaPrima, FichaTecnica, MateriaPrima, MateriaisPedido, PendenciaEstoquePedido, MovimentoMateriaPrima, Produto, ProdutoFichaTecnica, ProdutoRequisicao, ResultadoDecisao, SituacaoCompraMateriaPrima, SituacaoOrcamento, SituacaoPedido, TipoPessoa, Usuario, VerificacaoDocumento,
 } from "@/types/api";
+import type { ConsultaCnpj } from "@/types/api";
 
 type Params = Record<string, string | number | undefined | null>;
 const limpar = (p: Params) => Object.fromEntries(Object.entries(p).filter(([, v]) => v !== undefined && v !== null && v !== ""));
@@ -58,6 +59,8 @@ export const clientesService = {
     api.get<HistoricoEvento[]>(`/clientes/${id}/historico`, { params: limpar(p) }).then((r) => r.data),
   observacoes: (id: string) => api.get<ObservacaoCliente[]>(`/clientes/${id}/observacoes`).then((r) => r.data),
   adicionarObservacao: (id: string, texto: string) => api.post<ObservacaoCliente>(`/clientes/${id}/observacoes`, { texto }).then((r) => r.data),
+  /** Envia só os dígitos (a máscara tem "/"). CNPJ inválido: 400 CNPJ_INVALIDO. */
+  consultarCnpj: (cnpj: string) => api.get<ConsultaCnpj>(`/clientes/cnpj/${cnpj.replace(/\D/g, "")}`).then((r) => r.data),
 };
 
 export const orcamentosService = {

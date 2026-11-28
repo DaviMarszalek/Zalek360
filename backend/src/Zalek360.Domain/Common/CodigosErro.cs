@@ -16,6 +16,7 @@ public static class CodigosErro
     public const string ClienteDadosInvalidos = "CLIENTE_DADOS_INVALIDOS";
     public const string ClienteDocumentoDuplicado = "CLIENTE_CPF_CNPJ_DUPLICADO";
     public const string ObservacaoInvalida = "OBSERVACAO_INVALIDA";
+    public const string CnpjInvalido = "CNPJ_INVALIDO";
 
     public const string OrcamentoSemItens = "ORCAMENTO_SEM_ITENS";
     public const string OrcamentoDadosInvalidos = "ORCAMENTO_DADOS_INVALIDOS";
