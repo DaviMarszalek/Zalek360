@@ -4,7 +4,7 @@ import { request, type FullConfig } from "@playwright/test";
 // aguarda uma leitura autenticada responder pelo proxy, sem cookies ou retries de POST.
 export default async function preparar(config: FullConfig) {
   const api = await request.newContext({ baseURL: config.projects[0].use.baseURL, timeout: 3000 });
-  const limite = Date.now() + 30_000;
+  const limite = Date.now() + 120_000;
   let status = 0;
   try {
     while (Date.now() < limite) {
