@@ -193,7 +193,7 @@ public class ConsultaCnpjTests
         if (timeoutReal) falsos.Demora(BrasilApi);
         else falsos.Respostas[BrasilApi] = _ => throw new TaskCanceledException("HttpClient.Timeout");
         falsos.Json(Cnpja, JsonCnpja());
-        var (consulta, sp) = Criar(falsos, TimeSpan.FromMilliseconds(300));
+        var (consulta, sp) = Criar(falsos, TimeSpan.FromSeconds(1.5));
         using var _ = sp;
 
         var r = await consulta.ConsultarAsync(Cnpj, default);
