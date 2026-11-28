@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Zalek360.Application.Common;
 using Zalek360.Application.Interfaces;
 using Zalek360.Infrastructure.BackgroundJobs;
+using Zalek360.Infrastructure.ConsultaCnpj;
 using Zalek360.Infrastructure.Options;
 using Zalek360.Infrastructure.Persistence;
 using Zalek360.Infrastructure.Queries;
@@ -69,6 +70,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddSingleton<IFileStorage, ArmazenamentoLocal>();
+        services.AdicionarConsultaCnpj();
 
         services.AddHostedService<ExpiracaoOrcamentosWorker>();
         services.AddHostedService<LimpezaAnexosWorker>();
