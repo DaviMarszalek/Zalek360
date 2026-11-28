@@ -10,8 +10,8 @@
 | Onda | Situação | Branch / PR |
 |---|---|---|
 | Pré-etapa (Parte C) | **Já concluída antes deste plano**: PR #3 (Fase 1, R1 definitiva) e PR #4 (AGENTS.md + docs/10) mesclados em 24/11/2026. Nada a refazer. | — |
-| Onda 0 — plano, contratos, linha de base | em andamento | `integracao/melhorias-cadastro-pedidos` |
-| Onda 1 | pendente | — |
+| Onda 0 — plano, contratos, linha de base | concluída | `integracao/melhorias-cadastro-pedidos` (inclui `item/00-base-e2e-estavel`) |
+| Onda 1 | em andamento: Banco (M1 busca, `item/06a-busca-modelo`), Pedidos (`item/03-alertas-pedidos`, `item/10-estoque-abas`), Clientes (`item/05-ie-cliente`, `item/02-cnpj`). Pesquisa entra após a M1 integrada. | — |
 | Onda 2 | pendente | — |
 | Onda 3 | pendente | — |
 
@@ -191,3 +191,5 @@ Preenchido após a migration no banco da revisão.
 ## 9. Diário de checkpoints
 
 - 28/11/2026 — Onda 0 iniciada. Integração criada a partir de `main` `b5504f7`. Linha de base registrada (seção 3). Backup da revisão feito.
+- 28/11/2026 — `item/00-base-e2e-estavel` integrado: E2E **24/24** após a correção (a falha de `catalogo.spec.ts:59` não se repetiu; segue em observação). Onda 0 concluída. Worktrees `banco`, `pedidos`, `clientes` criados; agentes da Onda 1 iniciados.
+- Migrations em linha: cada migration do Agente Banco é integrada antes da próxima começar (evita conflito de `ModelSnapshot` entre branches).
