@@ -186,10 +186,13 @@ Preenchido após a migration no banco da revisão.
 | D7 | Consulta de CNPJ responde 200 com `Encontrado=false` em falha/limite. | Pedido: falha vira cadastro manual, sem erro. | — |
 | D8 | Agrupamento das listas colapsa espaços, sem removê-los. | "Ignorando espaços" lido do modo que junta menos. | Reagrupar manualmente em Configurações. |
 | D9 | Correção da corrida do "Sair" (pré-existente) incluída antes da Onda 1. | E2E da linha de base vermelho bloquearia todos os merges. | Reverter `item/00-base-e2e-estavel`. |
+| D11 | Consulta de CNPJ chama BrasilAPI e CNPJá em paralelo (a CNPJá serve a dados e IE) e usa a CNPJ.ws quando a CNPJá não traz IE; cache só de resultado definitivo. Formato da CNPJá pública **não confirmado** (site responde 429 a acessos automatizados); BrasilAPI e CNPJ.ws confirmadas na documentação oficial. | Menor tempo no pior caso; se a CNPJá estiver em outro formato, os dados vêm da BrasilAPI e a IE da CNPJ.ws. | Ordem sequencial em `ConsultaCnpjPublica`. |
+| D12 | CNPJ alfanumérico (Receita, 2026) ainda recebe 400: o validador existente só aceita 14 dígitos. | Fora do contrato; exige decisão. | Ampliar `DocumentoFiscal`. |
 | D10 | `testes-selenium/` fica sob responsabilidade do QA: o item 1 muda o formulário de cliente. | Manter a suíte verde; o zip do professor já foi entregue e não muda. | — |
 
 ## 9. Diário de checkpoints
 
 - 28/11/2026 — Onda 0 iniciada. Integração criada a partir de `main` `b5504f7`. Linha de base registrada (seção 3). Backup da revisão feito.
 - 28/11/2026 — `item/00-base-e2e-estavel` integrado: E2E **24/24** após a correção (a falha de `catalogo.spec.ts:59` não se repetiu; segue em observação). Onda 0 concluída. Worktrees `banco`, `pedidos`, `clientes` criados; agentes da Onda 1 iniciados.
+- 28/11/2026 — Agente Clientes concluiu: `item/05-ie-cliente` (169 testes backend, Vitest 55/55) e `item/02-cnpj` (194 testes, 32 novos, todos com provedores simulados). Ambos integrados sem conflito (`d62a6d9`).
 - Migrations em linha: cada migration do Agente Banco é integrada antes da próxima começar (evita conflito de `ModelSnapshot` entre branches).
