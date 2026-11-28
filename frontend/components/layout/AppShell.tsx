@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Package, Settings, Tags, Users, X } from "lucide-react";
@@ -42,16 +42,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const semSessao = isError && erroDaApi(error).status === 401;
   const [menuAberto, setMenuAberto] = useState(false);
   const [saindo, setSaindo] = useState(false);
+  // Saída voluntária: o 401 de /auth/me após limpar o cache não deve virar "sessão expirada" com redirect.
+  const saidaVoluntaria = useRef(false);
   const toast = useToast();
 
   async function sair() {
     setSaindo(true);
-    try { await authService.logout(); qc.clear(); router.replace("/login"); }
-    catch (erro) { toast("erro", `Não foi possível sair. ${erroDaApi(erro).message}`); }
+    saidaVoluntaria.current = true;
+    try { await authService.logout(); router.replace("/login"); qc.clear(); }
+    catch (erro) { saidaVoluntaria.current = false; toast("erro", `Não foi possível sair. ${erroDaApi(erro).message}`); }
     finally { setSaindo(false); }
   }
 
-  useEffect(() => { if (semSessao) router.replace(`/login?redirect=${encodeURIComponent(caminho)}`); }, [semSessao, router, caminho]);
+  useEffect(() => { if (semSessao && !saidaVoluntaria.current) router.replace(`/login?redirect=${encodeURIComponent(caminho)}`); }, [semSessao, router, caminho]);
   useEffect(() => {
     const telaGrande = window.matchMedia("(min-width: 1024px)");
     const fecharNoDesktop = () => { if (telaGrande.matches) setMenuAberto(false); };
