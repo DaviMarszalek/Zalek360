@@ -164,3 +164,10 @@ export interface ModeloProposta { id: string; canal: CanalProposta; assunto: str
 export interface EnvioProposta { id: string; situacao: "EmProcessamento" | "Enviado" | "NaoConfirmado"; destinatario: string; assunto: string; criadoEm: string; concluidoEm: string | null }
 export interface PreparacaoProposta { emailDisponivel: boolean; email: string | null; whatsApp: string | null; assunto: string; mensagemEmail: string; mensagemWhatsApp: string; versao: number; ultimoEnvio: EnvioProposta | null }
 export interface EnviarPropostaRequest { chaveEnvio: string; destinatario: string; assunto: string; mensagem: string; versao: number }
+
+// Item 2 — consulta de CNPJ em bases públicas (falha/limite/não encontrado: encontrado=false + mensagem).
+export interface InscricaoEstadual { numero: string; uf: string; ativa: boolean }
+export interface ConsultaCnpj {
+  encontrado: boolean; fonte: string | null; razaoSocial: string | null; nomeFantasia: string | null;
+  telefone: string | null; email: string | null; endereco: Endereco | null; inscricoesEstaduais: InscricaoEstadual[]; mensagem: string | null;
+}
