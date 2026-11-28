@@ -51,6 +51,18 @@ public class DocumentoPdfTests
         }
         finally { if (File.Exists(temporario)) File.Delete(temporario); }
     }
+
+    [Fact]
+    public async Task Pdf_real_com_inscricao_estadual_do_cliente_e_gerado_com_texto_seguro()
+    {
+        var relogio = new RelogioFixo();
+        var dto = OrcamentoDocumentoService.Montar(OrcamentoDocumentoTests.Orcamento(),
+            OrcamentoDocumentoTests.Cliente() with { InscricaoEstadual = "123.456.789😀" }, new EmpresaOptions(), relogio, relogio.AgoraUtc);
+        var bytes = await new GeradorDocumentoOrcamento().GerarAsync(dto, default);
+        Assert.Equal("%PDF", Encoding.ASCII.GetString(bytes, 0, 4));
+        var seguro = TextoPdf.Sanitizar(dto);
+        Assert.Contains(seguro.DadosCliente, c => c.Rotulo == "CNPJ" && c.Valor == "38.221.907/0001-53 · IE 123.456.789");
+    }
 }
 
 /// <summary>Pipeline HTTP e autenticação reais, banco relacional isolado e os dados reais do seed.</summary>

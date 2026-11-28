@@ -87,7 +87,7 @@ export function CartaoCliente({ cliente }: { cliente: ClienteCard }) {
     <div className="space-y-3 text-sm">
       <div>
         <Link href={`/clientes/${cliente.id}`} className="font-semibold text-texto hover:text-primaria">{cliente.nome}</Link>
-        <p className="numero mt-0.5 text-xs text-texto-fraco">{siglaTipoPessoa[cliente.tipoPessoa]} · {documento(cliente.documento)}</p>
+        <p className="numero mt-0.5 text-xs text-texto-fraco">{siglaTipoPessoa[cliente.tipoPessoa]} · {documento(cliente.documento)}{cliente.tipoPessoa === "PessoaJuridica" && cliente.inscricaoEstadual?.trim() && ` · IE ${cliente.inscricaoEstadual.trim()}`}</p>
       </div>
       <dl className="space-y-1.5 text-[13px] text-texto-suave">
         {cliente.contatoNome && <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5 text-texto-fraco" />{cliente.contatoNome}{cliente.contatoCargo && ` · ${cliente.contatoCargo}`}</div>}

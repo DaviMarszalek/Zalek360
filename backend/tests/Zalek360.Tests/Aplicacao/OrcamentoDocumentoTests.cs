@@ -86,6 +86,25 @@ public class OrcamentoDocumentoTests
     }
 
     [Fact]
+    public void Pj_com_inscricao_estadual_mostra_ie_junto_do_cnpj()
+    {
+        var d = OrcamentoDocumentoService.Montar(Orcamento(), Cliente() with { InscricaoEstadual = " 123.456.789 " },
+            new EmpresaOptions(), new RelogioFixo(), Dados.Agora);
+        Assert.Equal(new CampoDocumentoDto("CNPJ", "38.221.907/0001-53 · IE 123.456.789"), d.DadosCliente[0]);
+    }
+
+    [Theory]
+    [InlineData(TipoPessoa.PessoaJuridica, null)]
+    [InlineData(TipoPessoa.PessoaJuridica, "   ")]
+    [InlineData(TipoPessoa.PessoaFisica, "123.456.789")]
+    public void Pf_ou_pj_sem_inscricao_estadual_nao_mostra_ie(TipoPessoa tipo, string? ie)
+    {
+        var cliente = Cliente() with { TipoPessoa = tipo, Documento = tipo == TipoPessoa.PessoaFisica ? Dados.CpfJoao : Dados.CnpjAcademia, InscricaoEstadual = ie };
+        var d = OrcamentoDocumentoService.Montar(Orcamento(), cliente, new EmpresaOptions(), new RelogioFixo(), Dados.Agora);
+        Assert.DoesNotContain(d.DadosCliente, c => c.Valor.Contains(" · IE "));
+    }
+
+    [Fact]
     public void Rascunho_e_marcado_e_aprovado_usa_data_real_do_pedido()
     {
         var rascunho = Montar(Orcamento(situacao: SituacaoOrcamento.EmElaboracao));

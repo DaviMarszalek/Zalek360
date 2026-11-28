@@ -83,7 +83,10 @@ public sealed class OrcamentoDocumentoService(
         if (!string.IsNullOrWhiteSpace(empresa.Cnpj)) rodape.Add($"CNPJ: {Documento(empresa.Cnpj)}");
         if (!string.IsNullOrWhiteSpace(empresa.Endereco)) rodape.Add(empresa.Endereco);
         if (!string.IsNullOrWhiteSpace(empresa.TextoRodape)) rodape.Add(empresa.TextoRodape);
-        var dadosCliente = Campos((cliente.TipoPessoa == TipoPessoa.PessoaFisica ? "CPF" : "CNPJ", Documento(cliente.Documento)),
+        // PJ com IE: "CNPJ: 00.000.000/0000-00 · IE 123.456.789"; PF ou PJ sem IE ficam como antes.
+        var ie = cliente.TipoPessoa == TipoPessoa.PessoaJuridica && !string.IsNullOrWhiteSpace(cliente.InscricaoEstadual)
+            ? $" · IE {cliente.InscricaoEstadual.Trim()}" : "";
+        var dadosCliente = Campos((cliente.TipoPessoa == TipoPessoa.PessoaFisica ? "CPF" : "CNPJ", Documento(cliente.Documento) + ie),
             ("Nome fantasia", cliente.NomeFantasia), ("Contato", cliente.ContatoNome), ("Cargo", cliente.ContatoCargo),
             ("Telefone", Telefone(cliente.Telefone)), ("WhatsApp", Telefone(cliente.WhatsApp)), ("E-mail", cliente.Email));
         var itens = o.Itens.Select((i, index) => new ItemDocumentoDto((index + 1).ToString(CultureInfo.InvariantCulture),

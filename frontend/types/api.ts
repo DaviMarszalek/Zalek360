@@ -47,6 +47,8 @@ export interface Anexo { id: string; nome: string; extensao: string; contentType
 export interface ClienteCard {
   id: string; nome: string; tipoPessoa: TipoPessoa; documento: string; contatoNome: string | null; contatoCargo: string | null;
   telefone: string | null; whatsApp: string | null; email: string | null; cidade: string | null;
+  /** Somente PJ; ausente/nulo quando não há IE. */
+  inscricaoEstadual?: string | null;
 }
 
 export interface ClienteListaItem {
